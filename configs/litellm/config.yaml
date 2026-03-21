@@ -1,0 +1,45 @@
+# LiteLLM Proxy Configuration for StackPerf Benchmarking
+# Reference: https://docs.litellm.ai/docs/proxy/configs
+
+model_list:
+  # Fireworks provider routes - matches configs/providers/fireworks.yaml
+  - model_name: kimi-k2-5
+    litellm_params:
+      model: anthropic/accounts/fireworks/models/kimi-k2p5
+      api_base: os.environ/FIREWORKS_BASE_URL
+      api_key: os.environ/FIREWORKS_API_KEY
+  - model_name: glm-5
+    litellm_params:
+      model: anthropic/accounts/fireworks/models/glm-5
+      api_base: os.environ/FIREWORKS_BASE_URL
+      api_key: os.environ/FIREWORKS_API_KEY
+
+litellm_settings:
+  # Master key and database must be under litellm_settings for DB-backed state
+  master_key: "os.environ/LITELLM_MASTER_KEY"
+  database_url: "os.environ/DATABASE_URL"
+  
+  # Enable request logging
+  drop_params: true
+  set_verbose: false
+  
+  # Success callbacks for request tracking
+  success_callback: ["prometheus"]
+  
+  # Failure callbacks
+  failure_callback: ["prometheus"]
+
+general_settings:
+  # Enable Prometheus metrics on the proxy port
+  prometheus_port: 4000
+  
+  # Proxy authentication
+  enable_oauth_auth: false
+
+router_settings:
+  routing_strategy: "simple-shuffle"
+
+# Rate limits (optional, can be overridden per-key)
+litellm_rate_limit:
+  rpm: 1000
+  tpm: 100000

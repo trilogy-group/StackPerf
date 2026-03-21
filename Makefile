@@ -1,37 +1,60 @@
-.PHONY: install dev lint test clean help
+.PHONY: help install sync dev lint type-check test test-unit test-int test-cov quality clean compose-up compose-down compose-logs db-migrate db-reset db-shell
 
-help:
-	@echo "StackPerf Development Commands"
-	@echo ""
-	@echo "  install     Install production dependencies"
-	@echo "  dev         Install dev dependencies"
-	@echo "  lint        Run linters (ruff, mypy)"
-	@echo "  test        Run all tests"
-	@echo "  test-unit   Run unit tests only"
-	@echo "  test-int    Run integration tests only"
-	@echo "  clean       Remove build artifacts"
-	@echo ""
+help: ## Show this help message
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-install:
+install: ## Install dependencies with uv
 	uv sync
 
-dev:
+sync: install ## Alias for install
+
+dev: ## Install dev dependencies
 	uv sync --all-extras
 
-lint:
-	uv run ruff check src/ tests/
-	uv run mypy src/
+lint: ## Run ruff linting
+	uv run ruff check src tests
 
-test:
+type-check: ## Run mypy type checking
+	uv run mypy src
+
+test: ## Run all tests
 	uv run pytest tests/ -v
 
-test-unit:
+test-unit: ## Run unit tests only
 	uv run pytest tests/unit/ -v
 
-test-int:
+test-int: ## Run integration tests only
 	uv run pytest tests/integration/ -v
 
-clean:
-	rm -rf .pytest_cache .mypy_cache .ruff_cache
-	rm -rf build/ dist/ *.egg-info
-	find . -type d -name __pycache__ -exec rm -rf {} +
+test-cov: ## Run tests with coverage
+	uv run pytest tests --cov=src --cov-report=term-missing
+
+quality: lint type-check test ## Run all quality checks (lint, type-check, test)
+
+clean: ## Clean build artifacts
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+
+compose-up: ## Start local infrastructure stack
+	docker compose up -d
+
+compose-down: ## Stop local infrastructure stack
+	docker compose down
+
+compose-logs: ## Show infrastructure logs
+	docker compose logs -f
+
+compose-ps: ## Show infrastructure status
+	docker compose ps
+
+db-migrate: ## Run database migrations
+	@echo "TODO: implement migrations"
+
+db-reset: ## Reset database
+	@echo "TODO: implement db reset"
+
+db-shell: ## Open database shell
+	docker compose exec postgres psql -U stackperf -d stackperf

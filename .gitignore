@@ -7,6 +7,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 .Python
 build/
 develop-eggs/
@@ -41,14 +42,27 @@ ENV/
 .coverage
 htmlcov/
 .tox/
+.nox/
 
-# MyPy
+# Type checking
 .mypy_cache/
-.dmypy.json
-dmypy.json
 
-# Ruff
+# Linting
 .ruff_cache/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+
+# Docker volumes (local only)
+postgres_data/
+prometheus_data/
+grafana_data/
 
 # OS
 .DS_Store

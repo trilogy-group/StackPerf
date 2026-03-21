@@ -1,0 +1,5 @@
+# Example experiment grouping variants for comparison
+name: fireworks-terminal-agents-comparison
+variants:
+  - fireworks-kimi-k2-5-claude
+description: Compare terminal agent harnesses using Fireworks models

@@ -2,9 +2,9 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any, cast
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
 from uuid6 import uuid7
@@ -12,6 +12,12 @@ from uuid6 import uuid7
 
 class BenchmarkConfigBase(BaseModel):
     """Base class for benchmark configuration objects."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+        str_strip_whitespace=True,
+    )
 
     name: str = Field(..., description="Unique configuration name")
     description: str | None = Field(None, description="Human-readable description")

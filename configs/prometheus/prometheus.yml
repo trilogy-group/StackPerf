@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'stackperf-local'
+
+alerting:
+  alertmanagers: []
+
+rule_files: []
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          environment: 'local'
+
+  - job_name: 'litellm'
+    static_configs:
+      - targets: ['litellm:4000']
+        labels:
+          environment: 'local'
+          service: 'litellm-proxy'
+    metrics_path: '/metrics'
+
+  # Note: Postgres metrics require a postgres exporter container.
+  # This can be added in a future enhancement ticket.
+  # Direct scraping of port 5432 (wire protocol) will not work.
