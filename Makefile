@@ -10,8 +10,8 @@ help: ## Show this help message
 install: ## Install dependencies with uv
 	uv sync --all-extras
 
-sync: ## Sync dependencies with uv
-	uv sync
+sync: ## Sync dependencies with uv (includes dev extras)
+	uv sync --all-extras
 
 lint: ## Run linting with ruff
 	uv run ruff check src tests
