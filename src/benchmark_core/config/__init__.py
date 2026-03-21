@@ -1,15 +1,18 @@
 """Configuration models and loading."""
 
-from .base import BenchmarkConfigBase, Settings
-from .experiment import ExperimentConfig
-from .harness import HarnessProfileConfig, LaunchCheck, RenderFormat
-from .provider import ModelAlias, ProtocolSurface, ProviderConfig, RoutingDefaults
-from .task_card import StopCondition, TaskCardConfig
-from .variant import VariantConfig
+from .base import BaseConfig, BenchmarkConfigBase, NameStr, Settings, load_yaml_config
+from .experiments import ExperimentConfig
+from .harnesses import HarnessProfileConfig, LaunchCheck, RenderFormat
+from .providers import ModelAlias, ProtocolSurface, ProviderConfig, RoutingDefaults
+from .task_cards import TaskCardConfig
+from .variants import VariantConfig
 
 __all__ = [
+    "BaseConfig",
     "BenchmarkConfigBase",
+    "NameStr",
     "Settings",
+    "load_yaml_config",
     "ExperimentConfig",
     "HarnessProfileConfig",
     "LaunchCheck",
@@ -18,7 +21,6 @@ __all__ = [
     "ProtocolSurface",
     "ProviderConfig",
     "RoutingDefaults",
-    "StopCondition",
     "TaskCardConfig",
     "VariantConfig",
 ]

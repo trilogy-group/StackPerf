@@ -1,7 +1,7 @@
 """Provider configuration model."""
 
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import Field, field_validator
 
@@ -34,12 +34,14 @@ class RoutingDefaults(BaseConfig):
 class ProviderConfig(BaseConfig, NameStr):
     """Provider configuration defining an upstream inference endpoint."""
 
+    description: str | None = None
     route_name: Annotated[str, Field(min_length=1, max_length=255)]
     protocol_surface: ProtocolSurface
     upstream_base_url_env: Annotated[str, Field(min_length=1)]
     api_key_env: Annotated[str, Field(min_length=1)]
     models: list[ModelAlias] = Field(min_length=1)
     routing_defaults: RoutingDefaults = Field(default_factory=RoutingDefaults)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @field_validator("models")
     @classmethod

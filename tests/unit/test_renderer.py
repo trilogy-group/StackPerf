@@ -6,9 +6,9 @@ Tests that:
 - Rendered output never writes secrets into tracked files
 """
 
+import json
+
 import pytest
-from pathlib import Path
-from datetime import datetime
 
 from benchmark_core.config import (
     HarnessProfileConfig,
@@ -69,6 +69,7 @@ class TestHarnessRenderer:
             benchmark_tags={
                 "harness": "claude-code",
                 "provider": "test-provider",
+                "model": "test-model",
             },
         )
 
@@ -142,7 +143,7 @@ class TestHarnessRenderer:
         assert "# WARNING: This file contains secrets" in result
 
     def test_render_dotenv_format(self, renderer, anthropic_harness, variant):
-        """Dotenv format uses KEY=\"value\" syntax."""
+        """Dotenv format uses KEY=\\"value\\" syntax."""
         result = renderer.render_environment(
             harness_profile=anthropic_harness,
             variant=variant,
@@ -151,13 +152,11 @@ class TestHarnessRenderer:
             format=RenderFormat.DOTENV,
         )
 
-        assert "=\"" in result
+        assert '="' in result
         assert "# WARNING: This file contains secrets" in result
 
     def test_render_json_format(self, renderer, anthropic_harness, variant):
         """JSON format produces valid JSON."""
-        import json
-
         result = renderer.render_environment(
             harness_profile=anthropic_harness,
             variant=variant,
@@ -191,7 +190,7 @@ class TestHarnessRenderer:
         assert "secrets" in content.lower()
         assert "do not commit" in content.lower()
 
-    def test_template_rendering(self, renderer, anthropic_harness, variant):
+    def test_template_rendering(self, renderer, anthropic_harness):
         """Template variables are properly substituted."""
         variant_extra = VariantConfig(
             name="test-variant",
@@ -203,7 +202,9 @@ class TestHarnessRenderer:
                 "MODEL_DISPLAY": "{{ model_alias }}-display",
             },
             benchmark_tags={
-                "custom_tag": "custom_value",
+                "harness": "claude-code",
+                "provider": "test-provider",
+                "model": "claude-sonnet",
             },
         )
 

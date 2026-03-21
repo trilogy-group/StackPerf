@@ -1,7 +1,7 @@
 """Harness profile configuration model."""
 
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import Field
 
@@ -21,11 +21,14 @@ class LaunchCheck(BaseConfig):
     """A launch check item for documentation."""
 
     description: str
+    command: str | None = None
+    expected_pattern: str | None = None
 
 
 class HarnessProfileConfig(BaseConfig, NameStr):
     """Harness profile describing how to point a harness at the local proxy."""
 
+    description: str | None = None
     protocol_surface: ProtocolSurface
     base_url_env: Annotated[str, Field(min_length=1)]
     api_key_env: Annotated[str, Field(min_length=1)]
@@ -33,3 +36,4 @@ class HarnessProfileConfig(BaseConfig, NameStr):
     extra_env: dict[str, str] = Field(default_factory=dict)
     render_format: RenderFormat = RenderFormat.SHELL
     launch_checks: list[LaunchCheck] = Field(default_factory=list)
+    metadata: dict[str, Any] = Field(default_factory=dict)

@@ -1,6 +1,6 @@
 """Variant configuration model."""
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import Field, model_validator
 
@@ -10,12 +10,14 @@ from .base import BaseConfig, NameStr
 class VariantConfig(BaseConfig, NameStr):
     """A benchmarkable combination of provider, model, harness, and settings."""
 
+    description: str | None = None
     provider: Annotated[str, Field(min_length=1)]
     provider_route: Annotated[str, Field(min_length=1)]
     model_alias: Annotated[str, Field(min_length=1)]
     harness_profile: Annotated[str, Field(min_length=1)]
     harness_env_overrides: dict[str, str] = Field(default_factory=dict)
     benchmark_tags: Annotated[dict[str, str], Field(min_length=1)]
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def validate_benchmark_tags(self) -> "VariantConfig":

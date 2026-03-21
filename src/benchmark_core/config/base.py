@@ -4,10 +4,27 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Any, cast
 
+import yaml
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic_settings import BaseSettings
 
 from uuid6 import uuid7
+
+
+class BaseConfig(BaseModel):
+    """Base configuration model with strict validation."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+        str_strip_whitespace=True,
+    )
+
+
+class NameStr(BaseModel):
+    """Mixin for named configuration items."""
+
+    name: Annotated[str, Field(min_length=1, max_length=255, pattern=r"^[a-z0-9][a-z0-9-]*$")]
 
 
 class BenchmarkConfigBase(BaseModel):
@@ -67,3 +84,17 @@ class Settings(BaseSettings):
         "env_file": ".env",
         "extra": "ignore",
     }
+
+
+def load_yaml_config(path: Path) -> dict[str, Any]:
+    """Load and parse a YAML configuration file."""
+    if not path.exists():
+        raise FileNotFoundError(f"Config file not found: {path}")
+
+    with path.open("r") as f:
+        data = yaml.safe_load(f)
+
+    if data is None:
+        return {}
+
+    return cast(dict[str, Any], data)
