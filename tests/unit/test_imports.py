@@ -1,6 +1,5 @@
 """Import smoke tests for each top-level package."""
 
-import pytest
 
 
 def test_import_benchmark_core() -> None:
@@ -19,14 +18,14 @@ def test_import_cli() -> None:
 
 def test_import_collectors() -> None:
     """Smoke test: collectors package imports without error."""
-    import collectors
+    import collectors  # noqa: F401
 
 
 def test_import_reporting() -> None:
     """Smoke test: reporting package imports without error."""
-    import reporting
+    import reporting  # noqa: F401
 
 
 def test_import_api() -> None:
     """Smoke test: api package imports without error."""
-    import api
+    import api  # noqa: F401

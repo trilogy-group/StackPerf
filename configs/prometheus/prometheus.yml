@@ -24,9 +24,6 @@ scrape_configs:
           service: 'litellm-proxy'
     metrics_path: '/metrics'
 
-  - job_name: 'postgres'
-    static_configs:
-      - targets: ['postgres:5432']
-        labels:
-          environment: 'local'
-          service: 'postgres'
+  # Note: Postgres metrics require a postgres exporter container.
+  # This can be added in a future enhancement ticket.
+  # Direct scraping of port 5432 (wire protocol) will not work.

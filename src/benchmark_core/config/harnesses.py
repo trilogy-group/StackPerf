@@ -1,6 +1,6 @@
 """Harness profile configuration model."""
 
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 
 from pydantic import Field
@@ -9,7 +9,7 @@ from .base import BaseConfig, NameStr
 from .providers import ProtocolSurface
 
 
-class RenderFormat(str, Enum):
+class RenderFormat(StrEnum):
     """Supported render formats for harness environment snippets."""
 
     SHELL = "shell"

@@ -1,14 +1,14 @@
 """Provider configuration model."""
 
-from enum import Enum
-from typing import Annotated, Any
+from enum import StrEnum
+from typing import Annotated
 
 from pydantic import Field, field_validator
 
 from .base import BaseConfig, NameStr
 
 
-class ProtocolSurface(str, Enum):
+class ProtocolSurface(StrEnum):
     """Supported protocol surfaces for harness connections."""
 
     ANTHROPIC_MESSAGES = "anthropic_messages"

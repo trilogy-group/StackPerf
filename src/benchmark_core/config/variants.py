@@ -1,6 +1,6 @@
 """Variant configuration model."""
 
-from typing import Annotated, Any
+from typing import Annotated
 
 from pydantic import Field, model_validator
 

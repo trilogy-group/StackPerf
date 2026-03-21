@@ -10,7 +10,6 @@ from benchmark_core.config import (
     TaskCardConfig,
     VariantConfig,
 )
-from benchmark_core.config.base import load_yaml_config
 from benchmark_core.config.providers import ModelAlias, ProtocolSurface
 
 

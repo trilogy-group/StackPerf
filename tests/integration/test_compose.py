@@ -4,14 +4,14 @@ These tests verify the local infrastructure can be started and is healthy.
 They require Docker to be running.
 """
 
-import subprocess
-import time
+
+from collections.abc import Generator
 
 import pytest
 
 
 @pytest.fixture(scope="module")
-def compose_up() -> None:
+def compose_up() -> Generator[None, None, None]:
     """Start the compose stack for integration tests."""
     # This is a stub - actual implementation would start compose
     # For now, we assume compose is started manually or skip
