@@ -30,6 +30,7 @@ dev = [
 
 [project.scripts]
 stackperf = "cli:main"
+bench = "cli:main"
 
 [build-system]
 requires = ["hatchling"]
