@@ -1,0 +1,100 @@
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: stackperf-litellm
+    ports:
+      - "4000:4000"
+    environment:
+      - LITELLM_MASTER_KEY=sk-stackperf-master-key-dev
+      - DATABASE_URL=postgresql://stackperf:stackperf-dev-password@postgres:5432/litellm
+      - LITELLM_SALT_KEY=stackperf-salt-key-dev-only
+      - STORE_MODEL_IN_DB=True
+    volumes:
+      - ./configs/litellm/config.yaml:/app/config.yaml:ro
+    command: ["--config", "/app/config.yaml", "--detailed_debug"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+    networks:
+      - stackperf-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: stackperf-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=stackperf
+      - POSTGRES_PASSWORD=stackperf-dev-password
+      - POSTGRES_DB=stackperf
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./configs/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stackperf -d stackperf"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stackperf-network
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: stackperf-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stackperf-network
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: stackperf-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=stackperf-dev-admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+    volumes:
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - postgres
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stackperf-network
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  stackperf-network:
+    driver: bridge

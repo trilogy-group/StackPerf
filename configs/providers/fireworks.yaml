@@ -1,0 +1,14 @@
+# Example provider configuration
+name: fireworks
+route_name: fireworks-main
+protocol_surface: anthropic_messages
+upstream_base_url_env: FIREWORKS_BASE_URL
+api_key_env: FIREWORKS_API_KEY
+models:
+  - alias: kimi-k2-5
+    upstream_model: accounts/fireworks/models/kimi-k2p5
+  - alias: glm-5
+    upstream_model: accounts/fireworks/models/glm-5
+routing_defaults:
+  timeout_seconds: 180
+  extra_headers: {}
