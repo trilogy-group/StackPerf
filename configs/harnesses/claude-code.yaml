@@ -1,0 +1,12 @@
+# Claude Code harness profile
+name: claude-code
+protocol_surface: anthropic_messages
+base_url_env: ANTHROPIC_BASE_URL
+api_key_env: ANTHROPIC_API_KEY
+model_env: ANTHROPIC_MODEL
+extra_env:
+  ANTHROPIC_DEFAULT_SONNET_MODEL: "{{ model_alias }}"
+render_format: shell
+launch_checks:
+  - description: base URL points to local LiteLLM
+  - description: session API key is present
