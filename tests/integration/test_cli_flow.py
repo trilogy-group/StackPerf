@@ -3,12 +3,8 @@
 Tests the full session lifecycle through CLI commands.
 """
 
-import asyncio
-import os
 import subprocess
-import sys
 from pathlib import Path
-from uuid import UUID
 
 import pytest
 
@@ -17,7 +13,8 @@ class TestCLIFlow:
     """Test CLI create/finalize flow against in-memory DB."""
 
     @pytest.fixture
-    def project_root(self):
+    def project_root(self) -> Path:
+        """Get project root directory."""
         """Get project root directory."""
         return Path(__file__).parent.parent.parent
 
@@ -82,7 +79,7 @@ class TestCLIFlow:
             )
 
             assert result.returncode == 0, f"Format {fmt} failed: {result.stderr}"
-            
+
             output_file = project_root / ".stackperf" / f"session-env.{fmt}"
             assert output_file.exists(), f"No output file for {fmt}"
 
@@ -90,9 +87,10 @@ class TestCLIFlow:
             if fmt == "shell":
                 assert "export " in content
             elif fmt == "dotenv":
-                assert '=' in content and '"' in content
+                assert "=" in content and '"' in content
             elif fmt == "json":
                 import json
+
                 data = json.loads(content)
                 assert "STACKPERF_SESSION_ID" in data
 
@@ -101,7 +99,8 @@ class TestEnvironmentValidation:
     """Test that rendered environment outputs are valid."""
 
     @pytest.fixture
-    def project_root(self):
+    def project_root(self) -> Path:
+        """Get project root directory."""
         return Path(__file__).parent.parent.parent
 
     @pytest.fixture
@@ -126,12 +125,12 @@ class TestEnvironmentValidation:
         assert env_file.exists()
 
         content = env_file.read_text()
-        
+
         # Verify structure
         assert "STACKPERF_SESSION_ID=" in content
         assert "STACKPERF_PROXY_BASE_URL=" in content
         assert "STACKPERF_SESSION_API_KEY=" in content
-        
+
         # Verify warning is present
         assert "WARNING" in content
         assert "secrets" in content.lower()
@@ -140,7 +139,7 @@ class TestEnvironmentValidation:
         """Rendered output never writes secrets into tracked files."""
         # Check .gitignore includes output directory
         gitignore = project_root / ".gitignore"
-        
+
         if gitignore.exists():
             content = gitignore.read_text()
             # After running session create, .gitignore should be updated
