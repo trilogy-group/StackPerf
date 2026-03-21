@@ -1,0 +1,19 @@
+name: repo-analysis
+description: Repository structure and architecture analysis task
+
+repo_path: null
+
+goal: Analyze repository architecture and identify key components
+starting_prompt: |
+  Analyze the repository structure and identify:
+  1. Main entry points
+  2. Core modules and their responsibilities
+  3. Test coverage areas
+  4. Key dependencies
+
+stop_condition: produce a written summary with file references and component descriptions
+session_timebox_minutes: 30
+
+notes:
+  - work from the current git commit only
+  - do not install new dependencies

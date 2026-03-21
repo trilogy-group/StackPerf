@@ -1,0 +1,57 @@
+[project]
+name = "stackperf"
+version = "0.1.0"
+description = "Local-first benchmarking system for comparing LLM providers, models, and harnesses"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.1.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "pyyaml>=6.0.1",
+    "httpx>=0.27.0",
+    "sqlalchemy>=2.0.25",
+    "asyncpg>=0.29.0",
+    "rich>=13.7.0",
+    "python-dotenv>=1.0.0",
+    "uuid6>=2024.1.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.2.0",
+    "mypy>=1.8.0",
+    "types-pyyaml>=6.0.12",
+]
+
+[project.scripts]
+bench = "cli.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/benchmark_core", "src/cli", "src/collectors", "src/reporting", "src/api"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = ["E", "F", "I", "UP", "B", "C4", "SIM", "TCH"]
+
+[tool.ruff.isort]
+known-first-party = ["benchmark_core", "cli", "collectors", "reporting", "api"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]

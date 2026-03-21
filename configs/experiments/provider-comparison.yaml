@@ -1,0 +1,10 @@
+name: provider-comparison
+description: Compare providers using Claude Code harness
+
+variants:
+  - fireworks-kimi-claude-code
+
+comparison_dimensions:
+  - provider
+  - model
+  - harness_profile

@@ -1,0 +1,17 @@
+name: openai-cli
+description: OpenAI-compatible CLI harness profile
+
+protocol_surface: openai_responses
+
+# Environment variable names for OpenAI-compatible clients
+base_url_env: OPENAI_BASE_URL
+api_key_env: OPENAI_API_KEY
+model_env: OPENAI_MODEL
+
+extra_env: {}
+
+render_format: shell
+
+launch_checks:
+  - description: base URL points to local LiteLLM proxy
+  - description: session API key is present

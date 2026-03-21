@@ -1,0 +1,21 @@
+name: claude-code
+description: Claude Code terminal agent harness profile
+
+protocol_surface: anthropic_messages
+
+# Environment variable names for Claude Code
+base_url_env: ANTHROPIC_BASE_URL
+api_key_env: ANTHROPIC_API_KEY
+model_env: ANTHROPIC_MODEL
+
+# Extra environment variables for Claude Code
+extra_env:
+  ANTHROPIC_DEFAULT_SONNET_MODEL: "{{ model_alias }}"
+  ANTHROPIC_DEFAULT_HAIKU_MODEL: "{{ model_alias }}"
+  ANTHROPIC_DEFAULT_OPUS_MODEL: "{{ model_alias }}"
+
+render_format: shell
+
+launch_checks:
+  - description: base URL points to local LiteLLM proxy
+  - description: session API key is present

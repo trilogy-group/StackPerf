@@ -1,0 +1,17 @@
+name: anthropic
+description: Anthropic direct provider
+
+route_name: anthropic-main
+protocol_surface: anthropic_messages
+
+upstream_base_url_env: ANTHROPIC_BASE_URL
+api_key_env: ANTHROPIC_API_KEY
+
+models:
+  - alias: claude-sonnet
+    upstream_model: claude-sonnet-4-20250514
+  - alias: claude-opus
+    upstream_model: claude-opus-4-20250514
+
+routing_defaults:
+  timeout_seconds: 300

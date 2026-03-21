@@ -1,0 +1,15 @@
+name: fireworks-kimi-claude-code
+description: Fireworks Kimi K2.5 via Claude Code harness
+
+provider: fireworks
+provider_route: fireworks-main
+model_alias: kimi-k2-5
+
+harness_profile: claude-code
+harness_env_overrides: {}
+
+benchmark_tags:
+  harness: claude-code
+  provider: fireworks
+  model: kimi-k2-5
+  config: default
