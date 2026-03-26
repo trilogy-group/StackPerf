@@ -1,7 +1,7 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@d94e95e
+macos:/Users/magos/.opensymphony/workspaces/COE-306@87eb869
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
@@ -11,49 +11,70 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@d94e95e
 
 ### Plan
 
-- [ ] 1. Pull skill execution
+- [x] 1. Pull skill execution
   - [x] 1.1 Fetch origin/main
   - [x] 1.2 Verify clean sync (d94e95e)
   - [x] 1.3 Create feature branch COE-306-litellm-collection
-- [ ] 2. Build LiteLLM collection job
-  - [ ] 2.1 Implement raw request record collection from LiteLLM API
-  - [ ] 2.2 Add idempotent ingest cursor/watermark tracking
-  - [ ] 2.3 Implement session correlation key preservation
-  - [ ] 2.4 Add collection diagnostics for missing fields
-- [ ] 3. Update benchmark_core services
-  - [ ] 3.1 Add collection job service in benchmark_core/services/
-- [ ] 4. Validation and testing
-  - [ ] 4.1 Run existing tests
-  - [ ] 4.2 Add unit tests for collection job
-  - [ ] 4.3 Verify idempotent behavior
-- [ ] 5. Documentation and completion
-  - [ ] 5.1 Commit changes
-  - [ ] 5.2 Push branch
+- [x] 2. Build LiteLLM collection job
+  - [x] 2.1 Implement raw request record collection from LiteLLM API
+  - [x] 2.2 Add idempotent ingest cursor/watermark tracking (IngestWatermark class)
+  - [x] 2.3 Implement session correlation key preservation (correlation_keys in normalize_request)
+  - [x] 2.4 Add collection diagnostics for missing fields (CollectionDiagnostics class)
+- [x] 3. Update benchmark_core services
+  - [x] 3.1 Add CollectionJobService in benchmark_core/services.py
+- [x] 4. Validation and testing
+  - [x] 4.1 Run existing tests (100 passed)
+  - [x] 4.2 Add unit tests for collection job (29 tests in test_collectors.py)
+  - [x] 4.3 Verify idempotent behavior (watermark resumption tests)
+- [x] 5. Documentation and completion
+  - [x] 5.1 Commit changes (87eb869)
+  - [x] 5.2 Push branch (COE-306-litellm-collection)
 
 ### Acceptance Criteria
 
-- [ ] Collector ingests raw request records without duplication
-- [ ] Collected rows preserve session correlation keys when present
-- [ ] Collector exposes clear diagnostics for missing fields
+- [x] Collector ingests raw request records without duplication
+  - Idempotent via `IngestWatermark` cursor tracking
+  - Repository `create_many` handles duplicate request_id gracefully
+- [x] Collected rows preserve session correlation keys when present
+  - Correlation keys preserved in metadata: session_id, experiment_id, variant_id, task_card_id, harness_profile, trace_id, span_id, parent_span_id
+- [x] Collector exposes clear diagnostics for missing fields
+  - `CollectionDiagnostics` tracks missing_fields counts and errors
+  - `CollectionJobService.get_diagnostics_summary()` provides human-readable summary
 
 ### Validation
 
-- [ ] `pytest tests/unit/test_collectors.py -v`
-- [ ] New tests for collection job pass
+- [x] `pytest tests/unit/test_collectors.py -v` - 29 passed
+- [x] `pytest tests/unit/ -v` - 100 passed
+- [x] Specific tests:
+  - `test_normalize_request_correlation_keys_preserved` - Verifies session_id, experiment_id in metadata
+  - `test_collection_diagnostics_record_missing_field` - Verifies missing field tracking
+  - `test_collect_requests_idempotent_insert` - Verifies watermark-based idempotency
+  - `test_collection_job_service_diagnostics_summary` - Verifies diagnostics summary output
+
+### Implementation Details
+
+**src/collectors/litellm_collector.py:**
+- `CollectionDiagnostics` - Tracks total_raw_records, normalized_count, skipped_count, missing_fields dict, errors list
+- `IngestWatermark` - Serializable cursor with last_request_id, last_timestamp, record_count
+- `LiteLLMCollector.collect_requests()` - Async collection with watermark resumption
+- `LiteLLMCollector.normalize_request()` - Normalizes LiteLLM spend logs to Request model
+
+**src/benchmark_core/services.py:**
+- `CollectionJobService.run_collection_job()` - Orchestrates collection with time window support
+- `CollectionJobService.run_collection_job_with_window()` - Automatic lookback window
+- `CollectionJobService.get_diagnostics_summary()` - Human-readable diagnostics
 
 ### Notes
 
-- **2025-03-26**: Started implementation. Linear tool not available via CLI - blocker for state transitions.
-- **Pull skill evidence**: origin/main merged cleanly, HEAD at d94e95e (grafted).
-- Existing litellm_collector.py is a placeholder - needs full implementation.
-- Database schema already supports Request model with session_id correlation.
+- **2025-03-26**: Implementation complete. All deliverables and acceptance criteria met.
+- **Commit**: 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys
+- **Tests**: All 100 unit tests passing, including 29 collector-specific tests
+- **Linear API**: Unavailable for state transition. Manual transition from `In Progress` to `Human Review` required.
 
 ### Blockers
 
-1. **Linear MCP/GraphQL tool unavailable**: Cannot transition issue state via API. Manual state transition required.
-   - Issue should move from `Todo` -> `In Progress`
-   - Workpad comment cannot be posted to Linear automatically
+None - implementation complete. PR ready for human review.
 
 ### Confusions
 
-- None currently
+None currently
