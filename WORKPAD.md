@@ -67,13 +67,21 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@87eb869
 ### Notes
 
 - **2025-03-26**: Implementation complete. All deliverables and acceptance criteria met.
-- **Commit**: 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys
+- **Commits**:
+  - 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys
+  - d4f429d - Update workpad: mark all tasks complete, add validation evidence
 - **Tests**: All 100 unit tests passing, including 29 collector-specific tests
+- **Branch**: `COE-306-litellm-collection` pushed to origin (d4f429d)
 - **Linear API**: Unavailable for state transition. Manual transition from `In Progress` to `Human Review` required.
+- **GitHub PR**: Blocker - GITHUB_TOKEN lacks `repo` scope for PR creation. Manual PR creation required.
 
 ### Blockers
 
-None - implementation complete. PR ready for human review.
+1. **GitHub PR Creation**: GITHUB_TOKEN lacks permissions to create PRs.
+   - Branch `COE-306-litellm-collection` is pushed to origin
+   - Human must create PR via GitHub UI: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
+   - PR should include label `symphony`
+   - After PR creation, add `review-this` label for AI review
 
 ### Confusions
 
