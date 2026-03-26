@@ -72,9 +72,9 @@ def upgrade() -> None:
     op.create_index(op.f('ix_rollups_dimension_id'), 'rollups', ['dimension_id'], unique=False)
     op.create_table('sessions',
     sa.Column('id', sa.Uuid(), nullable=False),
-    sa.Column('experiment_id', sa.String(length=255), nullable=False),
-    sa.Column('variant_id', sa.String(length=255), nullable=False),
-    sa.Column('task_card_id', sa.String(length=255), nullable=False),
+    sa.Column('experiment_id', sa.Uuid(), nullable=False),
+    sa.Column('variant_id', sa.Uuid(), nullable=False),
+    sa.Column('task_card_id', sa.Uuid(), nullable=False),
     sa.Column('harness_profile', sa.String(length=255), nullable=False),
     sa.Column('repo_path', sa.String(length=1024), nullable=False),
     sa.Column('git_branch', sa.String(length=255), nullable=False),
@@ -87,8 +87,14 @@ def upgrade() -> None:
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['experiment_id'], ['experiments.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['task_card_id'], ['task_cards.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['variant_id'], ['variants.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index(op.f('ix_sessions_experiment_id'), 'sessions', ['experiment_id'], unique=False)
+    op.create_index(op.f('ix_sessions_task_card_id'), 'sessions', ['task_card_id'], unique=False)
+    op.create_index(op.f('ix_sessions_variant_id'), 'sessions', ['variant_id'], unique=False)
     op.create_table('task_cards',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
@@ -184,6 +190,9 @@ def downgrade() -> None:
     op.drop_table('artifacts')
     op.drop_table('variants')
     op.drop_table('task_cards')
+    op.drop_index(op.f('ix_sessions_task_card_id'), table_name='sessions')
+    op.drop_index(op.f('ix_sessions_variant_id'), table_name='sessions')
+    op.drop_index(op.f('ix_sessions_experiment_id'), table_name='sessions')
     op.drop_table('sessions')
     op.drop_index(op.f('ix_rollups_dimension_id'), table_name='rollups')
     op.drop_table('rollups')

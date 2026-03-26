@@ -130,6 +130,11 @@ class Variant(Base):
         onupdate=lambda: datetime.now(UTC),
     )
 
+    # Relationships
+    sessions: Mapped[list["Session"]] = relationship(
+        back_populates="variant", cascade="all, delete-orphan"
+    )
+
 
 class Experiment(Base):
     """A named comparison grouping that contains one or more variants."""
@@ -152,6 +157,9 @@ class Experiment(Base):
 
     # Relationships
     experiment_variants: Mapped[list["ExperimentVariant"]] = relationship(
+        back_populates="experiment", cascade="all, delete-orphan"
+    )
+    sessions: Mapped[list["Session"]] = relationship(
         back_populates="experiment", cascade="all, delete-orphan"
     )
 
@@ -200,6 +208,11 @@ class TaskCard(Base):
         onupdate=lambda: datetime.now(UTC),
     )
 
+    # Relationships
+    sessions: Mapped[list["Session"]] = relationship(
+        back_populates="task_card", cascade="all, delete-orphan"
+    )
+
 
 class Session(Base):
     """One interactive benchmark session under one variant and one task card."""
@@ -209,9 +222,15 @@ class Session(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    experiment_id: Mapped[str] = mapped_column(String(255), nullable=False)
-    variant_id: Mapped[str] = mapped_column(String(255), nullable=False)
-    task_card_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    experiment_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("experiments.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    variant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("variants.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    task_card_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("task_cards.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
     harness_profile: Mapped[str] = mapped_column(String(255), nullable=False)
     repo_path: Mapped[str] = mapped_column(String(1024), nullable=False)
     git_branch: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -232,6 +251,11 @@ class Session(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC),
     )
+
+    # Relationships
+    experiment: Mapped["Experiment"] = relationship(back_populates="sessions")
+    variant: Mapped["Variant"] = relationship(back_populates="sessions")
+    task_card: Mapped["TaskCard"] = relationship(back_populates="sessions")
 
 
 class Request(Base):

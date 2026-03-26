@@ -161,11 +161,29 @@ class TestDatabaseModels:
         assert retrieved.notes == ["Note 1", "Note 2"]
 
     def test_session(self, test_session):
-        """Test Session (benchmark session) creation."""
+        """Test Session (benchmark session) creation with proper FKs."""
+        # Create prerequisite records
+        experiment = Experiment(name="test-exp", description="Test experiment")
+        variant = Variant(
+            name="test-variant",
+            provider="test-provider",
+            model_alias="test-model",
+            harness_profile="profile-1",
+        )
+        task = TaskCard(
+            name="test-task",
+            goal="Test goal",
+            starting_prompt="Test prompt",
+            stop_condition="Test condition",
+        )
+        test_session.add_all([experiment, variant, task])
+        test_session.flush()
+
+        # Create session with proper FK references
         session = DBSession(
-            experiment_id="exp-1",
-            variant_id="var-1",
-            task_card_id="task-1",
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task.id,
             harness_profile="profile-1",
             repo_path="/test/repo",
             git_branch="main",
@@ -179,14 +197,34 @@ class TestDatabaseModels:
         retrieved = test_session.query(DBSession).first()
         assert retrieved is not None
         assert retrieved.status == "active"
+        assert retrieved.experiment_id == experiment.id
+        assert retrieved.variant_id == variant.id
+        assert retrieved.task_card_id == task.id
 
     def test_request(self, test_session):
         """Test Request creation with foreign key to Session."""
-        # Create session first
+        # Create prerequisite records first
+        experiment = Experiment(name="req-test-exp", description="Test")
+        variant = Variant(
+            name="req-test-variant",
+            provider="test-provider",
+            model_alias="test-model",
+            harness_profile="profile-1",
+        )
+        task = TaskCard(
+            name="req-test-task",
+            goal="Test goal",
+            starting_prompt="Test prompt",
+            stop_condition="Test condition",
+        )
+        test_session.add_all([experiment, variant, task])
+        test_session.flush()
+
+        # Create session with proper FKs
         session = DBSession(
-            experiment_id="exp-1",
-            variant_id="var-1",
-            task_card_id="task-1",
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task.id,
             harness_profile="profile-1",
             repo_path="/test/repo",
             git_branch="main",
@@ -195,7 +233,7 @@ class TestDatabaseModels:
             status="active",
         )
         test_session.add(session)
-        test_session.commit()
+        test_session.flush()
 
         # Create request linked to session
         request = Request(
@@ -235,11 +273,28 @@ class TestDatabaseModels:
 
     def test_artifact(self, test_session):
         """Test Artifact creation with foreign key to Session."""
-        # Create session
+        # Create prerequisite records
+        experiment = Experiment(name="art-test-exp", description="Test")
+        variant = Variant(
+            name="art-test-variant",
+            provider="test-provider",
+            model_alias="test-model",
+            harness_profile="profile-1",
+        )
+        task = TaskCard(
+            name="art-test-task",
+            goal="Test goal",
+            starting_prompt="Test prompt",
+            stop_condition="Test condition",
+        )
+        test_session.add_all([experiment, variant, task])
+        test_session.flush()
+
+        # Create session with proper FKs
         session = DBSession(
-            experiment_id="exp-1",
-            variant_id="var-1",
-            task_card_id="task-1",
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task.id,
             harness_profile="profile-1",
             repo_path="/test/repo",
             git_branch="main",
@@ -247,7 +302,7 @@ class TestDatabaseModels:
             status="active",
         )
         test_session.add(session)
-        test_session.commit()
+        test_session.flush()
 
         # Create artifact
         artifact = Artifact(
@@ -272,11 +327,28 @@ class TestDatabaseModels:
         SessionLocal = sessionmaker(bind=test_engine)
         test_session = SessionLocal()
 
-        # Create session
+        # Create prerequisite records
+        experiment = Experiment(name="cascade-test-exp", description="Test")
+        variant = Variant(
+            name="cascade-test-variant",
+            provider="test-provider",
+            model_alias="test-model",
+            harness_profile="profile-1",
+        )
+        task = TaskCard(
+            name="cascade-test-task",
+            goal="Test goal",
+            starting_prompt="Test prompt",
+            stop_condition="Test condition",
+        )
+        test_session.add_all([experiment, variant, task])
+        test_session.flush()
+
+        # Create session with proper FKs
         session = DBSession(
-            experiment_id="exp-1",
-            variant_id="var-1",
-            task_card_id="task-1",
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task.id,
             harness_profile="profile-1",
             repo_path="/test/repo",
             git_branch="main",
@@ -284,7 +356,7 @@ class TestDatabaseModels:
             status="active",
         )
         test_session.add(session)
-        test_session.commit()
+        test_session.flush()
 
         # Create request and artifact
         request = Request(
