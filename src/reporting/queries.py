@@ -1,13 +1,19 @@
 """Dashboard query helpers for the canonical query model."""
 
+from typing import Any
+
 
 class DashboardQueries:
     """Query helpers for dashboard data."""
 
     @staticmethod
-    def session_overview(session_id: str) -> str:
-        """Generate SQL for session overview."""
-        return f"""
+    def session_overview() -> tuple[str, dict[str, Any]]:
+        """Generate parameterized SQL for session overview.
+
+        Returns:
+            Tuple of (SQL query string, parameter dict with :session_id placeholder)
+        """
+        query = """
         SELECT
             s.session_id,
             s.experiment_id,
@@ -21,14 +27,19 @@ class DashboardQueries:
             SUM(CASE WHEN r.error THEN 1 ELSE 0 END) as error_count
         FROM sessions s
         LEFT JOIN requests r ON s.session_id = r.session_id
-        WHERE s.session_id = '{session_id}'
+        WHERE s.session_id = :session_id
         GROUP BY s.session_id
         """
+        return query, {"session_id": None}  # Params set by caller
 
     @staticmethod
-    def experiment_summary(experiment_id: str) -> str:
-        """Generate SQL for experiment summary."""
-        return f"""
+    def experiment_summary() -> tuple[str, dict[str, Any]]:
+        """Generate parameterized SQL for experiment summary.
+
+        Returns:
+            Tuple of (SQL query string, parameter dict with :experiment_id placeholder)
+        """
+        query = """
         SELECT
             v.variant_id,
             COUNT(DISTINCT s.session_id) as session_count,
@@ -39,21 +50,33 @@ class DashboardQueries:
         FROM variants v
         JOIN sessions s ON s.variant_id = v.variant_id
         LEFT JOIN requests r ON s.session_id = r.session_id
-        WHERE s.experiment_id = '{experiment_id}'
+        WHERE s.experiment_id = :experiment_id
         GROUP BY v.variant_id
         """
+        return query, {"experiment_id": None}  # Params set by caller
 
     @staticmethod
-    def latency_distribution(session_ids: list[str]) -> str:
-        """Generate SQL for latency distribution across sessions."""
-        ids_str = ", ".join(f"'{s}'" for s in session_ids)
-        return f"""
+    def latency_distribution(session_count: int) -> tuple[str, list[str]]:
+        """Generate parameterized SQL for latency distribution across sessions.
+
+        Args:
+            session_count: Number of session IDs to query
+
+        Returns:
+            Tuple of (SQL query string, list of placeholder names)
+        """
+        # Build parameterized placeholders
+        placeholders = [f":session_id_{i}" for i in range(session_count)]
+        placeholders_str = ", ".join(placeholders)
+
+        query = f"""
         SELECT
             session_id,
             latency_ms,
             ttft_ms,
             timestamp
         FROM requests
-        WHERE session_id IN ({ids_str})
+        WHERE session_id IN ({placeholders_str})
         ORDER BY timestamp
         """
+        return query, placeholders

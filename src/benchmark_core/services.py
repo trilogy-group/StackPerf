@@ -24,13 +24,7 @@ class SessionService:
         git_dirty: bool = False,
         operator_label: str | None = None,
     ) -> Session:
-        """Create a new benchmark session.
-
-        Steps:
-        1. Create session record
-        2. Issue session-scoped proxy credential
-        3. Store session metadata
-        """
+        """Create a new benchmark session record."""
         session = Session(
             experiment_id=experiment_id,
             variant_id=variant_id,

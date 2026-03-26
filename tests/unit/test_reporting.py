@@ -33,7 +33,22 @@ def test_import_queries() -> None:
     queries = DashboardQueries()
     assert queries is not None
 
-    # Verify query methods work
-    sql = DashboardQueries.session_overview("test-session")
+    # Verify parameterized query generation works
+    sql, params = DashboardQueries.session_overview()
     assert "SELECT" in sql
-    assert "test-session" in sql
+    assert ":session_id" in sql  # Parameterized placeholder
+    assert params == {"session_id": None}  # Template with placeholder key
+
+    # Verify experiment summary query
+    sql2, params2 = DashboardQueries.experiment_summary()
+    assert "SELECT" in sql2
+    assert ":experiment_id" in sql2
+    assert params2 == {"experiment_id": None}
+
+    # Verify latency distribution query
+    sql3, placeholders = DashboardQueries.latency_distribution(3)
+    assert "SELECT" in sql3
+    assert ":session_id_0" in sql3
+    assert ":session_id_1" in sql3
+    assert ":session_id_2" in sql3
+    assert len(placeholders) == 3

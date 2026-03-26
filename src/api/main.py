@@ -44,7 +44,7 @@ async def get_experiment_comparison(experiment_id: str) -> dict:
 async def get_metrics(
     session_id: str | None = None,
     experiment_id: str | None = None,
-    metric_name: str | None = None,
+    metric_rollup: str | None = None,
 ) -> list[dict]:
     """Get metric rollups."""
     # Placeholder: actual implementation will query repository

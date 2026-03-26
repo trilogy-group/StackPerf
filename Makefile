@@ -1,4 +1,4 @@
-.PHONY: help install install-dev sync lint format type-check test test-cov clean all quality
+.PHONY: help install install-dev sync lint format format-check type-check test test-unit test-integration test-cov clean quality dev-setup dev-check
 
 # Default target
 help: ## Show this help message
@@ -16,7 +16,6 @@ install-dev: ## Install all dependencies including dev tools with uv
 
 sync: ## Sync dependencies from pyproject.toml using uv
 	@echo "Syncing dependencies..."
-	uv pip sync pyproject.toml
 	uv pip install -e ".[dev]"
 
 # Code quality

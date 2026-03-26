@@ -18,12 +18,12 @@ def session(
         "-o",
         help="Output directory",
     ),
-    format: str = typer.Option("json", "--format", "-f", help="Export format (json, csv)"),
+    output_format: str = typer.Option("json", "--format", "-f", help="Export format (json, csv)"),
 ) -> None:
     """Export a single session report."""
     console.print(f"[bold blue]Exporting session {session_id}...[/bold blue]")
     # Placeholder: actual implementation will export session data
-    console.print(f"[green]Exported to {output}[/green]")
+    console.print(f"[green]Exported to {output} ({output_format})[/green]")
 
 
 @app.command()
@@ -35,12 +35,12 @@ def comparison(
         "-o",
         help="Output directory",
     ),
-    format: str = typer.Option("json", "--format", "-f", help="Export format"),
+    output_format: str = typer.Option("json", "--format", "-f", help="Export format"),
 ) -> None:
     """Export experiment comparison results."""
     console.print(f"[bold blue]Exporting comparison for {experiment}...[/bold blue]")
     # Placeholder: actual implementation will export comparison
-    console.print(f"[green]Exported to {output}[/green]")
+    console.print(f"[green]Exported to {output} ({output_format})[/green]")
 
 
 @app.command()

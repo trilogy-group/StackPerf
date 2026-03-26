@@ -20,8 +20,18 @@ def validate(
 ) -> None:
     """Validate all configuration files."""
     console.print(f"[bold blue]Validating configs in {configs_dir}...[/bold blue]")
+
+    if not configs_dir.exists():
+        console.print(f"[red]Error: Config directory does not exist: {configs_dir}[/red]")
+        raise typer.Exit(1)
+
+    if not configs_dir.is_dir():
+        console.print(f"[red]Error: Path is not a directory: {configs_dir}[/red]")
+        raise typer.Exit(1)
+
     # Placeholder: actual implementation will load and validate all configs
-    console.print("[green]All configurations are valid[/green]")
+    console.print("[yellow]Validation not fully implemented yet[/yellow]")
+    raise typer.Exit(1)
 
 
 @app.command()
