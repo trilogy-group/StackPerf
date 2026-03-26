@@ -44,8 +44,14 @@ async def get_experiment_comparison(experiment_id: str) -> dict:
 async def get_metrics(
     session_id: str | None = None,
     experiment_id: str | None = None,
-    metric_rollup: str | None = None,
+    rollup_type: str | None = None,
 ) -> list[dict]:
-    """Get metric rollups."""
+    """Get metric rollups.
+
+    Args:
+        session_id: Filter by session ID
+        experiment_id: Filter by experiment ID
+        rollup_type: Metric rollup granularity (request, session, variant, experiment)
+    """
     # Placeholder: actual implementation will query repository
     return []

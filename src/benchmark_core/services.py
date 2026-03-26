@@ -55,7 +55,7 @@ class SessionService:
 
 
 class CredentialService:
-    """Service for issuing session-scoped proxy credentials."""
+    """Service for rendering and managing session-scoped proxy credentials."""
 
     async def issue_credential(
         self,
@@ -64,7 +64,10 @@ class CredentialService:
         variant_id: str,
         harness_profile: str,
     ) -> str:
-        """Issue a short-lived, session-scoped proxy credential.
+        """Generate a session-scoped proxy credential.
+
+        Currently returns a placeholder credential. The actual implementation
+        will integrate with LiteLLM API for short-lived credential issuance.
 
         The credential encodes session metadata for correlation.
         """
