@@ -1,6 +1,7 @@
 """LiteLLM request collection and normalization."""
 
 from typing import Any
+from uuid import UUID
 
 from benchmark_core.models import Request
 from benchmark_core.repositories import RequestRepository
@@ -21,7 +22,7 @@ class LiteLLMCollector:
 
     async def collect_requests(
         self,
-        session_id: str,
+        session_id: UUID,
         start_time: str | None = None,
         end_time: str | None = None,
     ) -> list[Request]:

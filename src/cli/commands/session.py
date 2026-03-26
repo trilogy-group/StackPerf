@@ -15,7 +15,7 @@ def create(
     harness_profile: str = typer.Option(
         ...,
         "--harness",
-        "-h",
+        "-H",
         help="Harness profile name",
     ),
     label: str | None = typer.Option(None, "--label", "-l", help="Operator label"),
@@ -30,8 +30,8 @@ def create(
     console.print("[green]Session created successfully[/green]")
 
 
-@app.command()
-def list(
+@app.command("list")
+def list_sessions(
     experiment: str | None = typer.Option(None, "--experiment", "-e", help="Filter by experiment"),
 ) -> None:
     """List benchmark sessions."""

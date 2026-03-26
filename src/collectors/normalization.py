@@ -1,6 +1,7 @@
 """Normalization jobs for ingesting raw proxy records."""
 
 from typing import Any
+from uuid import UUID
 
 from benchmark_core.models import Request
 from benchmark_core.repositories import RequestRepository
@@ -14,7 +15,7 @@ class NormalizationJob:
 
     async def run(
         self,
-        session_id: str,
+        session_id: UUID,
         raw_requests: list[dict[str, Any]],
     ) -> list[Request]:
         """Run normalization job for a batch of raw requests.
@@ -24,14 +25,14 @@ class NormalizationJob:
         """
         requests = []
         for raw in raw_requests:
-            request = self._normalize(raw)
+            request = self._normalize(raw, session_id)
             if request:
                 requests.append(request)
 
         # Bulk insert with idempotency handling
         return await self._repository.create_many(requests)
 
-    def _normalize(self, raw: dict[str, Any]) -> Request | None:
+    def _normalize(self, raw: dict[str, Any], session_id: UUID) -> Request | None:
         """Normalize a single raw request."""
         # Placeholder: actual implementation
         return None

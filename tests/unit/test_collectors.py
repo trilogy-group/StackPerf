@@ -1,5 +1,7 @@
 """Unit tests for collectors package."""
 
+from uuid import UUID
+
 
 def test_import_collectors_package() -> None:
     """Smoke test: collectors package imports successfully."""
@@ -27,7 +29,7 @@ def test_import_prometheus_collector() -> None:
 
     collector = PrometheusCollector(
         base_url="http://localhost:9090",
-        session_id="test-session",
+        session_id=UUID("12345678-1234-1234-1234-123456789abc"),
     )
     assert collector is not None
 

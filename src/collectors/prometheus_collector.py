@@ -1,6 +1,7 @@
 """Prometheus metric collection and rollups."""
 
 from typing import Any
+from uuid import UUID
 
 import httpx
 
@@ -13,7 +14,7 @@ class PrometheusCollector:
     def __init__(
         self,
         base_url: str,
-        session_id: str,
+        session_id: UUID,
     ) -> None:
         self._base_url = base_url
         self._session_id = session_id
@@ -26,7 +27,7 @@ class PrometheusCollector:
         step: str = "1m",
     ) -> dict[str, Any]:
         """Query Prometheus range data."""
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(
                 f"{self._base_url}/api/v1/query_range",
                 params={
