@@ -1,5 +1,7 @@
 """Tests for typed config schemas and validation."""
 
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
@@ -13,6 +15,10 @@ from benchmark_core.config import (
     Variant,
 )
 from benchmark_core.config_loader import ConfigLoader, ConfigRegistry, ConfigValidationError
+
+# Get configs directory relative to test file
+TESTS_DIR = Path(__file__).parent.parent.parent
+CONFIGS_DIR = TESTS_DIR / "configs"
 
 
 class TestProviderModel:
@@ -417,7 +423,7 @@ class TestConfigLoader:
 
     def test_load_all_configs(self) -> None:
         """Test loading all config types from the configs directory."""
-        loader = ConfigLoader("/Users/magos/.opensymphony/workspaces/COE-302/configs")
+        loader = ConfigLoader(CONFIGS_DIR)
         registry = loader.load_all()
 
         # Verify providers loaded
@@ -440,7 +446,7 @@ class TestConfigLoader:
 
     def test_provider_protocol_surface(self) -> None:
         """Test that provider protocol surfaces are loaded correctly."""
-        loader = ConfigLoader("/Users/magos/.opensymphony/workspaces/COE-302/configs")
+        loader = ConfigLoader(CONFIGS_DIR)
         registry = loader.load_all()
 
         # Fireworks uses anthropic_messages
@@ -453,7 +459,7 @@ class TestConfigLoader:
 
     def test_harness_protocol_surface(self) -> None:
         """Test that harness protocol surfaces are loaded correctly."""
-        loader = ConfigLoader("/Users/magos/.opensymphony/workspaces/COE-302/configs")
+        loader = ConfigLoader(CONFIGS_DIR)
         registry = loader.load_all()
 
         # Claude Code uses anthropic_messages
@@ -466,7 +472,7 @@ class TestConfigLoader:
 
     def test_valid_protocol_compatibility(self) -> None:
         """Test that valid protocol surface combinations pass validation."""
-        loader = ConfigLoader("/Users/magos/.opensymphony/workspaces/COE-302/configs")
+        loader = ConfigLoader(CONFIGS_DIR)
         registry = loader.load_all()
 
         # All configs should load without validation errors

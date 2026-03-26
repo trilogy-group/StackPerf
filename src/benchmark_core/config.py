@@ -74,15 +74,6 @@ class ProviderConfig(BaseModel):
         return v
 
 
-class LaunchCheck(BaseModel):
-    """Launch verification check for harness profile."""
-
-    model_config = {"extra": "forbid"}
-
-    check_type: str = Field(..., description="Type of check to perform")
-    description: str = Field(..., description="Human-readable description of the check")
-
-
 class HarnessProfile(BaseModel):
     """How a harness is configured to talk to the proxy.
 
