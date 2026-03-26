@@ -133,6 +133,67 @@ A sub-issue is done when:
 - docs are updated
 - the change can be understood by another engineer without hidden local context
 
+## Development environment
+
+The project uses `uv` for dependency management and provides a Makefile for common tasks.
+
+### Quick start
+
+```bash
+# Install all dependencies including dev tools
+make install-dev
+
+# Run full quality check (lint + type-check + test)
+make quality
+
+# Run individual checks
+make lint         # Run ruff linter
+make format       # Run ruff formatter
+make type-check   # Run mypy type checker
+make test         # Run all tests
+```
+
+### Available Makefile commands
+
+- `make install` - Install production dependencies with uv
+- `make install-dev` - Install all dependencies including dev tools
+- `make sync` - Sync dependencies from pyproject.toml
+- `make lint` - Run ruff linter
+- `make format` - Run ruff formatter
+- `make format-check` - Check formatting without modifying files
+- `make type-check` - Run mypy type checker
+- `make test` - Run all tests
+- `make test-unit` - Run unit tests only
+- `make test-integration` - Run integration tests only
+- `make test-cov` - Run tests with coverage report
+- `make quality` - Run full quality check (lint + type-check + test)
+- `make clean` - Clean build artifacts and cache files
+- `make dev-setup` - Complete setup for new development environment
+- `make dev-check` - Quick check before committing
+
+### Project structure
+
+```
+├── pyproject.toml          # Project configuration and dependencies
+├── Makefile                # Development task runner
+├── src/
+│   ├── benchmark_core/     # Core domain (models, config, services, repositories)
+│   ├── cli/                  # CLI commands using Typer
+│   ├── collectors/           # LiteLLM and Prometheus data collection
+│   ├── reporting/            # Comparison services and serialization
+│   └── api/                  # FastAPI HTTP endpoints
+└── tests/
+    ├── unit/                 # Unit tests for each package
+    └── integration/          # Integration tests
+```
+
+### Tooling configuration
+
+- **Ruff**: Configured in `pyproject.toml` for linting and formatting (Python 3.11+ target)
+- **mypy**: Type checking with strict settings (disallow_untyped_defs)
+- **pytest**: Test discovery and execution with asyncio support
+- **pytest-cov**: Coverage reporting
+
 ## Definition of ready for coding agents
 
 Before starting a sub-issue, read:
