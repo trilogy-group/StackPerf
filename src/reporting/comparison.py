@@ -41,11 +41,11 @@ class ComparisonService:
         # Placeholder: actual implementation
         return {}
 
-    async def compare_harnesses(
+    async def compare_harness_profiles(
         self,
         experiment_id: str,
     ) -> dict[str, Any]:
-        """Compare metrics across harnesses for an experiment."""
+        """Compare metrics across harness profiles for an experiment."""
         # Placeholder: actual implementation
         return {}
 
