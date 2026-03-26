@@ -1,118 +1,94 @@
-# COE-302: Evidence for Typed Config Schemas
+# COE-304: Evidence for Benchmark Database Schema and Migration System
 
 ## Summary
-This document provides evidence that the typed config schemas and validation are working correctly, as requested in PR review.
+This document provides evidence that the database schema, migrations, and session utilities are working correctly as required in the acceptance criteria.
 
-## Config Loading Evidence
+## Database Schema Verification
 
-### Demo Script Execution
+### End-to-End Runtime Verification
 
 ```bash
-$ python scripts/demo_config_loading.py
+$ PYTHONPATH=src python scripts/verify_db_schema.py
 ```
 
 **Output:**
 
 ```
-============================================================
-COE-302: Config Loading Evidence Demo
-============================================================
+======================================================================
+Database Schema Verification
+======================================================================
 
-1. Providers Loaded:
-----------------------------------------
-  • fireworks
-    - protocol_surface: anthropic_messages
-    - models: ['kimi-k2-5', 'glm-5']
-  • openai
-    - protocol_surface: openai_responses
-    - models: ['gpt-4o', 'gpt-4o-mini']
+1. Creating database at: /var/folders/.../tmpXXX.db
+   ✓ Database initialized using init_db()
 
-2. Harness Profiles Loaded:
-----------------------------------------
-  • claude-code
-    - protocol_surface: anthropic_messages
-    - base_url_env: ANTHROPIC_BASE_URL
-  • openai-cli
-    - protocol_surface: openai_responses
-    - base_url_env: OPENAI_BASE_URL
+2. Verifying tables exist (11 found):
+   ✓ providers
+   ✓ provider_models
+   ✓ harness_profiles
+   ✓ variants
+   ✓ experiments
+   ✓ experiment_variants
+   ✓ task_cards
+   ✓ sessions
+   ✓ requests
+   ✓ rollups
+   ✓ artifacts
+   ✓ All expected tables present
 
-3. Variants Loaded:
-----------------------------------------
-  • fireworks-glm-5-claude-code
-    - provider: fireworks
-    - harness_profile: claude-code
-    - model_alias: glm-5
-  • fireworks-kimi-k2-5-claude-code
-    - provider: fireworks
-    - harness_profile: claude-code
-    - model_alias: kimi-k2-5
-  • openai-gpt-4o-cli
-    - provider: openai
-    - harness_profile: openai-cli
-    - model_alias: gpt-4o
+3. Inserting sample data with referential integrity:
+   ✓ Provider + ProviderModel inserted
+   ✓ HarnessProfile inserted
+   ✓ Variant inserted
+   ✓ Experiment + ExperimentVariant inserted
+   ✓ TaskCard inserted
+   ✓ Session inserted
+   ✓ Request inserted
+   ✓ MetricRollup inserted
+   ✓ Artifact inserted
 
-4. Experiments Loaded:
-----------------------------------------
-  • fireworks-terminal-agents-comparison
-    - variants: ['fireworks-kimi-k2-5-claude-code', 'fireworks-glm-5-claude-code']
+4. All data committed successfully!
 
-5. Task Cards Loaded:
-----------------------------------------
-  • repo-auth-analysis
-    - goal: identify auth flow, trust boundaries, and risky ed...
+5. Verifying data retrieval and relationships:
+   ✓ Provider -> ProviderModel relationship works
+   ✓ Experiment -> ExperimentVariant relationship works
+   ✓ Variant -> ExperimentVariant relationship works
+   ✓ Session retrieved successfully
+   ✓ Request -> Session relationship works
+   ✓ Artifact -> Session relationship works
 
-6. Protocol Surface Coverage:
-----------------------------------------
-  Anthropic surfaces:
-    - Providers: ['fireworks']
-    - Harnesses: ['claude-code']
-  OpenAI surfaces:
-    - Providers: ['openai']
-    - Harnesses: ['openai-cli']
+6. Testing cascade delete (session -> requests/artifacts):
+   ✓ Cascade delete works correctly
 
-============================================================
-All configs loaded successfully!
-============================================================
+7. Verifying migration files:
+   Found 1 migration file(s)
+   ✓ 03e22a58f3a7_initial_schema_providers_harness_.py
+
+8. Cleaning up temporary database
+   ✓ Cleanup complete
+
+======================================================================
+✓ ALL VERIFICATIONS PASSED
+======================================================================
 ```
 
-## Validation Error Evidence
-
-### Demo Script Execution
+### Migration Commands Verification
 
 ```bash
-$ python scripts/validation_demo.py
+$ alembic current
 ```
 
 **Output:**
-
 ```
-============================================================
-COE-302: Validation Error Evidence Demo
-============================================================
+03e22a58f3a7 (head)
+```
 
-1. Provider with empty name:
-----------------------------------------
-  Field-level error: 1 validation error for ProviderConfig
-name
-  Value error, must not be empty or whitespace [type=value_error, input_value='', input_type=str]
-    For further information visit https://errors.pydantic.dev/2.12/v/value_error
+```bash
+$ alembic history
+```
 
-2. Variant with missing benchmark tags:
-----------------------------------------
-  Field-level error: 1 validation error for Variant
-  Value error, benchmark_tags must include: harness, model, provider [type=value_error, input_value={'name': 'test', 'provide...', 'benchmark_tags': {}}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/2.12/v/value_error
-
-3. Task card with negative timebox:
-----------------------------------------
-  Field-level error: 1 validation error for TaskCard
-session_timebox_minutes
-  Value error, session_timebox_minutes must be positive [type=value_error, input_value=-5, input_type=str]
-    For further information visit https://errors.pydantic.dev/2.12/v/value_error
-
-============================================================
-All validation errors caught with precise field-level messages!
-============================================================
+**Output:**
+```
+03e22a58f3a7 ->  (base), Initial schema: providers, harness profiles, variants, experiments, task cards, sessions, requests, rollups, artifacts
 ```
 
 ## Test Results
@@ -124,18 +100,34 @@ $ make test
 **Output:**
 
 ```
-============================== 58 passed in 0.20s ==============================
+============================= test session starts ==============================
+...
+tests/unit/test_db.py::TestDatabaseModels::test_provider_model PASSED
+...
+tests/unit/test_db.py::TestDatabaseModels::test_artifact PASSED
+...
+============================== 75 passed in 0.32s ==============================
 ```
 
 ## Acceptance Criteria Verification
 
 | Criterion | Status | Evidence |
 |-----------|--------|----------|
-| Invalid configs fail with precise field-level errors | ✅ PASS | See Validation Error Evidence above |
-| Valid configs load into typed objects | ✅ PASS | See Config Loading Evidence above |
-| Examples cover Anthropic-surface harness profile | ✅ PASS | claude-code.yaml (anthropic_messages) |
-| Examples cover OpenAI-surface harness profile | ✅ PASS | openai-cli.yaml (openai_responses) |
+| Schema can be created from scratch | ✅ PASS | `verify_db_schema.py` creates database and all 11 tables successfully |
+| Schema can be migrated forward consistently | ✅ PASS | Alembic baseline migration `03e22a58f3a7` applies cleanly, `alembic upgrade head` works |
+| Required tables exist for providers | ✅ PASS | `providers` and `provider_models` tables created |
+| Required tables exist for harness profiles | ✅ PASS | `harness_profiles` table created |
+| Required tables exist for variants | ✅ PASS | `variants` table created |
+| Required tables exist for experiments | ✅ PASS | `experiments` and `experiment_variants` tables created |
+| Required tables exist for task cards | ✅ PASS | `task_cards` table created |
+| Required tables exist for sessions | ✅ PASS | `sessions` table created with proper FKs |
+| Required tables exist for requests | ✅ PASS | `requests` table created |
+| Required tables exist for rollups | ✅ PASS | `rollups` table created |
+| Required tables exist for artifacts | ✅ PASS | `artifacts` table created |
+| Foreign key relationships work | ✅ PASS | Provider->Models, Session->Requests/Artifacts relationships verified |
+| Cascade delete works | ✅ PASS | Deleting session cascades to requests and artifacts |
+| Database session utilities work | ✅ PASS | `get_db_session()`, `init_db()`, `get_database_engine()` all functional |
 
 ---
 
-**Generated:** 2026-03-26T12:00:00Z
+**Generated:** 2026-03-26T15:00:00Z

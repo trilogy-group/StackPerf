@@ -30,3 +30,8 @@ htmlcov/
 # Project
 .opensymphony/
 .opensymphony.after_create.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
