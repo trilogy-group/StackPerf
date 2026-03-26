@@ -1,0 +1,12 @@
+name: openai-gpt-4o-cli
+provider: openai
+provider_route: openai-main
+model_alias: gpt-4o
+harness_profile: openai-cli
+harness_env_overrides:
+  OPENAI_TIMEOUT: "120"
+benchmark_tags:
+  harness: openai-cli
+  provider: openai
+  model: gpt-4o
+  config: default

@@ -1,0 +1,13 @@
+name: openai
+route_name: openai-main
+protocol_surface: openai_responses
+upstream_base_url_env: OPENAI_UPSTREAM_BASE_URL
+api_key_env: OPENAI_UPSTREAM_API_KEY
+models:
+  - alias: gpt-4o
+    upstream_model: gpt-4o
+  - alias: gpt-4o-mini
+    upstream_model: gpt-4o-mini
+routing_defaults:
+  timeout_seconds: 120
+  extra_headers: {}
