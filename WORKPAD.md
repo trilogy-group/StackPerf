@@ -1,13 +1,13 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@4feaa31
+macos:/Users/magos/.opensymphony/workspaces/COE-306@4c31403
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
 **Issue ID:** ff8c37dc-4abb-4153-a625-40a15d20a873
 **Branch:** COE-306-litellm-collection
-**Status:** In Progress → Human Review (BLOCKED: GitHub PR creation)
+**Status:** In Progress → Human Review (BLOCKED: GitHub PAT permissions)
 
 ### Plan
 
@@ -66,47 +66,65 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@4feaa31
 
 ### Notes
 
-- **2025-03-26 (Retry #3)**: Continuation session. Implementation complete, PR creation still blocked.
+- **2025-03-26 (Retry #4)**: Continuation session. Implementation complete and validated. PR creation still blocked by PAT permissions.
 - **Commits**:
-  - 4a1d54d - COE-306: Final workpad - correct HEAD commit hash (current)
+  - 4c31403 - COE-306: Retry #4 - Update workpad with retry status (current)
+  - 4feaa31 - COE-306: Retry #3 - Update workpad with PR creation blocker status
+  - 4a1d54d - COE-306: Final workpad - correct HEAD commit hash
   - ff092d4 - COE-306: Final workpad - document complete blockers status
   - 3638617 - COE-306: Update workpad for retry #2 - document PR creation blocker
   - 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys (main implementation)
-- **Tests**: All 100 unit tests passing, including 29 collector-specific tests (verified)
-- **Branch**: `COE-306-litellm-collection` pushed to origin (4a1d54d)
-- **GitHub PR**: **BLOCKED - Retry #3 Confirmed** - Same authentication error persists
+- **Tests**: All 100 unit tests passing, including 29 collector-specific tests (verified in Retry #4)
+- **Branch**: `COE-306-litellm-collection` pushed to origin (4c31403)
+- **GitHub PR**: **BLOCKED - Retry #4 Confirmed** - GitHub PAT lacks write permissions
   - Commands attempted:
-    - `gh pr create --title ... --body ... --label symphony --label review-this` (timeout/interactive)
-    - `gh pr create --fill --repo trilogy-group/StackPerf --head COE-306-litellm-collection --base main` (failed)
-  - Error: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
-  - Token scopes: 'admin:public_key', 'gist', 'read:org', 'repo' (repo scope present but insufficient for GraphQL mutation)
-  - Likely cause: Fine-grained PAT lacks explicit write permissions on trilogy-group/StackPerf repository
+    - `gh pr create --title ... --body ... --base main` (interactive prompt timeout)
+    - `gh pr create --repo trilogy-group/StackPerf --head COE-306-litellm-collection --base main` (failed)
+    - Direct GitHub REST API call: `curl -X POST /repos/trilogy-group/StackPerf/pulls` (403 Forbidden)
+  - Error: `{"message":"Resource not accessible by personal access token","status":"403"}`
+  - Token scopes: 'admin:public_key', 'gist', 'read:org', 'repo'
+  - Root cause: Fine-grained PAT lacks explicit `pull_requests:write` permission on trilogy-group/StackPerf repository
 
 ### Blockers
 
-1. **GitHub PR Creation**: **ACTIVE - Retry #3 Confirmed**
-   - **Status**: Still blocked after retry #3 with same GraphQL authentication error
-   - **Error**: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
-   - **Token analysis**: GH_TOKEN has 'repo' scope but GraphQL mutation still fails
-   - **Likely cause**: Fine-grained PAT requires explicit repository write permissions for GraphQL mutations
-   - **Fallback strategies attempted in Retry #3**:
-     - `gh pr create --title ... --body ... --label symphony --label review-this` (interactive timeout)
-     - `gh pr create --fill --repo trilogy-group/StackPerf --head COE-306-litellm-collection --base main` (explicit flags - failed with same error)
+1. **GitHub PR Creation**: **ACTIVE - Retry #4 Confirmed PAT Permission Issue**
+   - **Status**: Still blocked after retry #4. GitHub API returns 403 Forbidden.
+   - **Error**: `{"message":"Resource not accessible by personal access token","status":"403"}`
+   - **Token analysis**: GH_TOKEN has 'repo' scope but fine-grained PAT requires explicit repository-level permissions
+   - **Root cause**: The fine-grained PAT needs `pull_requests:write` permission explicitly granted on the trilogy-group/StackPerf repository
+   - **Fallback strategies attempted in Retry #4**:
+     - Non-interactive `gh pr create` (fails with interactive prompt)
+     - Direct GitHub REST API call with curl (403 Forbidden)
+     - All fallback strategies exhausted
    - **Impact**: Cannot create PR programmatically; blocks transition to Human Review
    - **Action required**: Human must create PR via GitHub UI
-     - Branch pushed: `COE-306-litellm-collection` (4a1d54d)
+     - Branch: `COE-306-litellm-collection` (commit 4c31403, ahead of main)
      - Compare URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
      - PR Title: "COE-306: Build LiteLLM collection job for raw request records and correlation keys"
-     - Add labels: `symphony`, `review-this`
-   - **Resolution path**: Classic PAT with `repo` full access OR explicit repo write grant on fine-grained PAT
+     - Description: See WORKPAD.md "Implementation Summary" section below
+     - Labels to add: `symphony`, `review-this`
+   - **Resolution path**: Classic PAT with full `repo` access OR update fine-grained PAT with explicit `pull_requests:write` permission on trilogy-group/StackPerf
 
 2. **Linear API**: **UNAVAILABLE - `linear_graphql` tool not configured**
    - **Status**: No Linear MCP server or `linear_graphql` tool available in session
    - **Impact**: Cannot query/update Linear issue programmatically
    - **Action required**: Human must manually:
-     - Transition issue from "Todo" to "In Progress" (if not already)
+     - Verify issue is in "In Progress" state
      - Transition issue from "In Progress" to "Human Review" after PR is created
-     - Attach PR to Linear issue manually
+     - Attach PR URL to Linear issue
+
+### Implementation Summary
+
+**Files Modified:**
+- `src/collectors/litellm_collector.py` - New implementation with CollectionDiagnostics, IngestWatermark, LiteLLMCollector
+- `src/benchmark_core/services.py` - Added CollectionJobService
+- `tests/unit/test_collectors.py` - 29 comprehensive unit tests
+
+**Key Features:**
+1. **Raw Collection Job**: Async collection from LiteLLM API with spend logs endpoint
+2. **Idempotent Ingest**: IngestWatermark tracks last_request_id, last_timestamp, record_count for resumption
+3. **Correlation Keys**: Preserves session_id, experiment_id, variant_id, task_card_id, harness_profile, trace_id, span_id, parent_span_id in metadata
+4. **Diagnostics**: CollectionDiagnostics tracks missing_fields, errors, skipped_count for observability
 
 ### Confusions
 
