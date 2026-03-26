@@ -1,5 +1,5 @@
-"""Core domain services for session management and credential issuance."""
-
+"""Session service for managing benchmark session lifecycle."""
+from datetime import UTC, datetime
 from uuid import UUID
 
 from benchmark_core.models import Session
@@ -46,7 +46,7 @@ class SessionService:
         self,
         session_id: UUID,
         status: str = "completed",
-        ended_at: "datetime | None" = None,
+        ended_at: datetime | None = None,
     ) -> Session | None:
         """Finalize a session with end time and status.
 
@@ -58,49 +58,12 @@ class SessionService:
         Returns:
             Updated session or None if not found.
         """
-        from datetime import UTC, datetime
+        if ended_at is None:
+            ended_at = datetime.now(UTC)
 
         session = await self._repository.get_by_id(session_id)
         if session is None:
             return None
 
-        if ended_at is None:
-            ended_at = datetime.now(UTC)
-
         updated = session.model_copy(update={"ended_at": ended_at, "status": status})
         return await self._repository.update(updated)
-
-
-class CredentialService:
-    """Service for rendering and managing session-scoped proxy credentials."""
-
-    async def issue_credential(
-        self,
-        session_id: UUID,
-        experiment_id: str,
-        variant_id: str,
-        harness_profile: str,
-    ) -> str:
-        """Generate a session-scoped proxy credential.
-
-        Currently returns a placeholder credential. The actual implementation
-        will integrate with LiteLLM API for short-lived credential issuance.
-
-        The credential encodes session metadata for correlation.
-        """
-        # Placeholder: actual implementation will integrate with LiteLLM API
-        return f"sk-benchmark-{session_id}-{experiment_id[:8]}"
-
-    def render_env_snippet(
-        self,
-        credential: str,
-        proxy_base_url: str,
-        model: str,
-        harness_profile: str,
-    ) -> dict[str, str]:
-        """Render environment variable snippet for a harness."""
-        return {
-            "OPENAI_API_BASE": proxy_base_url,
-            "OPENAI_API_KEY": credential,
-            "OPENAI_MODEL": model,
-        }

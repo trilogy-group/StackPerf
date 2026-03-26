@@ -15,7 +15,7 @@ from benchmark_core.db.repositories import SQLAlchemySessionRepository
 from benchmark_core.db.session import get_db_session
 from benchmark_core.git import get_git_metadata
 from benchmark_core.models import Session
-from benchmark_core.services import SessionService
+from benchmark_core.services.session_service import SessionService
 
 app = typer.Typer(help="Manage benchmark sessions")
 console = Console()
