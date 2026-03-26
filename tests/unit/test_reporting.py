@@ -39,7 +39,7 @@ def test_import_queries() -> None:
     assert ":session_id" in sql  # Parameterized placeholder
     assert params == {"session_id": None}  # Template with placeholder key
     # Security: Ensure no string interpolation patterns exist
-    assert "f\"" not in sql
+    assert 'f"' not in sql
     assert "f'" not in sql
     assert "{}" not in sql or ":" in sql  # Allow only :param placeholders
 
@@ -49,7 +49,7 @@ def test_import_queries() -> None:
     assert ":experiment_id" in sql2
     assert params2 == {"experiment_id": None}
     # Security: Ensure no string interpolation patterns exist
-    assert "f\"" not in sql2
+    assert 'f"' not in sql2
     assert "f'" not in sql2
 
     # Verify latency distribution query uses safe parameterization
