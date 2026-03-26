@@ -94,12 +94,15 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@8f7ec05
      - Compare URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
      - PR Title: "COE-306: Build LiteLLM collection job for raw request records and correlation keys"
      - Add labels: `symphony`, `review-this`
-     - Attach PR to Linear issue COE-306
    - **Resolution path**: Classic PAT with `repo` full access OR explicit repo write grant on fine-grained PAT
 
-2. **Linear API**: Status unknown - will test availability
-   - Previous error: GRAPHQL_VALIDATION_FAILED on earlier run
-   - Will attempt to query/update issue programmatically
+2. **Linear API**: **UNAVAILABLE - `linear_graphql` tool not configured**
+   - **Status**: No Linear MCP server or `linear_graphql` tool available in session
+   - **Impact**: Cannot query/update Linear issue programmatically
+   - **Action required**: Human must manually:
+     - Transition issue from "Todo" to "In Progress" (if not already)
+     - Transition issue from "In Progress" to "Human Review" after PR is created
+     - Attach PR to Linear issue manually
 
 ### Confusions
 
