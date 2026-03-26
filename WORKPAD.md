@@ -1,13 +1,13 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@ff092d4
+macos:/Users/magos/.opensymphony/workspaces/COE-306@4a1d54d
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
 **Issue ID:** ff8c37dc-4abb-4153-a625-40a15d20a873
 **Branch:** COE-306-litellm-collection
-**Status:** In Progress → Human Review (BLOCKED: External tooling)
+**Status:** In Progress → Human Review (BLOCKED: GitHub PR creation)
 
 ### Plan
 
@@ -66,32 +66,35 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@ff092d4
 
 ### Notes
 
-- **2025-03-26 (Retry #2)**: Continuation session. Implementation complete, PR creation blocked.
+- **2025-03-26 (Retry #3)**: Continuation session. Implementation complete, PR creation still blocked.
 - **Commits**:
+  - 4a1d54d - COE-306: Final workpad - correct HEAD commit hash (current)
   - ff092d4 - COE-306: Final workpad - document complete blockers status
   - 3638617 - COE-306: Update workpad for retry #2 - document PR creation blocker
   - 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys (main implementation)
-- **Tests**: All 100 unit tests passing, including 29 collector-specific tests
-- **Branch**: `COE-306-litellm-collection` pushed to origin (ff092d4)
-- **GitHub PR**: **BLOCKED** - Retry #2 still failing with same error
-  - Command: `gh pr create --repo trilogy-group/StackPerf --fill --head COE-306-litellm-collection --base main`
+- **Tests**: All 100 unit tests passing, including 29 collector-specific tests (verified)
+- **Branch**: `COE-306-litellm-collection` pushed to origin (4a1d54d)
+- **GitHub PR**: **BLOCKED - Retry #3 Confirmed** - Same authentication error persists
+  - Commands attempted:
+    - `gh pr create --title ... --body ... --label symphony --label review-this` (timeout/interactive)
+    - `gh pr create --fill --repo trilogy-group/StackPerf --head COE-306-litellm-collection --base main` (failed)
   - Error: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
-  - Token scopes: 'admin:public_key', 'gist', 'read:org', 'repo' (repo scope present but insufficient)
-  - Likely cause: Fine-grained PAT lacks write permissions on trilogy-group/StackPerf repository
+  - Token scopes: 'admin:public_key', 'gist', 'read:org', 'repo' (repo scope present but insufficient for GraphQL mutation)
+  - Likely cause: Fine-grained PAT lacks explicit write permissions on trilogy-group/StackPerf repository
 
 ### Blockers
 
-1. **GitHub PR Creation**: **ACTIVE - Retry #2 Confirmed**
-   - **Status**: Still blocked after multiple attempts with different `gh pr create` options
+1. **GitHub PR Creation**: **ACTIVE - Retry #3 Confirmed**
+   - **Status**: Still blocked after retry #3 with same GraphQL authentication error
    - **Error**: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
    - **Token analysis**: GH_TOKEN has 'repo' scope but GraphQL mutation still fails
-   - **Likely cause**: Fine-grained PAT requires explicit repository write permissions
-   - **Fallback strategies attempted**:
-     - `gh pr create --fill` (with interactive prompt - timeout)
-     - `gh pr create --repo trilogy-group/StackPerf --fill --head COE-306-litellm-collection --base main` (explicit flags - failed)
+   - **Likely cause**: Fine-grained PAT requires explicit repository write permissions for GraphQL mutations
+   - **Fallback strategies attempted in Retry #3**:
+     - `gh pr create --title ... --body ... --label symphony --label review-this` (interactive timeout)
+     - `gh pr create --fill --repo trilogy-group/StackPerf --head COE-306-litellm-collection --base main` (explicit flags - failed with same error)
    - **Impact**: Cannot create PR programmatically; blocks transition to Human Review
    - **Action required**: Human must create PR via GitHub UI
-     - Branch pushed: `COE-306-litellm-collection` (8f7ec05)
+     - Branch pushed: `COE-306-litellm-collection` (4a1d54d)
      - Compare URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
      - PR Title: "COE-306: Build LiteLLM collection job for raw request records and correlation keys"
      - Add labels: `symphony`, `review-this`
