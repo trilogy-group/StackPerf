@@ -4,6 +4,7 @@ litellm_settings:
   drop_params: True
   num_retries: 3
   request_timeout: 600
+  callbacks: ["prometheus"]
 
 router_settings:
   routing_strategy: simple-shuffle
@@ -11,3 +12,7 @@ router_settings:
   timeout: 30
   allowed_fails: 3
   cooldown_time: 10
+
+prometheus:
+  enabled: True
+  verbose: False
