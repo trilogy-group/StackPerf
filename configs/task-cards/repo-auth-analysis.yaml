@@ -1,0 +1,10 @@
+name: repo-auth-analysis
+repo_path: /path/to/repo
+goal: identify auth flow, trust boundaries, and risky edge cases
+starting_prompt: |
+  Analyze the authentication architecture in this repository.
+stop_condition: produce a written summary with file references and identified risks
+session_timebox_minutes: 30
+notes:
+  - work from the current git commit only
+  - do not install new dependencies

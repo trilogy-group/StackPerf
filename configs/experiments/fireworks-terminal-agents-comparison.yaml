@@ -1,0 +1,5 @@
+name: fireworks-terminal-agents-comparison
+description: Compare Fireworks models (Kimi K2.5 vs GLM-5) across different harness configurations
+variants:
+  - fireworks-kimi-k2-5-claude-code
+  - fireworks-glm-5-claude-code

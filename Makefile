@@ -1,5 +1,8 @@
 .PHONY: help install install-dev sync lint format format-check type-check test test-unit test-integration test-cov clean quality dev-setup dev-check
 
+# Set PYTHONPATH for all targets (handle empty PYTHONPATH case)
+export PYTHONPATH := $(PWD)/src$(if $(PYTHONPATH),:$(PYTHONPATH),)
+
 # Default target
 help: ## Show this help message
 	@echo "Available commands:"

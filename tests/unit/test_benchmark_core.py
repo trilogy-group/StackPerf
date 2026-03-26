@@ -16,42 +16,56 @@ def test_import_config_models() -> None:
         Experiment,
         HarnessProfile,
         ProviderConfig,
+        ProviderModel,
+        RoutingDefaults,
         TaskCard,
         Variant,
     )
 
-    # Test basic instantiation
+    # Test basic instantiation with new typed schemas
     provider = ProviderConfig(
         name="test-provider",
+        protocol_surface="openai_responses",
+        upstream_base_url_env="TEST_BASE_URL",
         api_key_env="TEST_API_KEY",
+        models=[ProviderModel(alias="gpt-4o", upstream_model="gpt-4o")],
+        routing_defaults=RoutingDefaults(timeout_seconds=120),
     )
     assert provider.name == "test-provider"
+    assert provider.protocol_surface == "openai_responses"
 
     harness = HarnessProfile(
         name="test-harness",
-        protocol="openai",
+        protocol_surface="openai_responses",
+        base_url_env="BASE_URL",
+        api_key_env="API_KEY",
+        model_env="MODEL",
     )
-    assert harness.protocol == "openai"
+    assert harness.protocol_surface == "openai_responses"
 
     variant = Variant(
         name="test-variant",
         provider="test-provider",
-        model="gpt-4",
+        model_alias="gpt-4o",
         harness_profile="test-harness",
+        benchmark_tags={"harness": "test", "provider": "test", "model": "gpt-4o"},
     )
-    assert variant.model == "gpt-4"
+    assert variant.model_alias == "gpt-4o"
 
     experiment = Experiment(
         name="test-experiment",
         description="Test experiment",
+        variants=["test-variant"],
     )
     assert experiment.name == "test-experiment"
 
     task_card = TaskCard(
-        id="test-task",
-        description="Test task",
+        name="test-task",
+        goal="Test task goal",
+        starting_prompt="Test starting prompt",
+        stop_condition="Test stop condition",
     )
-    assert task_card.id == "test-task"
+    assert task_card.name == "test-task"
 
 
 def test_import_domain_models() -> None:
