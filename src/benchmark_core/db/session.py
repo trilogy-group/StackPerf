@@ -18,10 +18,16 @@ def get_database_url() -> str:
     # Check for PostgreSQL URL first
     pg_url = os.environ.get("BENCHMARK_DATABASE_URL")
     if pg_url:
+        # Convert postgres:// to postgresql:// (SQLAlchemy requires postgresql://)
+        if pg_url.startswith("postgres://"):
+            pg_url = pg_url.replace("postgres://", "postgresql://", 1)
         return pg_url
     # Fallback to generic DATABASE_URL
     db_url = os.environ.get("DATABASE_URL")
     if db_url:
+        # Convert postgres:// to postgresql:// (SQLAlchemy requires postgresql://)
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
         return db_url
     return default_url
 

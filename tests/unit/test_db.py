@@ -422,6 +422,24 @@ class TestSessionUtilities:
         url = get_database_url()
         assert url == "postgresql://localhost/test"
 
+    def test_get_database_url_converts_postgres_dialect(self, monkeypatch):
+        """Test that postgres:// is converted to postgresql://."""
+        monkeypatch.setenv("DATABASE_URL", "postgres://localhost/test")
+        monkeypatch.delenv("BENCHMARK_DATABASE_URL", raising=False)
+
+        url = get_database_url()
+        assert url == "postgresql://localhost/test"
+        assert not url.startswith("postgres://")
+
+    def test_get_database_url_benchmark_converts_postgres_dialect(self, monkeypatch):
+        """Test that BENCHMARK_DATABASE_URL postgres:// is converted to postgresql://."""
+        monkeypatch.setenv("BENCHMARK_DATABASE_URL", "postgres://localhost/benchmark")
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+
+        url = get_database_url()
+        assert url == "postgresql://localhost/benchmark"
+        assert not url.startswith("postgres://")
+
     def test_get_database_url_benchmark_takes_precedence(self, monkeypatch):
         """Test that BENCHMARK_DATABASE_URL takes precedence."""
         monkeypatch.setenv("DATABASE_URL", "postgresql://localhost/general")

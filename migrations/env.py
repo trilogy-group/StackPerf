@@ -32,6 +32,9 @@ target_metadata = Base.metadata
 # Allow overriding database URL from environment
 database_url = os.environ.get("BENCHMARK_DATABASE_URL") or os.environ.get("DATABASE_URL")
 if database_url:
+    # Convert postgres:// to postgresql:// (SQLAlchemy requires postgresql://)
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
     config.set_main_option("sqlalchemy.url", database_url)
 
 
