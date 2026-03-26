@@ -23,13 +23,11 @@ class ReportSerializer:
         fieldnames: list[str] | None = None,
     ) -> None:
         """Serialize tabular data to CSV."""
-        if not data:
-            return
-
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
+        # Compute fieldnames from union of all keys across rows
         if fieldnames is None:
-            fieldnames = list(data[0].keys())
+            fieldnames = sorted({k for row in data for k in row}) if data else []
 
         with open(output_path, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)

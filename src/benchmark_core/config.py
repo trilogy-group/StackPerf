@@ -2,15 +2,24 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ProviderConfig(BaseModel):
     """Upstream inference provider definition."""
 
+    model_config = {"extra": "forbid"}
+
     name: str = Field(..., description="Provider identifier")
     base_url: str | None = Field(None, description="Provider API base URL")
     api_key_env: str = Field(..., description="Environment variable name for API key")
+
+    @field_validator("name", "api_key_env")
+    @classmethod
+    def must_not_be_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("must not be empty or whitespace")
+        return v
 
 
 class HarnessProfile(BaseModel):

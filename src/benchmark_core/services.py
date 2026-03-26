@@ -50,9 +50,8 @@ class SessionService:
         if session is None:
             return None
 
-        session.ended_at = datetime.now(UTC)
-        session.status = "completed"
-        return await self._repository.update(session)
+        updated = session.model_copy(update={"ended_at": datetime.now(UTC), "status": "completed"})
+        return await self._repository.update(updated)
 
 
 class CredentialService:

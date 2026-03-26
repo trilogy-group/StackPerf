@@ -1,5 +1,6 @@
 """Comparison services for providers, models, harnesses, and configurations."""
 
+import copy
 from typing import Any
 
 from benchmark_core.models import MetricRollup, Session
@@ -77,4 +78,4 @@ class ReportBuilder:
 
     def build(self) -> dict[str, Any]:
         """Build the final report."""
-        return self._data
+        return copy.deepcopy(self._data)
