@@ -1,13 +1,13 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@c42b179
+macos:/Users/magos/.opensymphony/workspaces/COE-306@8f7ec05
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
 **Issue ID:** ff8c37dc-4abb-4153-a625-40a15d20a873
 **Branch:** COE-306-litellm-collection
-**Status:** In Progress → Human Review (BLOCKED: PR creation)
+**Status:** In Progress → Human Review (BLOCKED: PR creation - Retry #2)
 
 ### Plan
 
@@ -66,35 +66,40 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@c42b179
 
 ### Notes
 
-- **2025-03-26 (Retry #1)**: Continuation session. Implementation already complete from previous run.
+- **2025-03-26 (Retry #2)**: Continuation session. Implementation complete, PR creation blocked.
 - **Commits**:
-  - 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys
-  - d4f429d - Update workpad: mark all tasks complete, add validation evidence
-  - 5e42103 - Update workpad: document GitHub PR blocker
+  - 8f7ec05 - COE-306: Final workpad update - sync HEAD commit hash
+  - 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys (main implementation)
 - **Tests**: All 100 unit tests passing, including 29 collector-specific tests
-- **Branch**: `COE-306-litellm-collection` pushed to origin (5e42103)
-- **Linear API**: Unavailable (GRAPHQL_VALIDATION_FAILED error on previous run)
-- **GitHub PR**: FAILED - GH_TOKEN lacks `repo` scope for createPullRequest
-  - Attempted: `gh pr create --fill` - Result: "Resource not accessible by personal access token"
-  - Token has scopes: 'admin:public_key', 'gist', 'read:org', 'repo' but GraphQL mutation still blocked
+- **Branch**: `COE-306-litellm-collection` pushed to origin (8f7ec05)
+- **GitHub PR**: **BLOCKED** - Retry #2 still failing with same error
+  - Command: `gh pr create --repo trilogy-group/StackPerf --fill --head COE-306-litellm-collection --base main`
+  - Error: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
+  - Token scopes: 'admin:public_key', 'gist', 'read:org', 'repo' (repo scope present but insufficient)
+  - Likely cause: Fine-grained PAT lacks write permissions on trilogy-group/StackPerf repository
 
 ### Blockers
 
-1. **GitHub PR Creation**: ACTIVE - GH_TOKEN permissions insufficient for GraphQL mutation
-   - **Impact**: Cannot create PR programmatically; blocks transition to Human Review
-   - **Token scopes**: 'admin:public_key', 'gist', 'read:org', 'repo' (repo scope present but GraphQL createPullRequest still blocked)
+1. **GitHub PR Creation**: **ACTIVE - Retry #2 Confirmed**
+   - **Status**: Still blocked after multiple attempts with different `gh pr create` options
    - **Error**: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
+   - **Token analysis**: GH_TOKEN has 'repo' scope but GraphQL mutation still fails
+   - **Likely cause**: Fine-grained PAT requires explicit repository write permissions
+   - **Fallback strategies attempted**:
+     - `gh pr create --fill` (with interactive prompt - timeout)
+     - `gh pr create --repo trilogy-group/StackPerf --fill --head COE-306-litellm-collection --base main` (explicit flags - failed)
+   - **Impact**: Cannot create PR programmatically; blocks transition to Human Review
    - **Action required**: Human must create PR via GitHub UI
-     - Branch pushed: `COE-306-litellm-collection` (c42b179)
+     - Branch pushed: `COE-306-litellm-collection` (8f7ec05)
      - Compare URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
-     - Add label: `symphony`
-     - Add label: `review-this` (for AI PR review)
+     - PR Title: "COE-306: Build LiteLLM collection job for raw request records and correlation keys"
+     - Add labels: `symphony`, `review-this`
      - Attach PR to Linear issue COE-306
-   - **Alternative**: Grant `repo` scope with write permissions or use classic PAT with full repo access
+   - **Resolution path**: Classic PAT with `repo` full access OR explicit repo write grant on fine-grained PAT
 
-2. **Linear API**: UNAVAILABLE - Previous error: GRAPHQL_VALIDATION_FAILED on $issueId variable type
-   - **Impact**: Cannot update issue state programmatically
-   - **Action required**: Human must manually transition issue from "In Progress" to "Human Review" after PR is created
+2. **Linear API**: Status unknown - will test availability
+   - Previous error: GRAPHQL_VALIDATION_FAILED on earlier run
+   - Will attempt to query/update issue programmatically
 
 ### Confusions
 
