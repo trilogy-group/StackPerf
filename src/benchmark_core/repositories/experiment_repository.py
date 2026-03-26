@@ -1,8 +1,10 @@
 """Repository for Experiment entities."""
 
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as SQLAlchemySession
 
@@ -170,7 +172,7 @@ class SQLExperimentRepository(SQLAlchemyRepository[ExperimentORM]):
             ExperimentVariantORM.experiment_id == experiment_id,
             ExperimentVariantORM.variant_id == variant_id,
         )
-        result = self._session.execute(stmt)
+        result = cast(CursorResult, self._session.execute(stmt))
         self._session.flush()
         return result.rowcount > 0
 

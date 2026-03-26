@@ -1,8 +1,10 @@
 """Repository for Request entities."""
 
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import select
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as SQLAlchemySession
 
@@ -268,6 +270,6 @@ class SQLRequestRepository(SQLAlchemyRepository[RequestORM]):
         from sqlalchemy import delete
 
         stmt = delete(RequestORM).where(RequestORM.session_id == session_id)
-        result = self._session.execute(stmt)
+        result = cast(CursorResult, self._session.execute(stmt))
         self._session.flush()
         return result.rowcount
