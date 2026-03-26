@@ -1,13 +1,13 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@8f7ec05
+macos:/Users/magos/.opensymphony/workspaces/COE-306@ff092d4
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
 **Issue ID:** ff8c37dc-4abb-4153-a625-40a15d20a873
 **Branch:** COE-306-litellm-collection
-**Status:** In Progress → Human Review (BLOCKED: PR creation - Retry #2)
+**Status:** In Progress → Human Review (BLOCKED: External tooling)
 
 ### Plan
 
@@ -68,10 +68,11 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@8f7ec05
 
 - **2025-03-26 (Retry #2)**: Continuation session. Implementation complete, PR creation blocked.
 - **Commits**:
-  - 8f7ec05 - COE-306: Final workpad update - sync HEAD commit hash
+  - ff092d4 - COE-306: Final workpad - document complete blockers status
+  - 3638617 - COE-306: Update workpad for retry #2 - document PR creation blocker
   - 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys (main implementation)
 - **Tests**: All 100 unit tests passing, including 29 collector-specific tests
-- **Branch**: `COE-306-litellm-collection` pushed to origin (8f7ec05)
+- **Branch**: `COE-306-litellm-collection` pushed to origin (ff092d4)
 - **GitHub PR**: **BLOCKED** - Retry #2 still failing with same error
   - Command: `gh pr create --repo trilogy-group/StackPerf --fill --head COE-306-litellm-collection --base main`
   - Error: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
