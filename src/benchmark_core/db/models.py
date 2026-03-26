@@ -14,6 +14,7 @@ from sqlalchemy import (
     String,
     Text,
     Uuid,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -134,6 +135,9 @@ class Variant(Base):
     sessions: Mapped[list["Session"]] = relationship(
         back_populates="variant", cascade="all, delete-orphan"
     )
+    experiment_variants: Mapped[list["ExperimentVariant"]] = relationship(
+        back_populates="variant", cascade="all, delete-orphan"
+    )
 
 
 class Experiment(Base):
@@ -169,19 +173,27 @@ class ExperimentVariant(Base):
 
     __tablename__ = "experiment_variants"
 
+    # Ensure unique experiment-variant pairs
+    __table_args__ = (
+        UniqueConstraint("experiment_id", "variant_id", name="uq_experiment_variant"),
+    )
+
     id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     experiment_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("experiments.id", ondelete="CASCADE"), nullable=False
+        ForeignKey("experiments.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    variant_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    variant_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("variants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
 
     # Relationships
     experiment: Mapped["Experiment"] = relationship(back_populates="experiment_variants")
+    variant: Mapped["Variant"] = relationship(back_populates="experiment_variants")
 
 
 class TaskCard(Base):

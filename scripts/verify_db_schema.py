@@ -9,6 +9,7 @@ This script demonstrates:
 """
 
 import tempfile
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -148,7 +149,7 @@ def verify_schema():
 
         exp_variant = ExperimentVariant(
             experiment_id=experiment.id,
-            variant_name="openai-gpt4o-default",
+            variant_id=variant.id,
         )
         session.add(exp_variant)
         print("   ✓ Experiment + ExperimentVariant inserted")
@@ -245,7 +246,17 @@ def verify_schema():
         e = session.query(Experiment).filter_by(name="baseline-comparison").first()
         assert e is not None, "Experiment not found"
         assert len(e.experiment_variants) == 1
+        # Get the linked variant from the relationship
+        ev = e.experiment_variants[0]
+        # Verify the variant_id is a valid UUID (not a string name)
+        assert isinstance(ev.variant_id, uuid.UUID), f"Expected UUID, got {type(ev.variant_id)}"
         print("   ✓ Experiment -> ExperimentVariant relationship works")
+
+        # Verify variant -> experiments relationship (bidirectional)
+        v = session.query(Variant).filter_by(name="openai-gpt4o-default").first()
+        assert v is not None, "Variant not found"
+        assert len(v.experiment_variants) == 1
+        print("   ✓ Variant -> ExperimentVariant relationship works")
 
         # Verify session with foreign keys
         s = session.query(DBSession).first()

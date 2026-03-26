@@ -123,18 +123,28 @@ class TestDatabaseModels:
         assert retrieved.benchmark_tags["harness"] == "v1"
 
     def test_experiment(self, test_session):
-        """Test Experiment and ExperimentVariant creation."""
+        """Test Experiment and ExperimentVariant creation with proper FKs."""
+        # Create prerequisite variant
+        variant = Variant(
+            name="exp-test-variant",
+            provider="test-provider",
+            model_alias="test-model",
+            harness_profile="test-profile",
+        )
+        test_session.add(variant)
+        test_session.flush()
+
         experiment = Experiment(
             name="test-experiment",
             description="Test description",
         )
         test_session.add(experiment)
-        test_session.commit()
+        test_session.flush()
 
-        # Link variant
+        # Link variant with proper FK
         exp_variant = ExperimentVariant(
             experiment_id=experiment.id,
-            variant_name="test-variant",
+            variant_id=variant.id,
         )
         test_session.add(exp_variant)
         test_session.commit()
@@ -142,6 +152,7 @@ class TestDatabaseModels:
         retrieved = test_session.query(Experiment).filter_by(name="test-experiment").first()
         assert retrieved is not None
         assert len(retrieved.experiment_variants) == 1
+        assert retrieved.experiment_variants[0].variant_id == variant.id
 
     def test_task_card(self, test_session):
         """Test TaskCard creation."""

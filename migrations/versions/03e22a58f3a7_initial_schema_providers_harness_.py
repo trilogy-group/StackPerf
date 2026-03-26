@@ -143,11 +143,15 @@ def upgrade() -> None:
     op.create_table('experiment_variants',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('experiment_id', sa.Uuid(), nullable=False),
-    sa.Column('variant_name', sa.String(length=255), nullable=False),
+    sa.Column('variant_id', sa.Uuid(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(['experiment_id'], ['experiments.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    sa.ForeignKeyConstraint(['variant_id'], ['variants.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('experiment_id', 'variant_id', name='uq_experiment_variant')
     )
+    op.create_index(op.f('ix_experiment_variants_experiment_id'), 'experiment_variants', ['experiment_id'], unique=False)
+    op.create_index(op.f('ix_experiment_variants_variant_id'), 'experiment_variants', ['variant_id'], unique=False)
     op.create_table('provider_models',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('provider_id', sa.Uuid(), nullable=False),
@@ -188,6 +192,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_requests_request_id'), table_name='requests')
     op.drop_table('requests')
     op.drop_table('provider_models')
+    op.drop_index(op.f('ix_experiment_variants_variant_id'), table_name='experiment_variants')
+    op.drop_index(op.f('ix_experiment_variants_experiment_id'), table_name='experiment_variants')
     op.drop_table('experiment_variants')
     op.drop_index(op.f('ix_artifacts_session_id'), table_name='artifacts')
     op.drop_table('artifacts')
