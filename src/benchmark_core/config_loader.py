@@ -1,9 +1,8 @@
 """Config loader with YAML loading, validation, and deterministic precedence rules."""
 
-import os
 from pathlib import Path
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 from benchmark_core.config import (
     Experiment,
@@ -37,14 +36,10 @@ class ConfigRegistry:
         self.experiments: dict[str, Experiment] = {}
         self.task_cards: dict[str, TaskCard] = {}
 
-    def _validate_no_duplicates(
-        self, name: str, config_type: str, existing: dict
-    ) -> None:
+    def _validate_no_duplicates(self, name: str, config_type: str, existing: dict) -> None:
         """Validate no duplicate names within the same config type."""
         if name in existing:
-            raise ConfigValidationError(
-                [f"Duplicate {config_type} name: '{name}' already exists"]
-            )
+            raise ConfigValidationError([f"Duplicate {config_type} name: '{name}' already exists"])
 
     def register_provider(self, config: ProviderConfig) -> None:
         """Register a provider config."""
@@ -53,9 +48,7 @@ class ConfigRegistry:
 
     def register_harness_profile(self, config: HarnessProfile) -> None:
         """Register a harness profile."""
-        self._validate_no_duplicates(
-            config.name, "harness profile", self.harness_profiles
-        )
+        self._validate_no_duplicates(config.name, "harness profile", self.harness_profiles)
         self.harness_profiles[config.name] = config
 
     def register_variant(self, config: Variant) -> None:
@@ -86,8 +79,7 @@ class ConfigRegistry:
             # Check provider reference
             if variant.provider not in self.providers:
                 errors.append(
-                    f"Variant '{variant_name}': referenced provider "
-                    f"'{variant.provider}' not found"
+                    f"Variant '{variant_name}': referenced provider '{variant.provider}' not found"
                 )
             else:
                 # Check model_alias exists in provider
@@ -108,25 +100,23 @@ class ConfigRegistry:
                 )
             else:
                 # Check protocol surface compatibility
-                provider = self.providers.get(variant.provider)
+                variant_provider = self.providers.get(variant.provider)
                 harness = self.harness_profiles.get(variant.harness_profile)
-                if provider and harness:
-                    if provider.protocol_surface != harness.protocol_surface:
-                        errors.append(
-                            f"Variant '{variant_name}': protocol surface mismatch "
-                            f"(provider '{variant.provider}': "
-                            f"{provider.protocol_surface}, "
-                            f"harness '{variant.harness_profile}': "
-                            f"{harness.protocol_surface})"
-                        )
+                if variant_provider and harness and variant_provider.protocol_surface != harness.protocol_surface:
+                    errors.append(
+                        f"Variant '{variant_name}': protocol surface mismatch "
+                        f"(provider '{variant.provider}': "
+                        f"{variant_provider.protocol_surface}, "
+                        f"harness '{variant.harness_profile}': "
+                        f"{harness.protocol_surface})"
+                    )
 
         # Validate experiment references
         for exp_name, experiment in self.experiments.items():
             for variant_name in experiment.variants:
                 if variant_name not in self.variants:
                     errors.append(
-                        f"Experiment '{exp_name}': referenced variant "
-                        f"'{variant_name}' not found"
+                        f"Experiment '{exp_name}': referenced variant '{variant_name}' not found"
                     )
 
         return errors
@@ -152,7 +142,7 @@ class ConfigLoader:
 
     def _load_yaml_file(self, path: Path) -> dict:
         """Load and parse a YAML file."""
-        with open(path, "r") as f:
+        with open(path) as f:
             return yaml.safe_load(f) or {}
 
     def _resolve_path(self, subdir: str) -> Path:
@@ -178,9 +168,7 @@ class ConfigLoader:
             routing_data = data.pop("routing_defaults", {})
             routing_defaults = RoutingDefaults(**routing_data)
 
-            config = ProviderConfig(
-                **data, models=models, routing_defaults=routing_defaults
-            )
+            config = ProviderConfig(**data, models=models, routing_defaults=routing_defaults)
             self.registry.register_provider(config)
 
         return self.registry.providers
