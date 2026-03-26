@@ -124,6 +124,8 @@ class SQLTaskCardRepository(SQLAlchemyRepository[TaskCardORM]):
         Returns:
             List of matching task cards.
         """
-        stmt = select(TaskCardORM).where(TaskCardORM.goal.ilike(f"%{query}%")).limit(limit)
+        # Escape SQL LIKE wildcards to prevent injection
+        escaped_query = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        stmt = select(TaskCardORM).where(TaskCardORM.goal.ilike(f"%{escaped_query}%")).limit(limit)
         result = self._session.execute(stmt).scalars().all()
         return list(result)

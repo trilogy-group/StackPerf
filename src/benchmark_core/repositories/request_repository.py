@@ -101,16 +101,16 @@ class SQLRequestRepository(SQLAlchemyRepository[RequestORM]):
                 skipped += 1
                 continue
 
-            try:
-                self._session.add(request)
-                created.append(request)
-            except IntegrityError:
-                # Skip duplicates and FK violations silently for batch operations
-                skipped += 1
-                continue
+            self._session.add(request)
+            created.append(request)
 
         if created:
-            self._session.flush()
+            try:
+                self._session.flush()
+            except IntegrityError:
+                # Rollback on IntegrityError to maintain session consistency
+                self._session.rollback()
+                return []
 
         return created
 
