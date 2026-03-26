@@ -145,6 +145,112 @@ It must produce:
 - rendered dotenv file if requested
 - captured repository metadata
 
+## Session credentials and proxy routing
+
+### LiteLLM virtual keys for session isolation
+
+Benchmark sessions use LiteLLM virtual keys to:
+1. Isolate session traffic for billing and correlation
+2. Attach metadata (experiment, variant, harness, task-card) to all requests
+3. Enforce session-scoped rate limits and budgets
+
+### Creating a session virtual key
+
+When a session is created, the benchmark app generates a LiteLLM virtual key:
+
+```bash
+curl -X POST http://localhost:4000/key/generate \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metadata": {
+      "session_id": "session-uuid",
+      "experiment": "experiment-name",
+      "variant": "variant-name",
+      "harness": "harness-profile",
+      "task_card": "task-card-name"
+    },
+    "budget_duration": "1d",
+    "budget": 10
+  }'
+```
+
+The returned `key` becomes the `SESSION_VIRTUAL_KEY` for the harness environment.
+
+### Pointing a harness at the proxy
+
+Harness profiles specify which environment variables to set. The benchmark app renders the exact values:
+
+#### Example: Claude Code environment
+
+```yaml
+# Harness profile: configs/harnesses/claude-code.yaml
+name: claude-code
+protocol_surface: anthropic_messages
+base_url_env: ANTHROPIC_BASE_URL
+api_key_env: ANTHROPIC_API_KEY
+model_env: ANTHROPIC_MODEL
+```
+
+Rendered environment snippet:
+
+```bash
+export ANTHROPIC_BASE_URL="http://localhost:4000"
+export ANTHROPIC_API_KEY="sk-litellm-session-uuid"
+export ANTHROPIC_MODEL="kimi-k2-5"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="kimi-k2-5"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="kimi-k2-5"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="kimi-k2-5"
+export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS="1"
+```
+
+#### Example: OpenAI-compatible CLI environment
+
+```yaml
+# Harness profile: configs/harnesses/openai-cli.yaml
+name: openai-cli
+protocol_surface: openai_responses
+base_url_env: OPENAI_BASE_URL
+api_key_env: OPENAI_API_KEY
+model_env: OPENAI_MODEL
+```
+
+Rendered environment snippet:
+
+```bash
+export OPENAI_BASE_URL="http://localhost:4000"
+export OPENAI_API_KEY="sk-litellm-session-uuid"
+export OPENAI_MODEL="gpt-4o"
+export OPENAI_TIMEOUT="120"
+```
+
+### Route and model resolution
+
+When a harness sends a request:
+
+1. The `base_url` points to the LiteLLM proxy (`http://localhost:4000`)
+2. The `api_key` is the session-scoped virtual key
+3. The `model` is the alias from the variant config (e.g., `kimi-k2-5`, `gpt-4o`)
+4. LiteLLM routes to the correct provider based on the model alias
+5. LiteLLM attaches session metadata from the virtual key to the request log
+
+The request log includes:
+- `session_id` from virtual key metadata
+- `route_name` from model config (e.g., `fireworks-main`, `openai-main`)
+- `model` alias (e.g., `kimi-k2-5`)
+- `provider` (e.g., `fireworks`, `openai`)
+
+### Verification checklist
+
+Before running a harness:
+
+- [ ] LiteLLM proxy is running on `http://localhost:4000`
+- [ ] Health check passes: `curl http://localhost:4000/health`
+- [ ] Virtual key is valid: `curl http://localhost:4000/key/info -H "Authorization: Bearer $SESSION_VIRTUAL_KEY"`
+- [ ] Base URL environment variable is set to `http://localhost:4000`
+- [ ] API key environment variable is set to the session virtual key
+- [ ] Model environment variable is set to the variant's model alias
+
 ## CLI contract
 
 Suggested commands:

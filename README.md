@@ -131,6 +131,23 @@ Benchmark application capabilities:
   - external references that shaped the design
 - `skills/convert-tasks-to-linear/SKILL.md`
   - reusable instructions for converting a markdown implementation plan into Linear parent issues and sub-issues
+- `configs/litellm/README.md`
+  - LiteLLM proxy configuration
+  - route naming convention
+  - local operator instructions for session credentials
+  - harness environment setup
+
+## Local operator workflow
+
+For a complete walkthrough of running a benchmark session, see [configs/litellm/README.md](configs/litellm/README.md). The quick version:
+
+1. Start the infrastructure stack (LiteLLM, PostgreSQL, Prometheus, Grafana)
+2. Validate configs: `bench config validate`
+3. Create a session: `bench session create --experiment <name> --variant <name> --task-card <name> --harness <name>`
+4. Copy the rendered environment snippet and launch your harness interactively
+5. Work on the task; the proxy captures all traffic with session correlation
+6. Finalize the session: `bench session finalize --session-id <id> --status completed`
+7. View metrics in Grafana and export comparison reports
 
 ## MVP success criteria
 
