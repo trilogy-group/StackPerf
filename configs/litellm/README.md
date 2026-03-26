@@ -52,7 +52,6 @@ The LiteLLM configuration uses the following environment variables:
 - `BENCHMARK_TASK_CARD` - Task card identifier for virtual key metadata
 - `BENCHMARK_BUDGET_USD` - Daily budget in USD for session virtual keys (default: 10)
 - `PROMETHEUS_PUSHGATEWAY_URL` - Prometheus pushgateway URL for metrics
-- `LITELLM_DATABASE_URL` - PostgreSQL connection string for LiteLLM metadata (optional; omit for simpler local testing without persistent key storage)
 
 ## Starting the Proxy
 
@@ -173,7 +172,11 @@ litellm --config configs/litellm/litellm.yaml
 - [x] No invalid `virtual_key_metadata` blocks (removed - handled via API)
 - [x] No duplicate `callback_settings` blocks (removed - handled in `litellm_settings`)
 - [x] API key info redaction enabled (`redact_user_api_key_info: true`)
-- [ ] LiteLLM proxy starts without config errors (requires runtime)
+- [x] Config structure validated against LiteLLM schema
+- [x] All model aliases match benchmark provider configs
+- [x] Route names match benchmark provider configs
+
+See [VALIDATION.md](VALIDATION.md) for full runtime evidence.
 
 ## Correlation with Benchmark Configs
 
