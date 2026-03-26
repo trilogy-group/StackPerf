@@ -1,13 +1,13 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@87eb869
+macos:/Users/magos/.opensymphony/workspaces/COE-306@5e42103
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
 **Issue ID:** ff8c37dc-4abb-4153-a625-40a15d20a873
 **Branch:** COE-306-litellm-collection
-**Status:** In Progress
+**Status:** In Progress → Human Review (BLOCKED: PR creation)
 
 ### Plan
 
@@ -66,22 +66,33 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@87eb869
 
 ### Notes
 
-- **2025-03-26**: Implementation complete. All deliverables and acceptance criteria met.
+- **2025-03-26 (Retry #1)**: Continuation session. Implementation already complete from previous run.
 - **Commits**:
   - 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys
   - d4f429d - Update workpad: mark all tasks complete, add validation evidence
+  - 5e42103 - Update workpad: document GitHub PR blocker
 - **Tests**: All 100 unit tests passing, including 29 collector-specific tests
-- **Branch**: `COE-306-litellm-collection` pushed to origin (d4f429d)
-- **Linear API**: Unavailable for state transition. Manual transition from `In Progress` to `Human Review` required.
-- **GitHub PR**: Blocker - GITHUB_TOKEN lacks `repo` scope for PR creation. Manual PR creation required.
+- **Branch**: `COE-306-litellm-collection` pushed to origin (5e42103)
+- **Linear API**: Unavailable (GRAPHQL_VALIDATION_FAILED error on previous run)
+- **GitHub PR**: FAILED - GH_TOKEN lacks `repo` scope for createPullRequest
+  - Attempted: `gh pr create --fill` - Result: "Resource not accessible by personal access token"
+  - Token has scopes: 'admin:public_key', 'gist', 'read:org', 'repo' but GraphQL mutation still blocked
 
 ### Blockers
 
-1. **GitHub PR Creation**: GITHUB_TOKEN lacks permissions to create PRs.
-   - Branch `COE-306-litellm-collection` is pushed to origin
-   - Human must create PR via GitHub UI: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
-   - PR should include label `symphony`
-   - After PR creation, add `review-this` label for AI review
+1. **GitHub PR Creation**: PERSISTENT - GH_TOKEN permissions insufficient for GraphQL mutation
+   - **Impact**: Cannot create PR programmatically; blocks transition to Human Review
+   - **Token scopes**: 'admin:public_key', 'gist', 'read:org', 'repo' (repo scope present but GraphQL createPullRequest still blocked)
+   - **Action required**: Human must create PR via GitHub UI
+     - URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
+     - Add label: `symphony`
+     - Add label: `review-this` (for AI PR review)
+     - Attach PR to Linear issue COE-306
+   - **Alternative**: Grant additional OAuth scopes or use classic PAT with full repo access
+
+2. **Linear API**: UNAVAILABLE - Previous error: GRAPHQL_VALIDATION_FAILED on $issueId variable type
+   - **Impact**: Cannot update issue state programmatically
+   - **Action required**: Human must manually transition issue from "In Progress" to "Human Review"
 
 ### Confusions
 
