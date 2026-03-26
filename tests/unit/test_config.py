@@ -312,7 +312,7 @@ class TestConfigRegistry:
             api_key_env="FIREWORKS_API_KEY"
         )
         registry.register_provider(config)
-        
+
         with pytest.raises(ConfigValidationError) as exc_info:
             registry.register_provider(config)
         assert "Duplicate provider name" in str(exc_info.value)
@@ -331,7 +331,7 @@ class TestConfigRegistry:
                 "model": "kimi-k2-5"
             }
         ))
-        
+
         errors = registry.validate_references()
         assert len(errors) == 2  # Missing provider + missing harness
         assert "referenced provider 'nonexistent-provider' not found" in errors[0]
@@ -339,7 +339,7 @@ class TestConfigRegistry:
     def test_validate_protocol_mismatch(self) -> None:
         """Test validation catches protocol surface mismatch."""
         registry = ConfigRegistry()
-        
+
         # Register provider with anthropic_messages
         registry.register_provider(ProviderConfig(
             name="fireworks",
@@ -348,7 +348,7 @@ class TestConfigRegistry:
             api_key_env="FIREWORKS_API_KEY",
             models=[ProviderModel(alias="kimi-k2-5", upstream_model="model1")]
         ))
-        
+
         # Register harness with openai_responses
         registry.register_harness_profile(HarnessProfile(
             name="openai-cli",
@@ -357,7 +357,7 @@ class TestConfigRegistry:
             api_key_env="OPENAI_API_KEY",
             model_env="OPENAI_MODEL"
         ))
-        
+
         # Register variant combining them
         registry.register_variant(Variant(
             name="test-variant",
@@ -370,7 +370,7 @@ class TestConfigRegistry:
                 "model": "kimi-k2-5"
             }
         ))
-        
+
         errors = registry.validate_references()
         assert len(errors) == 1
         assert "protocol surface mismatch" in errors[0]
@@ -378,7 +378,7 @@ class TestConfigRegistry:
     def test_validate_missing_model_alias(self) -> None:
         """Test validation catches missing model alias in provider."""
         registry = ConfigRegistry()
-        
+
         registry.register_provider(ProviderConfig(
             name="fireworks",
             protocol_surface="anthropic_messages",
@@ -386,7 +386,7 @@ class TestConfigRegistry:
             api_key_env="FIREWORKS_API_KEY",
             models=[ProviderModel(alias="kimi-k2-5", upstream_model="model1")]
         ))
-        
+
         registry.register_harness_profile(HarnessProfile(
             name="claude-code",
             protocol_surface="anthropic_messages",
@@ -394,7 +394,7 @@ class TestConfigRegistry:
             api_key_env="ANTHROPIC_API_KEY",
             model_env="ANTHROPIC_MODEL"
         ))
-        
+
         registry.register_variant(Variant(
             name="test-variant",
             provider="fireworks",
@@ -406,7 +406,7 @@ class TestConfigRegistry:
                 "model": "nonexistent-model"
             }
         ))
-        
+
         errors = registry.validate_references()
         assert len(errors) == 1
         assert "model alias 'nonexistent-model' not found" in errors[0]
@@ -419,22 +419,22 @@ class TestConfigLoader:
         """Test loading all config types from the configs directory."""
         loader = ConfigLoader("/Users/magos/.opensymphony/workspaces/COE-302/configs")
         registry = loader.load_all()
-        
+
         # Verify providers loaded
         assert "fireworks" in registry.providers
         assert "openai" in registry.providers
-        
+
         # Verify harnesses loaded
         assert "claude-code" in registry.harness_profiles
         assert "openai-cli" in registry.harness_profiles
-        
+
         # Verify variants loaded
         assert "fireworks-kimi-k2-5-claude-code" in registry.variants
         assert "openai-gpt-4o-cli" in registry.variants
-        
+
         # Verify experiments loaded
         assert "fireworks-terminal-agents-comparison" in registry.experiments
-        
+
         # Verify task cards loaded
         assert "repo-auth-analysis" in registry.task_cards
 
@@ -442,11 +442,11 @@ class TestConfigLoader:
         """Test that provider protocol surfaces are loaded correctly."""
         loader = ConfigLoader("/Users/magos/.opensymphony/workspaces/COE-302/configs")
         registry = loader.load_all()
-        
+
         # Fireworks uses anthropic_messages
         fireworks = registry.providers["fireworks"]
         assert fireworks.protocol_surface == "anthropic_messages"
-        
+
         # OpenAI uses openai_responses
         openai = registry.providers["openai"]
         assert openai.protocol_surface == "openai_responses"
@@ -455,11 +455,11 @@ class TestConfigLoader:
         """Test that harness protocol surfaces are loaded correctly."""
         loader = ConfigLoader("/Users/magos/.opensymphony/workspaces/COE-302/configs")
         registry = loader.load_all()
-        
+
         # Claude Code uses anthropic_messages
         claude = registry.harness_profiles["claude-code"]
         assert claude.protocol_surface == "anthropic_messages"
-        
+
         # OpenAI CLI uses openai_responses
         openai_cli = registry.harness_profiles["openai-cli"]
         assert openai_cli.protocol_surface == "openai_responses"
@@ -468,13 +468,13 @@ class TestConfigLoader:
         """Test that valid protocol surface combinations pass validation."""
         loader = ConfigLoader("/Users/magos/.opensymphony/workspaces/COE-302/configs")
         registry = loader.load_all()
-        
+
         # All configs should load without validation errors
         # Fireworks-Kimi-Claude: anthropic_messages + anthropic_messages ✓
         variant1 = registry.variants["fireworks-kimi-k2-5-claude-code"]
         assert variant1.provider == "fireworks"
         assert variant1.harness_profile == "claude-code"
-        
+
         # OpenAI-GPT-4o-CLI: openai_responses + openai_responses ✓
         variant2 = registry.variants["openai-gpt-4o-cli"]
         assert variant2.provider == "openai"
