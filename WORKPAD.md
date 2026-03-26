@@ -80,19 +80,21 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@5e42103
 
 ### Blockers
 
-1. **GitHub PR Creation**: PERSISTENT - GH_TOKEN permissions insufficient for GraphQL mutation
+1. **GitHub PR Creation**: ACTIVE - GH_TOKEN permissions insufficient for GraphQL mutation
    - **Impact**: Cannot create PR programmatically; blocks transition to Human Review
    - **Token scopes**: 'admin:public_key', 'gist', 'read:org', 'repo' (repo scope present but GraphQL createPullRequest still blocked)
+   - **Error**: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
    - **Action required**: Human must create PR via GitHub UI
-     - URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
+     - Branch pushed: `COE-306-litellm-collection` (2b84693)
+     - Compare URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
      - Add label: `symphony`
      - Add label: `review-this` (for AI PR review)
      - Attach PR to Linear issue COE-306
-   - **Alternative**: Grant additional OAuth scopes or use classic PAT with full repo access
+   - **Alternative**: Grant `repo` scope with write permissions or use classic PAT with full repo access
 
 2. **Linear API**: UNAVAILABLE - Previous error: GRAPHQL_VALIDATION_FAILED on $issueId variable type
    - **Impact**: Cannot update issue state programmatically
-   - **Action required**: Human must manually transition issue from "In Progress" to "Human Review"
+   - **Action required**: Human must manually transition issue from "In Progress" to "Human Review" after PR is created
 
 ### Confusions
 
