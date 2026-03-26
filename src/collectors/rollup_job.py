@@ -230,10 +230,7 @@ class RollupJob:
             )
 
             # P95 (acceptance criteria requirement)
-            p95_idx = int(n * 0.95)
-            if p95_idx >= n:
-                p95_idx = n - 1
-            p95 = latencies_sorted[p95_idx]
+            p95 = self._compute_percentile(latencies_sorted, 0.95)
             rollups.append(
                 MetricRollup(
                     dimension_type="session",
@@ -245,10 +242,7 @@ class RollupJob:
             )
 
             # P99 (bonus)
-            p99_idx = int(n * 0.99)
-            if p99_idx >= n:
-                p99_idx = n - 1
-            p99 = latencies_sorted[p99_idx]
+            p99 = self._compute_percentile(latencies_sorted, 0.99)
             rollups.append(
                 MetricRollup(
                     dimension_type="session",
@@ -275,12 +269,12 @@ class RollupJob:
         if per_token_latencies:
             sorted_ptl = sorted(per_token_latencies)
             n_ptl = len(sorted_ptl)
-            median_ptl = sorted_ptl[n_ptl // 2] if n_ptl % 2 == 1 else (
-                sorted_ptl[n_ptl // 2 - 1] + sorted_ptl[n_ptl // 2]
-            ) / 2
-            p95_ptl_idx = int(n_ptl * 0.95)
-            if p95_ptl_idx >= n_ptl:
-                p95_ptl_idx = n_ptl - 1
+            median_ptl = (
+                sorted_ptl[n_ptl // 2]
+                if n_ptl % 2 == 1
+                else (sorted_ptl[n_ptl // 2 - 1] + sorted_ptl[n_ptl // 2]) / 2
+            )
+            p95_ptl = self._compute_percentile(sorted_ptl, 0.95)
 
             rollups.append(
                 MetricRollup(
@@ -296,7 +290,7 @@ class RollupJob:
                     dimension_type="session",
                     dimension_id=dimension_id,
                     metric_name="latency_per_token_p95_ms",
-                    metric_value=sorted_ptl[p95_ptl_idx],
+                    metric_value=p95_ptl,
                     sample_count=n_ptl,
                 )
             )

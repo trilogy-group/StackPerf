@@ -271,8 +271,11 @@ class TestRollupJob:
         # Median (middle value) = 140
         assert median_rollup.metric_value == 140.0
 
-        # P95 (95th percentile index = int(5 * 0.95) = 4) = 180
-        assert p95_rollup.metric_value == 180.0
+        # P95 using linear interpolation:
+        # index = 0.95 * (5 - 1) = 3.8
+        # lower=160 (index 3), upper=180 (index 4), fraction=0.8
+        # result = 160 + 0.8 * (180 - 160) = 176.0
+        assert p95_rollup.metric_value == 176.0
 
     @pytest.mark.asyncio
     async def test_compute_session_metrics_empty_requests(

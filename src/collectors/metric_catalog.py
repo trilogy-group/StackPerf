@@ -138,9 +138,11 @@ class MetricCatalog:
         sorted_values = sorted(values)
         n = len(sorted_values)
 
-        # For single values or when computing percentiles of percentiles,
-        # use the single value as both the value and sample count
-        metric_value = sorted_values[n // 2] if n > 0 else 0.0
+        # Median: average of middle two for even-length lists
+        if n % 2 == 1:
+            metric_value = sorted_values[n // 2]
+        else:
+            metric_value = (sorted_values[n // 2 - 1] + sorted_values[n // 2]) / 2
 
         return MetricRollup(
             dimension_type=dimension_type,
