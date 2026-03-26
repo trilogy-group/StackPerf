@@ -102,7 +102,11 @@ class ConfigRegistry:
                 # Check protocol surface compatibility
                 variant_provider = self.providers.get(variant.provider)
                 harness = self.harness_profiles.get(variant.harness_profile)
-                if variant_provider and harness and variant_provider.protocol_surface != harness.protocol_surface:
+                if (
+                    variant_provider
+                    and harness
+                    and variant_provider.protocol_surface != harness.protocol_surface
+                ):
                     errors.append(
                         f"Variant '{variant_name}': protocol surface mismatch "
                         f"(provider '{variant.provider}': "

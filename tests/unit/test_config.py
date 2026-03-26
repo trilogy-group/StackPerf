@@ -26,7 +26,9 @@ class TestProviderModel:
 
     def test_valid_provider_model(self) -> None:
         """Test creating a valid ProviderModel."""
-        model = ProviderModel(alias="kimi-k2-5", upstream_model="accounts/fireworks/models/kimi-k2p5")
+        model = ProviderModel(
+            alias="kimi-k2-5", upstream_model="accounts/fireworks/models/kimi-k2p5"
+        )
         assert model.alias == "kimi-k2-5"
         assert model.upstream_model == "accounts/fireworks/models/kimi-k2p5"
 
@@ -37,8 +39,7 @@ class TestRoutingDefaults:
     def test_valid_routing_defaults(self) -> None:
         """Test creating valid RoutingDefaults."""
         defaults = RoutingDefaults(
-            timeout_seconds=180,
-            extra_headers={"x-session-affinity": "{{ session_affinity_key }}"}
+            timeout_seconds=180, extra_headers={"x-session-affinity": "{{ session_affinity_key }}"}
         )
         assert defaults.timeout_seconds == 180
         assert defaults.extra_headers["x-session-affinity"] == "{{ session_affinity_key }}"
@@ -62,9 +63,11 @@ class TestProviderConfig:
             upstream_base_url_env="FIREWORKS_BASE_URL",
             api_key_env="FIREWORKS_API_KEY",
             models=[
-                ProviderModel(alias="kimi-k2-5", upstream_model="accounts/fireworks/models/kimi-k2p5")
+                ProviderModel(
+                    alias="kimi-k2-5", upstream_model="accounts/fireworks/models/kimi-k2p5"
+                )
             ],
-            routing_defaults=RoutingDefaults(timeout_seconds=180)
+            routing_defaults=RoutingDefaults(timeout_seconds=180),
         )
         assert config.name == "fireworks"
         assert config.protocol_surface == "anthropic_messages"
@@ -77,7 +80,7 @@ class TestProviderConfig:
                 name="",
                 protocol_surface="anthropic_messages",
                 upstream_base_url_env="FIREWORKS_BASE_URL",
-                api_key_env="FIREWORKS_API_KEY"
+                api_key_env="FIREWORKS_API_KEY",
             )
         assert "must not be empty or whitespace" in str(exc_info.value)
 
@@ -88,7 +91,7 @@ class TestProviderConfig:
                 name="   ",
                 protocol_surface="anthropic_messages",
                 upstream_base_url_env="FIREWORKS_BASE_URL",
-                api_key_env="FIREWORKS_API_KEY"
+                api_key_env="FIREWORKS_API_KEY",
             )
         assert "must not be empty or whitespace" in str(exc_info.value)
 
@@ -102,8 +105,8 @@ class TestProviderConfig:
                 api_key_env="FIREWORKS_API_KEY",
                 models=[
                     ProviderModel(alias="kimi-k2-5", upstream_model="model1"),
-                    ProviderModel(alias="kimi-k2-5", upstream_model="model2")
-                ]
+                    ProviderModel(alias="kimi-k2-5", upstream_model="model2"),
+                ],
             )
         assert "duplicate model aliases found" in str(exc_info.value)
 
@@ -114,9 +117,11 @@ class TestProviderConfig:
                 name="fireworks",
                 protocol_surface="invalid_protocol",  # type: ignore
                 upstream_base_url_env="FIREWORKS_BASE_URL",
-                api_key_env="FIREWORKS_API_KEY"
+                api_key_env="FIREWORKS_API_KEY",
             )
-        assert "anthropic_messages" in str(exc_info.value) or "openai_responses" in str(exc_info.value)
+        assert "anthropic_messages" in str(exc_info.value) or "openai_responses" in str(
+            exc_info.value
+        )
 
 
 class TestHarnessProfile:
@@ -130,11 +135,9 @@ class TestHarnessProfile:
             base_url_env="ANTHROPIC_BASE_URL",
             api_key_env="ANTHROPIC_API_KEY",
             model_env="ANTHROPIC_MODEL",
-            extra_env={
-                "ANTHROPIC_DEFAULT_SONNET_MODEL": "{{ model_alias }}"
-            },
+            extra_env={"ANTHROPIC_DEFAULT_SONNET_MODEL": "{{ model_alias }}"},
             render_format="shell",
-            launch_checks=["base URL points to local LiteLLM"]
+            launch_checks=["base URL points to local LiteLLM"],
         )
         assert profile.name == "claude-code"
         assert profile.protocol_surface == "anthropic_messages"
@@ -150,7 +153,7 @@ class TestHarnessProfile:
             model_env="OPENAI_MODEL",
             extra_env={},
             render_format="shell",
-            launch_checks=["base URL points to local LiteLLM"]
+            launch_checks=["base URL points to local LiteLLM"],
         )
         assert profile.name == "openai-cli"
         assert profile.protocol_surface == "openai_responses"
@@ -163,7 +166,7 @@ class TestHarnessProfile:
                 protocol_surface="anthropic_messages",
                 base_url_env="ANTHROPIC_BASE_URL",
                 api_key_env="ANTHROPIC_API_KEY",
-                model_env="ANTHROPIC_MODEL"
+                model_env="ANTHROPIC_MODEL",
             )
         assert "must not be empty or whitespace" in str(exc_info.value)
 
@@ -183,8 +186,8 @@ class TestVariant:
             benchmark_tags={
                 "harness": "claude-code",
                 "provider": "fireworks",
-                "model": "kimi-k2-5"
-            }
+                "model": "kimi-k2-5",
+            },
         )
         assert variant.name == "fireworks-kimi-k2-5-claude-code"
         assert variant.provider == "fireworks"
@@ -198,7 +201,7 @@ class TestVariant:
                 provider="fireworks",
                 model_alias="kimi-k2-5",
                 harness_profile="claude-code",
-                benchmark_tags={"harness": "claude-code"}  # Missing provider and model
+                benchmark_tags={"harness": "claude-code"},  # Missing provider and model
             )
         assert "benchmark_tags must include" in str(exc_info.value)
         assert "provider" in str(exc_info.value)
@@ -215,8 +218,8 @@ class TestVariant:
                 benchmark_tags={
                     "harness": "claude-code",
                     "provider": "fireworks",
-                    "model": "kimi-k2-5"
-                }
+                    "model": "kimi-k2-5",
+                },
             )
         assert "must not be empty or whitespace" in str(exc_info.value)
 
@@ -229,10 +232,7 @@ class TestExperiment:
         experiment = Experiment(
             name="fireworks-terminal-agents-comparison",
             description="Compare Fireworks models across harnesses",
-            variants=[
-                "fireworks-kimi-k2-5-claude-code",
-                "fireworks-glm-5-claude-code"
-            ]
+            variants=["fireworks-kimi-k2-5-claude-code", "fireworks-glm-5-claude-code"],
         )
         assert experiment.name == "fireworks-terminal-agents-comparison"
         assert len(experiment.variants) == 2
@@ -240,10 +240,7 @@ class TestExperiment:
     def test_experiment_duplicate_variants(self) -> None:
         """Test that duplicate variant names raise ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            Experiment(
-                name="test-experiment",
-                variants=["variant-1", "variant-1"]
-            )
+            Experiment(name="test-experiment", variants=["variant-1", "variant-1"])
         assert "duplicate variant names found" in str(exc_info.value)
 
     def test_experiment_empty_name(self) -> None:
@@ -265,7 +262,7 @@ class TestTaskCard:
             starting_prompt="Analyze the authentication architecture in this repository.",
             stop_condition="produce a written summary with file references and identified risks",
             session_timebox_minutes=30,
-            notes=["work from the current git commit only"]
+            notes=["work from the current git commit only"],
         )
         assert task_card.name == "repo-auth-analysis"
         assert task_card.session_timebox_minutes == 30
@@ -277,7 +274,7 @@ class TestTaskCard:
                 name="repo-auth-analysis",
                 goal="",
                 starting_prompt="Analyze the authentication architecture.",
-                stop_condition="produce a written summary"
+                stop_condition="produce a written summary",
             )
         assert "must not be empty or whitespace" in str(exc_info.value)
 
@@ -288,7 +285,7 @@ class TestTaskCard:
                 name="repo-auth-analysis",
                 goal="Analyze auth",
                 starting_prompt="Analyze the authentication architecture.",
-                stop_condition=""
+                stop_condition="",
             )
         assert "must not be empty or whitespace" in str(exc_info.value)
 
@@ -300,7 +297,7 @@ class TestTaskCard:
                 goal="Analyze auth",
                 starting_prompt="Analyze.",
                 stop_condition="produce summary",
-                session_timebox_minutes=0
+                session_timebox_minutes=0,
             )
         assert "session_timebox_minutes must be positive" in str(exc_info.value)
 
@@ -315,7 +312,7 @@ class TestConfigRegistry:
             name="fireworks",
             protocol_surface="anthropic_messages",
             upstream_base_url_env="FIREWORKS_BASE_URL",
-            api_key_env="FIREWORKS_API_KEY"
+            api_key_env="FIREWORKS_API_KEY",
         )
         registry.register_provider(config)
 
@@ -326,17 +323,19 @@ class TestConfigRegistry:
     def test_validate_missing_provider_reference(self) -> None:
         """Test validation catches missing provider reference."""
         registry = ConfigRegistry()
-        registry.register_variant(Variant(
-            name="test-variant",
-            provider="nonexistent-provider",
-            model_alias="kimi-k2-5",
-            harness_profile="claude-code",
-            benchmark_tags={
-                "harness": "claude-code",
-                "provider": "fireworks",
-                "model": "kimi-k2-5"
-            }
-        ))
+        registry.register_variant(
+            Variant(
+                name="test-variant",
+                provider="nonexistent-provider",
+                model_alias="kimi-k2-5",
+                harness_profile="claude-code",
+                benchmark_tags={
+                    "harness": "claude-code",
+                    "provider": "fireworks",
+                    "model": "kimi-k2-5",
+                },
+            )
+        )
 
         errors = registry.validate_references()
         assert len(errors) == 2  # Missing provider + missing harness
@@ -347,35 +346,41 @@ class TestConfigRegistry:
         registry = ConfigRegistry()
 
         # Register provider with anthropic_messages
-        registry.register_provider(ProviderConfig(
-            name="fireworks",
-            protocol_surface="anthropic_messages",
-            upstream_base_url_env="FIREWORKS_BASE_URL",
-            api_key_env="FIREWORKS_API_KEY",
-            models=[ProviderModel(alias="kimi-k2-5", upstream_model="model1")]
-        ))
+        registry.register_provider(
+            ProviderConfig(
+                name="fireworks",
+                protocol_surface="anthropic_messages",
+                upstream_base_url_env="FIREWORKS_BASE_URL",
+                api_key_env="FIREWORKS_API_KEY",
+                models=[ProviderModel(alias="kimi-k2-5", upstream_model="model1")],
+            )
+        )
 
         # Register harness with openai_responses
-        registry.register_harness_profile(HarnessProfile(
-            name="openai-cli",
-            protocol_surface="openai_responses",
-            base_url_env="OPENAI_BASE_URL",
-            api_key_env="OPENAI_API_KEY",
-            model_env="OPENAI_MODEL"
-        ))
+        registry.register_harness_profile(
+            HarnessProfile(
+                name="openai-cli",
+                protocol_surface="openai_responses",
+                base_url_env="OPENAI_BASE_URL",
+                api_key_env="OPENAI_API_KEY",
+                model_env="OPENAI_MODEL",
+            )
+        )
 
         # Register variant combining them
-        registry.register_variant(Variant(
-            name="test-variant",
-            provider="fireworks",
-            model_alias="kimi-k2-5",
-            harness_profile="openai-cli",
-            benchmark_tags={
-                "harness": "openai-cli",
-                "provider": "fireworks",
-                "model": "kimi-k2-5"
-            }
-        ))
+        registry.register_variant(
+            Variant(
+                name="test-variant",
+                provider="fireworks",
+                model_alias="kimi-k2-5",
+                harness_profile="openai-cli",
+                benchmark_tags={
+                    "harness": "openai-cli",
+                    "provider": "fireworks",
+                    "model": "kimi-k2-5",
+                },
+            )
+        )
 
         errors = registry.validate_references()
         assert len(errors) == 1
@@ -385,33 +390,39 @@ class TestConfigRegistry:
         """Test validation catches missing model alias in provider."""
         registry = ConfigRegistry()
 
-        registry.register_provider(ProviderConfig(
-            name="fireworks",
-            protocol_surface="anthropic_messages",
-            upstream_base_url_env="FIREWORKS_BASE_URL",
-            api_key_env="FIREWORKS_API_KEY",
-            models=[ProviderModel(alias="kimi-k2-5", upstream_model="model1")]
-        ))
+        registry.register_provider(
+            ProviderConfig(
+                name="fireworks",
+                protocol_surface="anthropic_messages",
+                upstream_base_url_env="FIREWORKS_BASE_URL",
+                api_key_env="FIREWORKS_API_KEY",
+                models=[ProviderModel(alias="kimi-k2-5", upstream_model="model1")],
+            )
+        )
 
-        registry.register_harness_profile(HarnessProfile(
-            name="claude-code",
-            protocol_surface="anthropic_messages",
-            base_url_env="ANTHROPIC_BASE_URL",
-            api_key_env="ANTHROPIC_API_KEY",
-            model_env="ANTHROPIC_MODEL"
-        ))
+        registry.register_harness_profile(
+            HarnessProfile(
+                name="claude-code",
+                protocol_surface="anthropic_messages",
+                base_url_env="ANTHROPIC_BASE_URL",
+                api_key_env="ANTHROPIC_API_KEY",
+                model_env="ANTHROPIC_MODEL",
+            )
+        )
 
-        registry.register_variant(Variant(
-            name="test-variant",
-            provider="fireworks",
-            model_alias="nonexistent-model",
-            harness_profile="claude-code",
-            benchmark_tags={
-                "harness": "claude-code",
-                "provider": "fireworks",
-                "model": "nonexistent-model"
-            }
-        ))
+        registry.register_variant(
+            Variant(
+                name="test-variant",
+                provider="fireworks",
+                model_alias="nonexistent-model",
+                harness_profile="claude-code",
+                benchmark_tags={
+                    "harness": "claude-code",
+                    "provider": "fireworks",
+                    "model": "nonexistent-model",
+                },
+            )
+        )
 
         errors = registry.validate_references()
         assert len(errors) == 1
@@ -497,7 +508,7 @@ class TestFieldLevelErrors:
                 name="",  # Empty name
                 protocol_surface="anthropic_messages",
                 upstream_base_url_env="FIREWORKS_BASE_URL",
-                api_key_env="FIREWORKS_API_KEY"
+                api_key_env="FIREWORKS_API_KEY",
             )
         error_str = str(exc_info.value)
         assert "name" in error_str.lower()
@@ -510,7 +521,7 @@ class TestFieldLevelErrors:
                 name="fireworks",
                 protocol_surface="anthropic_messages",
                 upstream_base_url_env="FIREWORKS_BASE_URL",
-                api_key_env="   "  # Whitespace only
+                api_key_env="   ",  # Whitespace only
             )
         error_str = str(exc_info.value)
         assert "api_key_env" in error_str.lower()
@@ -524,7 +535,7 @@ class TestFieldLevelErrors:
                 provider="fireworks",
                 model_alias="kimi-k2-5",
                 harness_profile="claude-code",
-                benchmark_tags={}  # Missing required tags
+                benchmark_tags={},  # Missing required tags
             )
         error_str = str(exc_info.value)
         assert "benchmark_tags" in error_str.lower() or "benchmark tags" in error_str.lower()
@@ -540,7 +551,7 @@ class TestFieldLevelErrors:
                 goal="Test goal",
                 starting_prompt="Test prompt",
                 stop_condition="Test condition",
-                session_timebox_minutes=-5  # Negative timebox
+                session_timebox_minutes=-5,  # Negative timebox
             )
         error_str = str(exc_info.value)
         assert "session_timebox_minutes" in error_str.lower()
@@ -558,8 +569,10 @@ class TestTypedObjects:
             "protocol_surface": "anthropic_messages",
             "upstream_base_url_env": "FIREWORKS_BASE_URL",
             "api_key_env": "FIREWORKS_API_KEY",
-            "models": [{"alias": "kimi-k2-5", "upstream_model": "accounts/fireworks/models/kimi-k2p5"}],
-            "routing_defaults": {"timeout_seconds": 180}
+            "models": [
+                {"alias": "kimi-k2-5", "upstream_model": "accounts/fireworks/models/kimi-k2p5"}
+            ],
+            "routing_defaults": {"timeout_seconds": 180},
         }
         config = ProviderConfig(**data)
         assert isinstance(config, ProviderConfig)
@@ -576,7 +589,7 @@ class TestTypedObjects:
             "model_env": "ANTHROPIC_MODEL",
             "extra_env": {"ANTHROPIC_DEFAULT_SONNET_MODEL": "{{ model_alias }}"},
             "render_format": "shell",
-            "launch_checks": ["base URL points to local LiteLLM"]
+            "launch_checks": ["base URL points to local LiteLLM"],
         }
         profile = HarnessProfile(**data)
         assert isinstance(profile, HarnessProfile)
@@ -592,8 +605,8 @@ class TestTypedObjects:
             "benchmark_tags": {
                 "harness": "claude-code",
                 "provider": "fireworks",
-                "model": "kimi-k2-5"
-            }
+                "model": "kimi-k2-5",
+            },
         }
         variant = Variant(**data)
         assert isinstance(variant, Variant)
@@ -604,7 +617,7 @@ class TestTypedObjects:
         data = {
             "name": "test-experiment",
             "description": "Test description",
-            "variants": ["variant-1", "variant-2"]
+            "variants": ["variant-1", "variant-2"],
         }
         experiment = Experiment(**data)
         assert isinstance(experiment, Experiment)
@@ -619,7 +632,7 @@ class TestTypedObjects:
             "starting_prompt": "Analyze auth.",
             "stop_condition": "produce summary",
             "session_timebox_minutes": 30,
-            "notes": ["note 1"]
+            "notes": ["note 1"],
         }
         task_card = TaskCard(**data)
         assert isinstance(task_card, TaskCard)

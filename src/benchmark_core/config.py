@@ -23,9 +23,7 @@ class RoutingDefaults(BaseModel):
 
     model_config = {"extra": "forbid"}
 
-    timeout_seconds: int | None = Field(
-        default=None, description="Request timeout in seconds"
-    )
+    timeout_seconds: int | None = Field(default=None, description="Request timeout in seconds")
     extra_headers: dict[str, str] = Field(
         default_factory=dict, description="Additional headers to include"
     )
@@ -41,9 +39,7 @@ class ProviderConfig(BaseModel):
     model_config = {"extra": "forbid"}
 
     name: str = Field(..., description="Provider identifier")
-    route_name: str | None = Field(
-        default=None, description="Route name for LiteLLM proxy"
-    )
+    route_name: str | None = Field(default=None, description="Route name for LiteLLM proxy")
     protocol_surface: ProtocolSurface = Field(
         ..., description="Protocol surface (anthropic_messages or openai_responses)"
     )
@@ -86,15 +82,9 @@ class HarnessProfile(BaseModel):
     protocol_surface: ProtocolSurface = Field(
         ..., description="Protocol surface (anthropic_messages or openai_responses)"
     )
-    base_url_env: str = Field(
-        ..., description="Environment variable name for base URL"
-    )
-    api_key_env: str = Field(
-        ..., description="Environment variable name for API key"
-    )
-    model_env: str = Field(
-        ..., description="Environment variable name for model selection"
-    )
+    base_url_env: str = Field(..., description="Environment variable name for base URL")
+    api_key_env: str = Field(..., description="Environment variable name for API key")
+    model_env: str = Field(..., description="Environment variable name for model selection")
     extra_env: dict[str, str] = Field(
         default_factory=dict,
         description="Additional environment variable templates with {{ model_alias }} support",
@@ -125,9 +115,7 @@ class Variant(BaseModel):
 
     name: str = Field(..., description="Variant identifier")
     provider: str = Field(..., description="Provider name reference")
-    provider_route: str | None = Field(
-        default=None, description="Provider route name"
-    )
+    provider_route: str | None = Field(default=None, description="Provider route name")
     model_alias: str = Field(..., description="Model alias from provider config")
     harness_profile: str = Field(..., description="Harness profile name reference")
     harness_env_overrides: dict[str, str] = Field(
@@ -193,20 +181,14 @@ class TaskCard(BaseModel):
     model_config = {"extra": "forbid"}
 
     name: str = Field(..., description="Task card identifier")
-    repo_path: str | None = Field(
-        default=None, description="Path to repository for analysis"
-    )
+    repo_path: str | None = Field(default=None, description="Path to repository for analysis")
     goal: str = Field(..., description="High-level task objective")
     starting_prompt: str = Field(..., description="Initial prompt for the harness")
-    stop_condition: str = Field(
-        ..., description="Condition that signals task completion"
-    )
+    stop_condition: str = Field(..., description="Condition that signals task completion")
     session_timebox_minutes: int | None = Field(
         default=None, description="Maximum session duration in minutes"
     )
-    notes: list[str] = Field(
-        default_factory=list, description="Additional notes and constraints"
-    )
+    notes: list[str] = Field(default_factory=list, description="Additional notes and constraints")
 
     @field_validator("name", "goal", "starting_prompt", "stop_condition")
     @classmethod
