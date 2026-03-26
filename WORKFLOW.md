@@ -83,14 +83,13 @@ openhands:
       # Workflow-owned agent extras such as `log_completions` are rejected until
       # the current conversation-create payload can actually forward them.
 
-# Workflow-owned websocket enablement and timeout/reconnect knobs are
-  # currently rejected until the runtime readiness/reconnect path consumes them.
-
   mcp:
     stdio_servers:
       - name: linear
-        command: ["opensymphony", "linear-mcp"]
-  ---
+        command:
+          - opensymphony
+          - linear-mcp
+---
 
 You are working on a Linear ticket `{{ issue.identifier }}`
 
