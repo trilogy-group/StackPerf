@@ -1,7 +1,7 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@5e42103
+macos:/Users/magos/.opensymphony/workspaces/COE-306@c42b179
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
@@ -85,7 +85,7 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@5e42103
    - **Token scopes**: 'admin:public_key', 'gist', 'read:org', 'repo' (repo scope present but GraphQL createPullRequest still blocked)
    - **Error**: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
    - **Action required**: Human must create PR via GitHub UI
-     - Branch pushed: `COE-306-litellm-collection` (2b84693)
+     - Branch pushed: `COE-306-litellm-collection` (c42b179)
      - Compare URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
      - Add label: `symphony`
      - Add label: `review-this` (for AI PR review)
