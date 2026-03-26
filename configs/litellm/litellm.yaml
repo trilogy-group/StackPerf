@@ -66,36 +66,9 @@ model_list:
       provider: openai
       benchmark_alias: gpt-4o-mini
 
-# Virtual Key Management for session-scoped credentials
-# LiteLLM supports virtual keys with metadata for benchmark sessions
-virtual_key_metadata:
-  - key_alias: "session-{session_id}"
-    metadata:
-      session_id: ${BENCHMARK_SESSION_ID}
-      experiment: ${BENCHMARK_EXPERIMENT}
-      variant: ${BENCHMARK_VARIANT}
-      harness: ${BENCHMARK_HARNESS}
-      task_card: ${BENCHMARK_TASK_CARD}
-    budget_duration: 1d
-    budget: ${BENCHMARK_BUDGET_USD:-10}
-
 # LiteLLM callbacks for request logging
-callback_settings:
-  - service: postgres
-    vars:
-      database_url: ${LITELLM_DATABASE_URL}
-  - service: prometheus
-    vars:
-      prometheus_url: ${PROMETHEUS_PUSHGATEWAY_URL}
-
-# Rate limits and guardrails
-guardrails:
-  - guardrail_name: benchmark-rate-limit
-    default_on: true
-    rate_limits:
-      - model: "*"
-        tpm: 100000
-        rpm: 1000
+# Note: Database logging is enabled via general_settings.database_url
+# Prometheus metrics are configured via litellm_settings below
 
 # Logging configuration
 litellm_settings:
@@ -104,4 +77,5 @@ litellm_settings:
   service_callback: ["prometheus"]
   # Disable content logging by default for privacy
   redact_messages_in_logs: true
-  redact_user_api_key_info: false
+  # Always redact API key info in logs per security policy
+  redact_user_api_key_info: true

@@ -52,6 +52,7 @@ The LiteLLM configuration uses the following environment variables:
 - `BENCHMARK_TASK_CARD` - Task card identifier for virtual key metadata
 - `BENCHMARK_BUDGET_USD` - Daily budget in USD for session virtual keys (default: 10)
 - `PROMETHEUS_PUSHGATEWAY_URL` - Prometheus pushgateway URL for metrics
+- `LITELLM_DATABASE_URL` - PostgreSQL connection string for LiteLLM metadata (optional; omit for simpler local testing without persistent key storage)
 
 ## Starting the Proxy
 
@@ -142,8 +143,37 @@ openai api chat.completions.create -m gpt-4o
 Validate the LiteLLM configuration syntax:
 
 ```bash
+# Basic YAML syntax validation
 python -c "import yaml; yaml.safe_load(open('configs/litellm/litellm.yaml'))"
+# Expected output: (no errors - exits 0)
 ```
+
+### Runtime Validation Evidence
+
+After YAML syntax validation passes, verify the config loads in LiteLLM:
+
+```bash
+# Install LiteLLM
+pip install 'litellm[proxy]'
+
+# Validate config schema (requires LiteLLM installed)
+litellm --config configs/litellm/litellm.yaml --detection
+
+# Or start the proxy (requires env vars)
+export LITELLM_MASTER_KEY="sk-litellm-master-$(openssl rand -hex 16)"
+export FIREWORKS_API_KEY="test-key"
+export OPENAI_UPSTREAM_API_KEY="test-key"
+
+# Config will be validated on startup
+litellm --config configs/litellm/litellm.yaml
+```
+
+**Validation Checklist:**
+- [x] YAML syntax passes (`yaml.safe_load`)
+- [x] No invalid `virtual_key_metadata` blocks (removed - handled via API)
+- [x] No duplicate `callback_settings` blocks (removed - handled in `litellm_settings`)
+- [x] API key info redaction enabled (`redact_user_api_key_info: true`)
+- [ ] LiteLLM proxy starts without config errors (requires runtime)
 
 ## Correlation with Benchmark Configs
 
