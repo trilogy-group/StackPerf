@@ -42,15 +42,32 @@ class SessionService:
         """Retrieve a session by ID."""
         return await self._repository.get_by_id(session_id)
 
-    async def finalize_session(self, session_id: UUID) -> Session | None:
-        """Finalize a session with end time and summary rollups."""
+    async def finalize_session(
+        self,
+        session_id: UUID,
+        status: str = "completed",
+        ended_at: "datetime | None" = None,
+    ) -> Session | None:
+        """Finalize a session with end time and status.
+
+        Args:
+            session_id: UUID of the session to finalize.
+            status: Final status (completed, failed, cancelled).
+            ended_at: Optional end timestamp. Defaults to current UTC time.
+
+        Returns:
+            Updated session or None if not found.
+        """
         from datetime import UTC, datetime
 
         session = await self._repository.get_by_id(session_id)
         if session is None:
             return None
 
-        updated = session.model_copy(update={"ended_at": datetime.now(UTC), "status": "completed"})
+        if ended_at is None:
+            ended_at = datetime.now(UTC)
+
+        updated = session.model_copy(update={"ended_at": ended_at, "status": status})
         return await self._repository.update(updated)
 
 
