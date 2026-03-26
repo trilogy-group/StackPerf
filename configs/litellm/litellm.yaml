@@ -1,0 +1,81 @@
+# LiteLLM Proxy Configuration
+# Routes and model aliases matching benchmark provider configs
+
+# General settings
+general_settings:
+  master_key: ${LITELLM_MASTER_KEY}
+  proxy_batch_write_at: 60
+  database_url: ${LITELLM_DATABASE_URL}
+  store_model_in_db: true
+
+# Router settings for load balancing and fallbacks
+router_settings:
+  timeout: 180
+  allowed_fails: 3
+  cooldown_time: 300
+
+# Model list with routes and model aliases
+model_list:
+  # Fireworks AI routes
+  - model_name: kimi-k2-5
+    litellm_params:
+      model: fireworks_ai/accounts/fireworks/models/kimi-k2p5
+      api_key: ${FIREWORKS_API_KEY}
+      api_base: ${FIREWORKS_BASE_URL:-https://api.fireworks.ai/inference/v1}
+      timeout: 180
+      extra_headers:
+        x-session-affinity: ${SESSION_AFFINITY_KEY:-default}
+    model_info:
+      route_name: fireworks-main
+      provider: fireworks
+      benchmark_alias: kimi-k2-5
+
+  - model_name: glm-5
+    litellm_params:
+      model: fireworks_ai/accounts/fireworks/models/glm-5
+      api_key: ${FIREWORKS_API_KEY}
+      api_base: ${FIREWORKS_BASE_URL:-https://api.fireworks.ai/inference/v1}
+      timeout: 180
+      extra_headers:
+        x-session-affinity: ${SESSION_AFFINITY_KEY:-default}
+    model_info:
+      route_name: fireworks-main
+      provider: fireworks
+      benchmark_alias: glm-5
+
+  # OpenAI routes
+  - model_name: gpt-4o
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: ${OPENAI_UPSTREAM_API_KEY}
+      api_base: ${OPENAI_UPSTREAM_BASE_URL:-https://api.openai.com/v1}
+      timeout: 120
+    model_info:
+      route_name: openai-main
+      provider: openai
+      benchmark_alias: gpt-4o
+
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: ${OPENAI_UPSTREAM_API_KEY}
+      api_base: ${OPENAI_UPSTREAM_BASE_URL:-https://api.openai.com/v1}
+      timeout: 120
+    model_info:
+      route_name: openai-main
+      provider: openai
+      benchmark_alias: gpt-4o-mini
+
+# LiteLLM callbacks for request logging
+# Note: Database logging is enabled via general_settings.database_url
+# Prometheus metrics are configured via litellm_settings below
+
+# Logging configuration
+litellm_settings:
+  success_callback: ["prometheus", "postgres"]
+  failure_callback: ["prometheus", "postgres"]
+  service_callback: ["prometheus"]
+  # Disable content logging by default for privacy
+  redact_messages_in_logs: true
+  # Always redact API key info in logs per security policy
+  redact_user_api_key_info: true
