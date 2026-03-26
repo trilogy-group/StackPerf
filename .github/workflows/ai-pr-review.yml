@@ -90,7 +90,7 @@ jobs:
         uses: OpenHands/extensions/plugins/pr-review@main
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          llm-api-key: ${{ secrets.FIREWORKS_API_KEY }}
+          llm-api-key: ${{ secrets.LLM_API_KEY }}
           llm-model: ${{ steps.llm.outputs.model }}
           llm-base-url: ${{ steps.llm.outputs.base_url }}
           extensions-version: main
