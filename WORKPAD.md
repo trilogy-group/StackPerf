@@ -1,7 +1,7 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@4c31403
+macos:/Users/magos/.opensymphony/workspaces/COE-306@0d2db86
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
@@ -68,14 +68,16 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@4c31403
 
 - **2025-03-26 (Retry #4)**: Continuation session. Implementation complete and validated. PR creation still blocked by PAT permissions.
 - **Commits**:
-  - 4c31403 - COE-306: Retry #4 - Update workpad with retry status (current)
+  - 0d2db86 - COE-306: Add PR description for manual creation (current)
+  - 5fb3708 - COE-306: Final retry #4 workpad - confirmed PAT permission blocker
+  - 4c31403 - COE-306: Retry #4 - Update workpad with retry status
   - 4feaa31 - COE-306: Retry #3 - Update workpad with PR creation blocker status
   - 4a1d54d - COE-306: Final workpad - correct HEAD commit hash
   - ff092d4 - COE-306: Final workpad - document complete blockers status
   - 3638617 - COE-306: Update workpad for retry #2 - document PR creation blocker
   - 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys (main implementation)
 - **Tests**: All 100 unit tests passing, including 29 collector-specific tests (verified in Retry #4)
-- **Branch**: `COE-306-litellm-collection` pushed to origin (4c31403)
+- **Branch**: `COE-306-litellm-collection` pushed to origin (0d2db86)
 - **GitHub PR**: **BLOCKED - Retry #4 Confirmed** - GitHub PAT lacks write permissions
   - Commands attempted:
     - `gh pr create --title ... --body ... --base main` (interactive prompt timeout)
@@ -98,10 +100,10 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@4c31403
      - All fallback strategies exhausted
    - **Impact**: Cannot create PR programmatically; blocks transition to Human Review
    - **Action required**: Human must create PR via GitHub UI
-     - Branch: `COE-306-litellm-collection` (commit 4c31403, ahead of main)
+     - Branch: `COE-306-litellm-collection` (commit 0d2db86, ahead of main)
      - Compare URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
      - PR Title: "COE-306: Build LiteLLM collection job for raw request records and correlation keys"
-     - Description: See WORKPAD.md "Implementation Summary" section below
+     - Description: Copy from PR_DESCRIPTION.md (ready to use)
      - Labels to add: `symphony`, `review-this`
    - **Resolution path**: Classic PAT with full `repo` access OR update fine-grained PAT with explicit `pull_requests:write` permission on trilogy-group/StackPerf
 
