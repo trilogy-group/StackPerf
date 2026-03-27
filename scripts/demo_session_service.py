@@ -36,9 +36,9 @@ async def demo_create_and_finalize_session():
     print("DEMO 1: Create and Finalize Sessions Safely")
     print("=" * 60)
 
-    SessionLocal = setup_database()
+    session_local = setup_database()
 
-    with SessionLocal() as db_session:
+    with session_local() as db_session:
         metadata_service = BenchmarkMetadataService(db_session)
         session_service = SessionService(db_session)
 
@@ -133,21 +133,21 @@ async def demo_referential_integrity():
     print("DEMO 2: Referential Integrity Preservation")
     print("=" * 60)
 
-    SessionLocal = setup_database()
+    session_local = setup_database()
 
-    with SessionLocal() as db_session:
+    with session_local() as db_session:
         metadata_service = BenchmarkMetadataService(db_session)
         session_service = SessionService(db_session)
 
         # Create valid entities
-        provider = await metadata_service.create_provider_with_models(
+        await metadata_service.create_provider_with_models(
             name="anthropic",
             protocol_surface="anthropic_messages",
             upstream_base_url_env="ANTHROPIC_BASE_URL",
             api_key_env="ANTHROPIC_API_KEY",
             models=[{"alias": "claude", "upstream_model": "claude-3"}],
         )
-        harness = await metadata_service.create_harness_profile(
+        await metadata_service.create_harness_profile(
             name="default",
             protocol_surface="anthropic_messages",
             base_url_env="OPENAI_API_BASE",
@@ -232,21 +232,21 @@ async def demo_duplicate_rejection():
     print("DEMO 3: Duplicate Session Identifier Rejection")
     print("=" * 60)
 
-    SessionLocal = setup_database()
+    session_local = setup_database()
 
-    with SessionLocal() as db_session:
+    with session_local() as db_session:
         metadata_service = BenchmarkMetadataService(db_session)
         session_service = SessionService(db_session)
 
         # Create prerequisite entities
-        provider = await metadata_service.create_provider_with_models(
+        await metadata_service.create_provider_with_models(
             name="ollama",
             protocol_surface="openai_responses",
             upstream_base_url_env="OLLAMA_BASE_URL",
             api_key_env="OLLAMA_API_KEY",
             models=[{"alias": "llama3", "upstream_model": "llama3"}],
         )
-        harness = await metadata_service.create_harness_profile(
+        await metadata_service.create_harness_profile(
             name="local",
             protocol_surface="openai_responses",
             base_url_env="OPENAI_API_BASE",
