@@ -1,5 +1,6 @@
 """Session lifecycle commands."""
 
+import asyncio
 from uuid import UUID
 
 import typer
@@ -112,8 +113,6 @@ def create(
             service = SessionService(repository)
 
             # Create session with git metadata
-            import asyncio
-
             session = asyncio.run(
                 service.create_session(
                     experiment_id=str(exp_id),
@@ -267,7 +266,6 @@ def finalize(
             service = SessionService(repository)
 
             # Finalize session
-            import asyncio
             from datetime import UTC, datetime
 
             # Get current session
