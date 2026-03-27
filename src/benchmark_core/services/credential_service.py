@@ -1,4 +1,5 @@
 """Credential service for session-scoped proxy credentials."""
+
 from uuid import UUID
 
 

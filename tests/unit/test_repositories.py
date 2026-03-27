@@ -2,18 +2,28 @@
 
 import asyncio
 from datetime import UTC, datetime
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session as SQLAlchemySession, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from benchmark_core.db.models import (
     Base,
+)
+from benchmark_core.db.models import (
     Experiment as DBExperiment,
+)
+from benchmark_core.db.models import (
     Request as DBRequest,
+)
+from benchmark_core.db.models import (
     Session as DBSession,
+)
+from benchmark_core.db.models import (
     TaskCard as DBTaskCard,
+)
+from benchmark_core.db.models import (
     Variant as DBVariant,
 )
 from benchmark_core.db.repositories import (
@@ -34,8 +44,8 @@ def test_engine():
 @pytest.fixture
 def db_session(test_engine):
     """Create a database session for testing."""
-    SessionLocal = sessionmaker(bind=test_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=test_engine)
+    session = session_local()
     try:
         yield session
     finally:
@@ -191,6 +201,7 @@ class TestSQLAlchemySessionRepository:
 
             # Modify and update
             from datetime import UTC, datetime
+
             session.status = "completed"
             session.ended_at = datetime.now(UTC)
 
@@ -388,9 +399,11 @@ class TestSQLAlchemyRequestRepository:
             assert len(created) == 3
 
             # Verify in database
-            db_records = db_session.query(DBRequest).filter(
-                DBRequest.request_id.in_(["req-0", "req-1", "req-2"])
-            ).all()
+            db_records = (
+                db_session.query(DBRequest)
+                .filter(DBRequest.request_id.in_(["req-0", "req-1", "req-2"]))
+                .all()
+            )
             assert len(db_records) == 3
 
         asyncio.run(run_test())

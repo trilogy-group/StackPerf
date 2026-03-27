@@ -1,12 +1,13 @@
 """SQLAlchemy repository implementations for session and request storage."""
 
-from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
     Request as DBRequest,
+)
+from benchmark_core.db.models import (
     Session as DBSession,
 )
 from benchmark_core.models import Request, Session
@@ -23,9 +24,15 @@ class SQLAlchemySessionRepository(SessionRepository):
         """Create a new session record in the database."""
         db_session = DBSession(
             id=session.session_id,
-            experiment_id=UUID(session.experiment_id) if isinstance(session.experiment_id, str) else session.experiment_id,
-            variant_id=UUID(session.variant_id) if isinstance(session.variant_id, str) else session.variant_id,
-            task_card_id=UUID(session.task_card_id) if isinstance(session.task_card_id, str) else session.task_card_id,
+            experiment_id=UUID(session.experiment_id)
+            if isinstance(session.experiment_id, str)
+            else session.experiment_id,
+            variant_id=UUID(session.variant_id)
+            if isinstance(session.variant_id, str)
+            else session.variant_id,
+            task_card_id=UUID(session.task_card_id)
+            if isinstance(session.task_card_id, str)
+            else session.task_card_id,
             harness_profile=session.harness_profile,
             repo_path=session.repo_path,
             git_branch=session.git_branch,
@@ -70,9 +77,19 @@ class SQLAlchemySessionRepository(SessionRepository):
         if db_session is None:
             raise ValueError(f"Session {session.session_id} not found")
 
-        db_session.experiment_id = UUID(session.experiment_id) if isinstance(session.experiment_id, str) else session.experiment_id
-        db_session.variant_id = UUID(session.variant_id) if isinstance(session.variant_id, str) else session.variant_id
-        db_session.task_card_id = UUID(session.task_card_id) if isinstance(session.task_card_id, str) else session.task_card_id
+        db_session.experiment_id = (
+            UUID(session.experiment_id)
+            if isinstance(session.experiment_id, str)
+            else session.experiment_id
+        )
+        db_session.variant_id = (
+            UUID(session.variant_id) if isinstance(session.variant_id, str) else session.variant_id
+        )
+        db_session.task_card_id = (
+            UUID(session.task_card_id)
+            if isinstance(session.task_card_id, str)
+            else session.task_card_id
+        )
         db_session.harness_profile = session.harness_profile
         db_session.repo_path = session.repo_path
         db_session.git_branch = session.git_branch

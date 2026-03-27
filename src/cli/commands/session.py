@@ -8,13 +8,16 @@ from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
     Experiment as DBExperiment,
+)
+from benchmark_core.db.models import (
     TaskCard as DBTaskCard,
+)
+from benchmark_core.db.models import (
     Variant as DBVariant,
 )
 from benchmark_core.db.repositories import SQLAlchemySessionRepository
 from benchmark_core.db.session import get_db_session
 from benchmark_core.git import get_git_metadata
-from benchmark_core.models import Session
 from benchmark_core.services.session_service import SessionService
 
 app = typer.Typer(help="Manage benchmark sessions")
@@ -25,6 +28,7 @@ def _get_db_session() -> SQLAlchemySession:
     """Get a database session for CLI commands."""
     # This is a generator, we need to use it in a context
     from benchmark_core.db.session import get_db
+
     return next(get_db())
 
 
@@ -85,7 +89,9 @@ def create(
         help="Harness profile name",
     ),
     label: str | None = typer.Option(None, "--label", "-l", help="Operator label"),
-    repo_path: str | None = typer.Option(None, "--repo", "-r", help="Repository path (default: current directory)"),
+    repo_path: str | None = typer.Option(
+        None, "--repo", "-r", help="Repository path (default: current directory)"
+    ),
 ) -> None:
     """Create a new benchmark session with git metadata capture."""
     console.print("[bold blue]Creating benchmark session...[/bold blue]")
@@ -115,17 +121,20 @@ def create(
 
             # Create session with git metadata
             import asyncio
-            session = asyncio.run(service.create_session(
-                experiment_id=str(exp_id),
-                variant_id=str(var_id),
-                task_card_id=str(task_id),
-                harness_profile=harness_profile,
-                repo_path=git_metadata.repo_path if git_metadata else (repo_path or "."),
-                git_branch=git_metadata.branch if git_metadata else "unknown",
-                git_commit=git_metadata.commit if git_metadata else "unknown",
-                git_dirty=git_metadata.dirty if git_metadata else False,
-                operator_label=label,
-            ))
+
+            session = asyncio.run(
+                service.create_session(
+                    experiment_id=str(exp_id),
+                    variant_id=str(var_id),
+                    task_card_id=str(task_id),
+                    harness_profile=harness_profile,
+                    repo_path=git_metadata.repo_path if git_metadata else (repo_path or "."),
+                    git_branch=git_metadata.branch if git_metadata else "unknown",
+                    git_commit=git_metadata.commit if git_metadata else "unknown",
+                    git_dirty=git_metadata.dirty if git_metadata else False,
+                    operator_label=label,
+                )
+            )
 
             console.print(f"[green]Session created successfully: {session.session_id}[/green]")
             console.print(f"  Experiment: {experiment} ({exp_id})")
@@ -138,12 +147,14 @@ def create(
             raise
         except Exception as e:
             console.print(f"[red]Error creating session: {e}[/red]")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e
 
 
 @app.command("list")
 def list_sessions(
-    experiment: str | None = typer.Option(None, "--experiment", "-e", help="Filter by experiment ID or name"),
+    experiment: str | None = typer.Option(
+        None, "--experiment", "-e", help="Filter by experiment ID or name"
+    ),
     status: str | None = typer.Option(None, "--status", "-s", help="Filter by status"),
 ) -> None:
     """List benchmark sessions."""
@@ -164,7 +175,9 @@ def list_sessions(
                     if exp:
                         query = query.filter_by(experiment_id=exp.id)
                     else:
-                        console.print(f"[yellow]Warning: Experiment not found: {experiment}[/yellow]")
+                        console.print(
+                            f"[yellow]Warning: Experiment not found: {experiment}[/yellow]"
+                        )
 
             if status:
                 query = query.filter_by(status=status)
@@ -177,15 +190,23 @@ def list_sessions(
 
             console.print(f"[bold blue]Sessions ({len(sessions)}):[/bold blue]")
             for sess in sessions:
-                status_color = "green" if sess.status == "active" else "yellow" if sess.status == "completed" else "red"
-                console.print(f"  [{status_color}]{sess.id}[/{status_color}] - {sess.status} - {sess.harness_profile}")
+                status_color = (
+                    "green"
+                    if sess.status == "active"
+                    else "yellow"
+                    if sess.status == "completed"
+                    else "red"
+                )
+                console.print(
+                    f"  [{status_color}]{sess.id}[/{status_color}] - {sess.status} - {sess.harness_profile}"
+                )
                 console.print(f"    Started: {sess.started_at}")
                 if sess.ended_at:
                     console.print(f"    Ended: {sess.ended_at}")
 
         except Exception as e:
             console.print(f"[red]Error listing sessions: {e}[/red]")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e
 
 
 @app.command()
@@ -196,11 +217,12 @@ def show(session_id: str) -> None:
             # Resolve session ID
             try:
                 sess_uuid = UUID(session_id)
-            except ValueError:
-                raise typer.BadParameter(f"Invalid session ID: {session_id}")
+            except ValueError as err:
+                raise typer.BadParameter(f"Invalid session ID: {session_id}") from err
 
             # Get session from database
             from benchmark_core.db.models import Session as DBSession
+
             db_session = db.query(DBSession).filter_by(id=sess_uuid).first()
             if db_session is None:
                 console.print(f"[red]Session not found: {session_id}[/red]")
@@ -227,13 +249,15 @@ def show(session_id: str) -> None:
             raise
         except Exception as e:
             console.print(f"[red]Error showing session: {e}[/red]")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e
 
 
 @app.command()
 def finalize(
     session_id: str = typer.Argument(..., help="Session ID to finalize"),
-    status: str = typer.Option("completed", "--status", "-s", help="Final status (completed, failed, cancelled)"),
+    status: str = typer.Option(
+        "completed", "--status", "-s", help="Final status (completed, failed, cancelled)"
+    ),
 ) -> None:
     """Finalize a benchmark session with status and end time."""
     console.print(f"[bold blue]Finalizing session {session_id}...[/bold blue]")
@@ -243,8 +267,8 @@ def finalize(
             # Resolve session ID
             try:
                 sess_uuid = UUID(session_id)
-            except ValueError:
-                raise typer.BadParameter(f"Invalid session ID: {session_id}")
+            except ValueError as err:
+                raise typer.BadParameter(f"Invalid session ID: {session_id}") from err
 
             # Create repository and service
             repository = SQLAlchemySessionRepository(db)
@@ -262,16 +286,18 @@ def finalize(
 
             # Finalize with status and end time
             ended_at = datetime.now(UTC)
-            updated = asyncio.run(service.finalize_session(
-                sess_uuid,
-                status=status,
-                ended_at=ended_at,
-            ))
+            updated = asyncio.run(
+                service.finalize_session(
+                    sess_uuid,
+                    status=status,
+                    ended_at=ended_at,
+                )
+            )
             if updated is None:
                 console.print(f"[red]Failed to finalize session: {session_id}[/red]")
                 raise typer.Exit(1)
 
-            console.print(f"[green]Session finalized successfully[/green]")
+            console.print("[green]Session finalized successfully[/green]")
             console.print(f"  Status: {updated.status}")
             console.print(f"  Ended at: {updated.ended_at}")
 
@@ -279,7 +305,7 @@ def finalize(
             raise
         except Exception as e:
             console.print(f"[red]Error finalizing session: {e}[/red]")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e
 
 
 @app.command()
@@ -290,11 +316,12 @@ def env(session_id: str) -> None:
             # Resolve session ID
             try:
                 sess_uuid = UUID(session_id)
-            except ValueError:
-                raise typer.BadParameter(f"Invalid session ID: {session_id}")
+            except ValueError as err:
+                raise typer.BadParameter(f"Invalid session ID: {session_id}") from err
 
             # Get session from database
             from benchmark_core.db.models import Session as DBSession
+
             db_session = db.query(DBSession).filter_by(id=sess_uuid).first()
             if db_session is None:
                 console.print(f"[red]Session not found: {session_id}[/red]")
@@ -303,11 +330,11 @@ def env(session_id: str) -> None:
             console.print(f"[bold blue]Environment for session {session_id}:[/bold blue]")
             console.print(f"# Session: {db_session.id}")
             console.print(f"# Harness Profile: {db_session.harness_profile}")
-            console.print(f"export OPENAI_API_BASE=http://localhost:4000")
+            console.print("export OPENAI_API_BASE=http://localhost:4000")
             console.print(f"export OPENAI_API_KEY=sk-benchmark-{db_session.id}")
 
         except typer.BadParameter:
             raise
         except Exception as e:
             console.print(f"[red]Error rendering environment: {e}[/red]")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e

@@ -1,19 +1,25 @@
 """Tests for session CLI commands."""
 
-import os
 from datetime import UTC, datetime
-from uuid import UUID
 
 import pytest
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session as SQLAlchemySession, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from typer.testing import CliRunner
 
 from benchmark_core.db.models import (
     Base,
+)
+from benchmark_core.db.models import (
     Experiment as DBExperiment,
+)
+from benchmark_core.db.models import (
     Session as DBSession,
+)
+from benchmark_core.db.models import (
     TaskCard as DBTaskCard,
+)
+from benchmark_core.db.models import (
     Variant as DBVariant,
 )
 from cli.main import app
@@ -30,8 +36,8 @@ def test_engine():
 @pytest.fixture
 def db_session(test_engine):
     """Create a database session for testing."""
-    SessionLocal = sessionmaker(bind=test_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=test_engine)
+    session = session_local()
     try:
         yield session
     finally:
@@ -49,8 +55,9 @@ def mock_env_db_url(test_engine, monkeypatch):
     """Mock the database URL to use the test engine."""
     # We need to patch the get_db_session function to use our test engine
     # Since the CLI imports at module level, we patch the function used by session commands
-    from cli import commands
+    # ruff: noqa: PLC0415 (imports used for patching must be local)
     from benchmark_core.db import session as db_session_module
+    from cli import commands
 
     # Store original
     original_get_db_session = db_session_module.get_db_session
@@ -94,11 +101,16 @@ class TestSessionCreateCommand:
             [
                 "session",
                 "create",
-                "--experiment", "cli-test-exp",
-                "--variant", "cli-test-var",
-                "--task-card", "cli-test-task",
-                "--harness", "test-harness",
-                "--label", "test-label",
+                "--experiment",
+                "cli-test-exp",
+                "--variant",
+                "cli-test-var",
+                "--task-card",
+                "cli-test-task",
+                "--harness",
+                "test-harness",
+                "--label",
+                "test-label",
             ],
         )
 
@@ -139,10 +151,14 @@ class TestSessionCreateCommand:
             [
                 "session",
                 "create",
-                "--experiment", str(experiment.id),
-                "--variant", str(variant.id),
-                "--task-card", str(task.id),
-                "--harness", "test-harness",
+                "--experiment",
+                str(experiment.id),
+                "--variant",
+                str(variant.id),
+                "--task-card",
+                str(task.id),
+                "--harness",
+                "test-harness",
             ],
         )
 
@@ -156,10 +172,14 @@ class TestSessionCreateCommand:
             [
                 "session",
                 "create",
-                "--experiment", "nonexistent-exp",
-                "--variant", "some-var",
-                "--task-card", "some-task",
-                "--harness", "test-harness",
+                "--experiment",
+                "nonexistent-exp",
+                "--variant",
+                "some-var",
+                "--task-card",
+                "some-task",
+                "--harness",
+                "test-harness",
             ],
         )
 
@@ -411,10 +431,7 @@ class TestSessionFinalizeCommand:
         db_session.add(session)
         db_session.commit()
 
-        result = runner.invoke(
-            app,
-            ["session", "finalize", str(session.id), "--status", "failed"]
-        )
+        result = runner.invoke(app, ["session", "finalize", str(session.id), "--status", "failed"])
 
         assert result.exit_code == 0, f"Exit code: {result.exit_code}, Output: {result.output}"
 
@@ -424,10 +441,7 @@ class TestSessionFinalizeCommand:
 
     def test_finalize_session_not_found(self, mock_env_db_url, runner):
         """Test finalizing non-existent session."""
-        result = runner.invoke(
-            app,
-            ["session", "finalize", "550e8400-e29b-41d4-a716-446655440000"]
-        )
+        result = runner.invoke(app, ["session", "finalize", "550e8400-e29b-41d4-a716-446655440000"])
 
         assert result.exit_code != 0
         assert "Session not found" in result.output or "Exit" in result.output
@@ -478,10 +492,7 @@ class TestSessionEnvCommand:
 
     def test_env_session_not_found(self, mock_env_db_url, runner):
         """Test env command for non-existent session."""
-        result = runner.invoke(
-            app,
-            ["session", "env", "550e8400-e29b-41d4-a716-446655440000"]
-        )
+        result = runner.invoke(app, ["session", "env", "550e8400-e29b-41d4-a716-446655440000"])
 
         assert result.exit_code != 0
         assert "Session not found" in result.output or "Exit" in result.output

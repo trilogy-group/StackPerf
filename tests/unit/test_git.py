@@ -1,11 +1,8 @@
 """Tests for git metadata capture utilities."""
 
-import os
 import subprocess
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from benchmark_core.git import GitMetadata, get_git_metadata, get_repo_root
 
@@ -41,7 +38,11 @@ class TestGitMetadata:
         metadata = get_git_metadata(str(tmp_path))
 
         # Should find the .git directory
-        assert metadata is not None or True  # May fail due to git commands failing
+        # Note: This may fail if git commands fail in the test environment
+        # but for valid git repos, we should get metadata
+        if metadata is not None:
+            assert metadata.branch == "test-branch"
+            assert "abc123de" in metadata.commit
 
     def test_get_git_metadata_not_git_repo(self, tmp_path):
         """Test that None is returned when not in a git repository."""
@@ -62,7 +63,10 @@ class TestGitMetadata:
         metadata = get_git_metadata(str(nested))
 
         # Should find the parent .git directory
-        assert metadata is not None or True  # May fail due to git commands failing
+        # Note: This may fail if git commands fail in the test environment
+        # but for valid git repos, we should get metadata
+        if metadata is not None:
+            assert metadata.branch == "main"
 
     def test_get_repo_root_from_current_repo(self):
         """Test getting repo root from current repository."""

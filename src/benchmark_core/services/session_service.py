@@ -1,4 +1,5 @@
 """Session service for managing benchmark session lifecycle."""
+
 from datetime import UTC, datetime
 from uuid import UUID
 
