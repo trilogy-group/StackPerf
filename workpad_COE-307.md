@@ -1,11 +1,13 @@
 ## Codex Workpad - COE-307
 
 ```text
-devhost:/Users/magos/.opensymphony/workspaces/COE-307@ad3410e
+devhost:/Users/magos/.opensymphony/workspaces/COE-307@0c4cebf
 ```
 
-**Branch**: `COE-307-normalize-requests`
-**Status**: In Progress
+**Branch**: `COE-307-normalize-requests` (pushed to origin)
+**PR**: https://github.com/trilogy-group/StackPerf/pull/20
+**Status**: Human Review - PR Created, Awaiting Approval
+**Latest Commit**: `0c4cebf`
 
 ### Plan
 
@@ -33,45 +35,48 @@ devhost:/Users/magos/.opensymphony/workspaces/COE-307@ad3410e
   - [x] 5.2 Add run command to execute normalization job
   - [x] 5.3 Add report command to show reconciliation
 - [x] 6. Update tests
-  - [x] 6.1 Add tests for RequestNormalizerJob
+  - [x] 6.1 Add tests for RequestNormalizerJob (30 tests)
   - [x] 6.2 Add tests for reconciliation reporting
-  - [x] 6.3 Run full test suite
-- [ ] 7. Sync and push
-  - [ ] 7.1 Sync with origin/main
-  - [ ] 7.2 Push branch
-  - [ ] 7.3 Create PR
-  - [ ] 7.4 Add labels
+  - [x] 6.3 Run full test suite (240 tests passing)
+- [x] 7. Sync and push
+  - [x] 7.1 Sync with origin/main (clean, no conflicts)
+  - [x] 7.2 Push branch to origin
+  - [x] 7.3 Create PR #20
+  - [x] 7.4 Add labels (`symphony`, `review-this`)
 
 ### Acceptance Criteria
 
-- [ ] Normalized requests contain required canonical fields
-  - [ ] request_id (required, from LiteLLM)
-  - [ ] session_id (required, FK to sessions)
-  - [ ] provider (required, from raw.user or raw.customer_identifier)
-  - [ ] model (required, from raw.model)
-  - [ ] timestamp (required, from raw.startTime)
-  - [ ] latency_ms (optional)
-  - [ ] ttft_ms (optional)
-  - [ ] tokens_prompt (optional)
-  - [ ] tokens_completion (optional)
-  - [ ] error (boolean)
-  - [ ] error_message (optional)
-  - [ ] cache_hit (optional)
-  - [ ] metadata (JSON with correlation keys)
-- [ ] Requests join cleanly to sessions and variants
-  - [ ] session_id FK constraint validated
-  - [ ] variant_id tracked in metadata
-  - [ ] experiment_id tracked in metadata
-- [ ] Unmapped rows are surfaced with actionable diagnostics
-  - [ ] Missing field counts reported
-  - [ ] Error messages captured
-  - [ ] Row-level diagnostics available
+- [x] Normalized requests contain required canonical fields
+  - [x] request_id (required, from LiteLLM)
+  - [x] session_id (required, FK to sessions)
+  - [x] provider (required, from raw.user or raw.customer_identifier)
+  - [x] model (required, from raw.model)
+  - [x] timestamp (required, from raw.startTime)
+  - [x] latency_ms (optional)
+  - [x] ttft_ms (optional)
+  - [x] tokens_prompt (optional)
+  - [x] tokens_completion (optional)
+  - [x] error (boolean)
+  - [x] error_message (optional)
+  - [x] cache_hit (optional)
+  - [x] metadata (JSON with correlation keys)
+- [x] Requests join cleanly to sessions and variants
+  - [x] session_id FK constraint validated
+  - [x] variant_id tracked in metadata
+  - [x] experiment_id tracked in metadata
+- [x] Unmapped rows are surfaced with actionable diagnostics
+  - [x] Missing field counts reported
+  - [x] Error messages captured
+  - [x] Row-level diagnostics available
 
 ### Validation
 
-- [ ] targeted tests: `python -m pytest tests/unit/test_collectors.py -v -k normalize`
-- [ ] full test suite: `python -m pytest tests/ -v`
-- [ ] lint: `ruff check src/collectors/normalize_requests.py`
+- [x] targeted tests: `python -m pytest tests/unit/test_normalize_requests.py -v`
+  - 30/30 tests passing
+- [x] full test suite: `python -m pytest tests/ -v`
+  - 240/240 tests passing (210 existing + 30 new)
+- [x] lint: `ruff check src/collectors/normalize_requests.py src/cli/commands/normalize.py`
+  - All checks passed
 
 ### Notes
 
@@ -87,6 +92,11 @@ devhost:/Users/magos/.opensymphony/workspaces/COE-307@ad3410e
 2. Move normalization logic from collector to shared module
 3. Add reconciliation reporting
 4. Wire into CLI
+
+**PR Created**:
+- PR #20: https://github.com/trilogy-group/StackPerf/pull/20
+- Labels: `symphony`, `review-this`
+- Status: Awaiting human review
 
 ### Confusions
 
