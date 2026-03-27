@@ -16,14 +16,9 @@ from uuid import uuid4
 sys.path.insert(0, "src")
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy.orm import sessionmaker
 
 from benchmark_core.db.models import Base
-from benchmark_core.repositories.base import (
-    DuplicateIdentifierError,
-    ReferentialIntegrityError,
-)
 from benchmark_core.services.benchmark_metadata_service import BenchmarkMetadataService
 from benchmark_core.services.session_service import SessionService, SessionValidationError
 
@@ -111,7 +106,7 @@ async def demo_create_and_finalize_session():
         # Step 3: Get session summary
         print("\n3. Retrieving session summary...")
         summary = await session_service.get_session_summary(session.id)
-        print(f"   ✓ Session summary retrieved:")
+        print("   ✓ Session summary retrieved:")
         print(f"     - ID: {summary['id']}")
         print(f"     - Status: {summary['status']}")
         print(f"     - Experiment: {summary['experiment_id']}")
@@ -123,7 +118,7 @@ async def demo_create_and_finalize_session():
         # Step 4: Finalize the session
         print("\n4. Finalizing the session...")
         finalized = await session_service.finalize_session(session.id, status="completed")
-        print(f"   ✓ Session finalized")
+        print("   ✓ Session finalized")
         print(f"   ✓ Status: {finalized.status}")
         print(f"   ✓ Ended at: {finalized.ended_at}")
         print(f"   ✓ Duration: {(finalized.ended_at - finalized.started_at).total_seconds():.2f} seconds")

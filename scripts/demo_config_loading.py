@@ -1,7 +1,7 @@
 """Demo script showing config loading working end-to-end for COE-302."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
