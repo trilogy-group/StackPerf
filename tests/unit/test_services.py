@@ -73,7 +73,9 @@ def harness_profile_service(db_session):
 @pytest.fixture
 def session_service(db_session):
     """Create a session service."""
-    return SessionService(db_session)
+    from benchmark_core.repositories.session_repository import SQLSessionRepository
+
+    return SessionService(SQLSessionRepository(db_session))
 
 
 @pytest.fixture
@@ -411,7 +413,7 @@ class TestSessionService:
         )
         db_session.commit()
 
-        assert session.id is not None
+        assert session.session_id is not None
         assert session.status == "active"
         assert session.operator_label == "test-session-1"
 
@@ -495,7 +497,7 @@ class TestSessionService:
         )
         db_session.commit()
 
-        finalized = await session_service.finalize_session(session.id)
+        finalized = await session_service.finalize_session(session.session_id)
         db_session.commit()
 
         assert finalized is not None
@@ -520,12 +522,12 @@ class TestSessionService:
         db_session.commit()
 
         # Finalize once
-        await session_service.finalize_session(session.id)
+        await session_service.finalize_session(session.session_id)
         db_session.commit()
 
         # Try to finalize again
         with pytest.raises(SessionValidationError) as exc_info:
-            await session_service.finalize_session(session.id)
+            await session_service.finalize_session(session.session_id)
         assert "already finalized" in str(exc_info.value)
 
     async def test_get_session_summary(self, session_service, db_session, setup_entities):
@@ -544,7 +546,7 @@ class TestSessionService:
         )
         db_session.commit()
 
-        summary = await session_service.get_session_summary(session.id)
+        summary = await session_service.get_session_summary(session.session_id)
 
         assert summary is not None
         assert summary["status"] == "active"

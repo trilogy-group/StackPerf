@@ -20,9 +20,9 @@ from benchmark_core.db.models import (
 from benchmark_core.db.models import (
     Variant as DBVariant,
 )
-from benchmark_core.db.repositories import SQLAlchemySessionRepository
 from benchmark_core.db.session import get_db_session
 from benchmark_core.git import get_git_metadata
+from benchmark_core.repositories.session_repository import SQLSessionRepository
 from benchmark_core.services.session_service import SessionService
 
 app = typer.Typer(help="Manage benchmark sessions")
@@ -113,7 +113,7 @@ def create(
             task_id = _resolve_task_card_id(db, task_card)
 
             # Create repository and service
-            repository = SQLAlchemySessionRepository(db)
+            repository = SQLSessionRepository(db)
             service = SessionService(repository)
 
             # Create session with git metadata
@@ -262,7 +262,7 @@ def finalize(
                 raise typer.BadParameter(f"Invalid session ID: {session_id}") from err
 
             # Create repository and service
-            repository = SQLAlchemySessionRepository(db)
+            repository = SQLSessionRepository(db)
             service = SessionService(repository)
 
             # Finalize session

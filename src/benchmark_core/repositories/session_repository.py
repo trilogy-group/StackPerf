@@ -1,5 +1,6 @@
 """Repository for Session entities."""
 
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -124,19 +125,23 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
             raise
 
     async def finalize_session(
-        self, session_id: UUID, status: str = "completed"
+        self,
+        session_id: UUID,
+        status: str = "completed",
+        ended_at: datetime | None = None,
     ) -> SessionORM | None:
         """Safely finalize a session with end time and status.
 
         This is the recommended way to end a session - it atomically:
         1. Retrieves the session
-        2. Sets ended_at to current UTC time
+        2. Sets ended_at to provided or current UTC time
         3. Updates status
         4. Saves changes
 
         Args:
             session_id: The session UUID to finalize.
             status: The final status (default: 'completed').
+            ended_at: Optional end timestamp. Defaults to current UTC time.
 
         Returns:
             The finalized session, or None if not found.
@@ -150,8 +155,11 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
         if session is None:
             return None
 
+        if ended_at is None:
+            ended_at = datetime.now(UTC)
+
         try:
-            session.ended_at = datetime.now(UTC)
+            session.ended_at = ended_at
             session.status = status
             self._session.flush()
             return session
@@ -323,23 +331,28 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
                 )
 
         # Check referential integrity
-        experiment = self._session.get(Experiment, experiment_id)
+        # Ensure proper UUID types for lookups
+        exp_id = experiment_id if isinstance(experiment_id, UUID) else UUID(experiment_id)
+        var_id = variant_id if isinstance(variant_id, UUID) else UUID(variant_id)
+        task_id = task_card_id if isinstance(task_card_id, UUID) else UUID(task_card_id)
+
+        experiment = self._session.get(Experiment, exp_id)
         if experiment is None:
             raise ReferentialIntegrityError(f"Experiment '{experiment_id}' does not exist")
 
-        variant = self._session.get(VariantORM, variant_id)
+        variant = self._session.get(VariantORM, var_id)
         if variant is None:
             raise ReferentialIntegrityError(f"Variant '{variant_id}' does not exist")
 
-        task_card = self._session.get(TaskCardORM, task_card_id)
+        task_card = self._session.get(TaskCardORM, task_id)
         if task_card is None:
             raise ReferentialIntegrityError(f"TaskCard '{task_card_id}' does not exist")
 
-        # Create the session entity
+        # Create the session entity with proper UUID types
         session = SessionORM(
-            experiment_id=experiment_id,
-            variant_id=variant_id,
-            task_card_id=task_card_id,
+            experiment_id=exp_id,
+            variant_id=var_id,
+            task_card_id=task_id,
             harness_profile=harness_profile,
             repo_path=repo_path,
             git_branch=git_branch,
