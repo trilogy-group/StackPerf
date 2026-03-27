@@ -1,10 +1,11 @@
 """Core domain services for session management, credential issuance, and request collection."""
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from benchmark_core.models import Request, Session
+from benchmark_core.models import Session
 from benchmark_core.repositories import RequestRepository, SessionRepository
 from collectors.litellm_collector import (
     CollectionDiagnostics,
@@ -49,16 +50,32 @@ class SessionService:
         """Retrieve a session by ID."""
         return await self._repository.get_by_id(session_id)
 
-    async def finalize_session(self, session_id: UUID) -> Session | None:
-        """Finalize a session with end time and summary rollups."""
-        from datetime import UTC, datetime
+    async def finalize_session(
+        self,
+        session_id: UUID,
+        status: str = "completed",
+        ended_at: datetime | None = None,
+    ) -> Session | None:
+        """Finalize a session with end time and status.
+
+        Args:
+            session_id: UUID of the session to finalize.
+            status: Final status (completed, failed, cancelled).
+            ended_at: Optional end timestamp. Defaults to current UTC time.
+
+        Returns:
+            Updated session or None if not found.
+        """
+        if ended_at is None:
+            ended_at = datetime.now(UTC)
 
         session = await self._repository.get_by_id(session_id)
         if session is None:
             return None
 
-        updated = session.model_copy(update={"ended_at": datetime.now(UTC), "status": "completed"})
+        updated = session.model_copy(update={"ended_at": ended_at, "status": status})
         return await self._repository.update(updated)
+
 
 
 class CredentialService:
