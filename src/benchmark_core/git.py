@@ -52,6 +52,9 @@ def get_git_metadata(repo_path: str | None = None) -> GitMetadata | None:
             check=True,
         )
         branch = branch_result.stdout.strip()
+        if not branch:
+            # In detached HEAD state, use special marker
+            branch = "(detached)"
 
         # Get commit SHA
         commit_result = subprocess.run(

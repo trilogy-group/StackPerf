@@ -24,14 +24,6 @@ app = typer.Typer(help="Manage benchmark sessions")
 console = Console()
 
 
-def _get_db_session() -> SQLAlchemySession:
-    """Get a database session for CLI commands."""
-    # This is a generator, we need to use it in a context
-    from benchmark_core.db.session import get_db
-
-    return next(get_db())
-
-
 def _resolve_experiment_id(db: SQLAlchemySession, experiment: str) -> UUID:
     """Resolve experiment identifier to UUID."""
     # Try as UUID first
