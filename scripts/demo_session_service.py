@@ -107,7 +107,7 @@ async def demo_create_and_finalize_session():
         # Step 3: Get session summary
         print("\n3. Retrieving session summary...")
         summary = await session_service.get_session_summary(session.session_id)
-        print(f"   ✓ Session summary retrieved:")
+        print("   ✓ Session summary retrieved:")
         print(f"     - ID: {summary['id']}")
         print(f"     - Status: {summary['status']}")
         print(f"     - Experiment: {summary['experiment_id']}")
@@ -119,7 +119,7 @@ async def demo_create_and_finalize_session():
         # Step 4: Finalize the session
         print("\n4. Finalizing the session...")
         finalized = await session_service.finalize_session(session.session_id, status="completed")
-        print(f"   ✓ Session finalized")
+        print("   ✓ Session finalized")
         print(f"   ✓ Ended at: {finalized.ended_at}")
         # Handle timezone-aware/naive datetime comparison for SQLite compatibility
         started = finalized.started_at
