@@ -154,7 +154,7 @@ The agent should be able to talk to Linear, either via a configured Linear MCP s
 - `commit`: produce clean, logical commits during implementation.
 - `push`: keep remote branch current and publish updates.
 - `pull`: keep branch updated with latest `origin/main` before handoff.
-- `land`: when ticket reaches `Merging`, explicitly open and follow `.codex/skills/land/SKILL.md`, which includes the `land` loop.
+- `land`: when ticket reaches `Merging`, explicitly open and follow `.agents/skills/land/SKILL.md`, which includes the `land` loop.
 
 ## Status map
 
@@ -177,7 +177,7 @@ The agent should be able to talk to Linear, either via a configured Linear MCP s
      - If PR is already attached, start by reviewing all open PR comments and deciding required changes vs explicit pushback responses.
    - `In Progress` -> continue execution flow from current scratchpad comment.
    - `Human Review` -> wait and poll for decision/review updates.
-   - `Merging` -> on entry, open and follow `.codex/skills/land/SKILL.md`; do not call `gh pr merge` directly.
+   - `Merging` -> on entry, open and follow `.agents/skills/land/SKILL.md`; do not call `gh pr merge` directly.
    - `Rework` -> run rework flow.
    - `Done` -> do nothing and shut down.
 4. Check whether a PR already exists for the current branch and whether it is closed.
@@ -185,14 +185,14 @@ The agent should be able to talk to Linear, either via a configured Linear MCP s
    - Create a fresh branch from `origin/main` and restart execution flow as a new attempt.
 5. For `Todo` tickets, do startup sequencing in this exact order:
    - `update_issue(..., state: "In Progress")`
-   - find/create `## Codex Workpad` bootstrap comment
+   - find/create `## Agent Harness Workpad` bootstrap comment
    - only then begin analysis/planning/implementation work.
 6. Add a short comment if state and issue content are inconsistent, then proceed with the safest flow.
 
 ## Step 1: Start/continue execution (Todo or In Progress)
 
 1.  Find or create a single persistent scratchpad comment for the issue:
-    - Search existing comments for a marker header: `## Codex Workpad`.
+    - Search existing comments for a marker header: `## Agent Harness Workpad`.
     - Ignore resolved comments while searching; only active/unresolved comments are eligible to be reused as the live workpad.
     - If found, reuse that comment; do not create a new workpad comment.
     - If not found, create one workpad comment and use it for all updates.
@@ -305,7 +305,7 @@ Use this only when completion is blocked by missing required tools or missing au
    - Required checks are failing
    - Required validation items from the ticket are incomplete
    Wait for the human to move the issue to `Merging` only when genuinely ready.
-6. When cleared to proceed, open and follow `.codex/skills/land/SKILL.md`, then run the `land` skill in a loop until the PR is merged. Do not call `gh pr merge` directly.
+6. When cleared to proceed, open and follow `.agents/skills/land/SKILL.md`, then run the `land` skill in a loop until the PR is merged. Do not call `gh pr merge` directly.
 7. After merge is complete, move the issue to `Done`.
 
 ## Step 4: Rework handling
@@ -317,7 +317,7 @@ When an issue moves to `Rework`, first determine the scope of required changes:
 For most code review feedback (addressing comments, small fixes, requested tweaks):
 
 1. **Keep the existing PR and branch open** - do not close them.
-2. Continue using the existing `## Codex Workpad` comment - do not remove it.
+2. Continue using the existing `## Agent Harness Workpad` comment - do not remove it.
 3. Address each piece of feedback directly in the current branch:
    - Make the requested code changes
    - Respond to inline comments (resolve or reply with justification)
@@ -343,11 +343,11 @@ For major rework:
 
 1. Document in the workpad **why** a reset is necessary before closing anything.
 2. Close the existing PR tied to the issue.
-3. Remove the existing `## Codex Workpad` comment from the issue.
+3. Remove the existing `## Agent Harness Workpad` comment from the issue.
 4. Create a fresh branch from `origin/main`.
 5. Start over from the normal kickoff flow:
    - If current issue state is `Todo`, move it to `In Progress`; otherwise keep the current state.
-   - Create a new bootstrap `## Codex Workpad` comment.
+   - Create a new bootstrap `## Agent Harness Workpad` comment.
    - Build a fresh plan/checklist and execute end-to-end.
 6. After creating the new PR, add the `review-this` label to trigger automated AI PR review.
 
@@ -370,7 +370,7 @@ For major rework:
 - Only close a PR and start fresh for major rework (fundamentally flawed approach, unrecoverable branch, or completely changed scope).
 - If issue state is `Backlog`, do not modify it; wait for human to move it to `Todo`.
 - Do not edit the issue body/description for planning or progress tracking.
-- Use exactly one persistent workpad comment (`## Codex Workpad`) per issue.
+- Use exactly one persistent workpad comment (`## Agent Harness Workpad`) per issue.
 - If comment editing is unavailable in-session, use the update script. Only report blocked if both MCP editing and script-based editing are unavailable.
 - Temporary proof edits are allowed only for local verification and must be reverted before commit.
 - If out-of-scope improvements are found, create a separate Backlog issue rather
@@ -444,7 +444,7 @@ Use this exact markdown structure (no Status column - Linear issue refs automati
 Use this exact structure for the persistent workpad comment and keep it updated in place throughout execution:
 
 ```md
-## Codex Workpad
+## Agent Harness Workpad
 
 ```text
 <hostname>:<abs-path>@<short-sha>
