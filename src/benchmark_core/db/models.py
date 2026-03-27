@@ -283,6 +283,7 @@ class Session(Base):
     proxy_credential: Mapped["ProxyCredential"] = relationship(
         back_populates="session",
         uselist=False,
+        foreign_keys="ProxyCredential.session_id",
         lazy="joined",  # Always load with session for convenience
     )
 
