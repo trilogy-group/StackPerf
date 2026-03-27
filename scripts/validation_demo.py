@@ -1,13 +1,14 @@
 """Demo script showing validation errors for COE-302."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from benchmark_core.config import ProviderConfig, Variant, TaskCard
 from pydantic import ValidationError
+
+from benchmark_core.config import ProviderConfig, TaskCard, Variant
 
 
 def main() -> None:
