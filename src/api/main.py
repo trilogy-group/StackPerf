@@ -1,5 +1,6 @@
 """FastAPI application for benchmark query endpoints."""
 
+import os
 from collections.abc import Generator
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
@@ -37,9 +38,14 @@ from benchmark_core.db.models import (
     Session as SessionORM,
 )
 
-# Database configuration
-# In production, this would come from environment config
-DATABASE_URL = "sqlite:///./benchmark.db"
+# Database configuration from environment
+database_url = os.getenv("DATABASE_URL", "sqlite:///./benchmark.db")
+
+# Handle PostgreSQL URL format (convert postgres:// to postgresql+psycopg2://)
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql+psycopg2://", 1)
+
+DATABASE_URL = database_url
 
 # Engine and session factory
 engine = create_engine(DATABASE_URL, echo=False)
@@ -60,11 +66,17 @@ DBSession = Annotated[SQLAlchemySession, Depends(get_db)]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> Any:
-    """Application lifespan handler for startup/shutdown."""
-    # Create tables if they don't exist
-    from benchmark_core.db.models import Base
+    """Application lifespan handler for startup/shutdown.
 
-    Base.metadata.create_all(bind=engine)
+    Note: Tables should be created via Alembic migrations in production.
+    This auto-creation is only for development/testing convenience.
+    """
+    # In production, use: alembic upgrade head
+    # For dev/test, create tables if they don't exist
+    if os.getenv("AUTO_CREATE_TABLES", "false").lower() == "true":
+        from benchmark_core.db.models import Base
+
+        Base.metadata.create_all(bind=engine)
     yield
 
 
