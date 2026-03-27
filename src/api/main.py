@@ -469,6 +469,7 @@ async def get_experiment_comparison(experiment_id: UUID, db: DBSession) -> dict[
         raise HTTPException(status_code=404, detail="Experiment not found")
 
     # Get variant-level metrics for this experiment
+    # Start from ExperimentVariant to include variants with 0 sessions
     stmt = (
         select(
             Variant.id.label("variant_id"),
@@ -479,10 +480,11 @@ async def get_experiment_comparison(experiment_id: UUID, db: DBSession) -> dict[
             func.avg(RequestORM.ttft_ms).label("avg_ttft_ms"),
             func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
         )
-        .select_from(Variant)
+        .select_from(ExperimentVariant)
+        .join(Variant, Variant.id == ExperimentVariant.variant_id)
         .outerjoin(SessionORM, SessionORM.variant_id == Variant.id)
         .outerjoin(RequestORM, RequestORM.session_id == SessionORM.id)
-        .where(SessionORM.experiment_id == experiment_id)
+        .where(ExperimentVariant.experiment_id == experiment_id)
         .group_by(Variant.id, Variant.name)
     )
 
