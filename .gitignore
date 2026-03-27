@@ -28,6 +28,7 @@ htmlcov/
 .DS_Store
 
 # Project
+workpad*.md
 .opensymphony/
 .opensymphony.after_create.json
 WORKPAD.md

@@ -7,6 +7,12 @@ from collectors.litellm_collector import (
 )
 from collectors.metric_catalog import MetricCatalog
 from collectors.normalization import NormalizationJob
+from collectors.normalize_requests import (
+    ReconciliationReport,
+    RequestNormalizer,
+    RequestNormalizerJob,
+    UnmappedRowDiagnostics,
+)
 from collectors.prometheus_collector import PrometheusCollector
 from collectors.rollup_job import RollupJob
 
@@ -17,5 +23,9 @@ __all__ = [
     "MetricCatalog",
     "NormalizationJob",
     "PrometheusCollector",
+    "ReconciliationReport",
+    "RequestNormalizer",
+    "RequestNormalizerJob",
     "RollupJob",
+    "UnmappedRowDiagnostics",
 ]
