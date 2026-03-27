@@ -1,15 +1,14 @@
 """Unit tests for collectors package."""
 
 from datetime import UTC, datetime
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
 import respx
 from httpx import Response
 
-from benchmark_core.models import Request, Session
+from benchmark_core.models import Request
 from collectors.litellm_collector import (
     CollectionDiagnostics,
     IngestWatermark,
@@ -599,7 +598,8 @@ async def test_fetch_raw_requests_watermark_respects_start_time() -> None:
     # start_time is earlier than watermark
     start_time = "2025-03-26T10:00:00+00:00"
 
-    result = await collector._fetch_raw_requests(
+    # Call fetch and verify request was made with correct start_time
+    await collector._fetch_raw_requests(
         session_id=session_id,
         start_time=start_time,
         end_time=None,
@@ -675,6 +675,6 @@ async def test_collection_job_service_diagnostics_summary() -> None:
 
     summary = service.get_diagnostics_summary(mock_diagnostics)
 
-    assert "100 raw records" in summary or 100 == summary.get("total_raw_records")
-    assert "95 normalized" in summary or 95 == summary.get("normalized_count")
-    assert "5 skipped" in summary or 5 == summary.get("skipped_count")
+    assert "100 raw records" in summary or summary.get("total_raw_records") == 100
+    assert "95 normalized" in summary or summary.get("normalized_count") == 95
+    assert "5 skipped" in summary or summary.get("skipped_count") == 5
