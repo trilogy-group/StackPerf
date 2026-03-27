@@ -102,7 +102,7 @@ class CollectionJobResult:
 
     success: bool
     requests_collected: int
-    requests_new: int
+    requests_normalized: int
     diagnostics: CollectionDiagnostics
     watermark: IngestWatermark
     error_message: str | None = None
@@ -158,17 +158,17 @@ class CollectionJobService:
                 watermark=watermark,
             )
 
-            # Count how many were actually new (not duplicates)
-            # The repository's create_many handles idempotency
-            requests_new = len(collected)
+            # Count how many were normalized (ready for ingest)
+            # The repository's create_many handles idempotency for duplicates
+            requests_normalized = len(collected)
 
             # Determine success based on diagnostics
-            success = len(diagnostics.errors) == 0 or requests_new > 0
+            success = len(diagnostics.errors) == 0 or requests_normalized > 0
 
             return CollectionJobResult(
                 success=success,
                 requests_collected=diagnostics.total_raw_records,
-                requests_new=requests_new,
+                requests_normalized=requests_normalized,
                 diagnostics=diagnostics,
                 watermark=new_watermark,
             )
@@ -177,7 +177,7 @@ class CollectionJobService:
             return CollectionJobResult(
                 success=False,
                 requests_collected=0,
-                requests_new=0,
+                requests_normalized=0,
                 diagnostics=CollectionDiagnostics(),
                 watermark=IngestWatermark(),
                 error_message=str(e),

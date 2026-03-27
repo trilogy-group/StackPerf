@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
@@ -597,6 +597,74 @@ async def test_collect_requests_idempotent_insert() -> None:
     assert watermark.last_request_id == "req-1"
 
 
+@pytest.mark.asyncio
+async def test_fetch_raw_requests_watermark_respects_start_time() -> None:
+    """Test that watermark and start_time interact correctly.
+
+    When both watermark and start_time are provided, the later timestamp
+    should be used (max behavior) to respect both constraints.
+    """
+
+    collector = LiteLLMCollector(
+        base_url="http://localhost:4000",
+        api_key="test",
+        repository=None,  # type: ignore
+    )
+
+    session_id = uuid4()
+
+    # Case 1: Watermark timestamp is later than start_time - should use watermark
+    watermark_later = IngestWatermark(
+        last_request_id="req-last",
+        last_timestamp=datetime(2025, 3, 26, 12, 0, 0, tzinfo=UTC),  # 12:00
+        record_count=50,
+    )
+
+    # Case 1: Watermark timestamp is later than start_time - should use watermark
+    # Use respx to mock the actual HTTP call
+    import respx
+    from httpx import Response
+
+    with respx.mock:
+        route = respx.get("http://localhost:4000/spend/logs")
+        route.return_value = Response(200, json=[])
+
+        await collector._fetch_raw_requests(
+            session_id=session_id,
+            start_time="2025-03-26T10:00:00+00:00",  # 10:00 (earlier)
+            end_time=None,
+            watermark=watermark_later,
+            diagnostics=CollectionDiagnostics(),
+        )
+
+        # Should use watermark timestamp (12:00) since it's later
+        request = route.calls.last.request
+        assert request.url.params["start_time"] == "2025-03-26T12:00:00+00:00"
+
+    # Case 2: start_time is later than watermark - should use start_time
+    watermark_earlier = IngestWatermark(
+        last_request_id="req-last",
+        last_timestamp=datetime(2025, 3, 26, 8, 0, 0, tzinfo=UTC),  # 08:00
+        record_count=50,
+    )
+
+    with respx.mock:
+        route = respx.get("http://localhost:4000/spend/logs")
+        route.return_value = Response(200, json=[])
+
+        await collector._fetch_raw_requests(
+            session_id=session_id,
+            start_time="2025-03-26T10:00:00+00:00",  # 10:00 (later)
+            end_time=None,
+            watermark=watermark_earlier,
+            diagnostics=CollectionDiagnostics(),
+        )
+
+        # Should use start_time (10:00) since it's later than watermark
+        request = route.calls.last.request
+        assert request.url.params["start_time"] == "2025-03-26T10:00:00+00:00"
+
+
 # =============================================================================
 # CollectionJobService Tests
 # =============================================================================
@@ -623,7 +691,7 @@ async def test_collection_job_service_run() -> None:
     # we verify the structure of the result
     assert hasattr(result, "success")
     assert hasattr(result, "requests_collected")
-    assert hasattr(result, "requests_new")
+    assert hasattr(result, "requests_normalized")
     assert hasattr(result, "diagnostics")
     assert hasattr(result, "watermark")
 

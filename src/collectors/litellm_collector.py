@@ -170,9 +170,11 @@ class LiteLLMCollector:
             params["end_time"] = end_time
 
         # Use watermark to avoid re-fetching already processed records
+        # If both start_time and watermark are provided, use the later one
         if watermark and watermark.last_timestamp:
-            # Resume from watermark position
-            params["start_time"] = watermark.last_timestamp.isoformat()
+            watermark_start = watermark.last_timestamp.isoformat()
+            if "start_time" not in params or watermark_start > params["start_time"]:
+                params["start_time"] = watermark_start
 
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
