@@ -49,8 +49,8 @@ def test_engine():
 @pytest.fixture
 def test_session(test_engine):
     """Create a database session for testing."""
-    SessionLocal = sessionmaker(bind=test_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=test_engine)
+    session = session_local()
     try:
         yield session
     finally:
@@ -337,8 +337,8 @@ class TestDatabaseModels:
     def test_cascade_delete(self, test_engine):
         """Test that requests and artifacts are deleted when session is deleted."""
         # Create fresh session with proper engine
-        SessionLocal = sessionmaker(bind=test_engine)
-        test_session = SessionLocal()
+        session_local = sessionmaker(bind=test_engine)
+        test_session = session_local()
 
         # Create prerequisite records
         experiment = Experiment(name="cascade-test-exp", description="Test")
