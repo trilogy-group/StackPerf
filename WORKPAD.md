@@ -29,6 +29,9 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@9486904
 - [x] 5. Documentation and completion
   - [x] 5.1 Commit changes (87eb869)
   - [x] 5.2 Push branch (COE-306-litellm-collection)
+- [ ] 6. PR Creation (BLOCKED - PAT Permissions)
+  - [ ] 6.1 Create PR via GitHub API (blocked: needs pull_requests:write permission)
+  - [ ] 6.2 Add `symphony` and `review-this` labels
 
 ### Acceptance Criteria
 
@@ -66,12 +69,14 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@9486904
 
 ### Notes
 
-- **2025-03-26 (Retry #7)**: Fresh session after LLM provider settings changed. Retried PR creation - **PAT permissions STILL blocking** (confirmed 7th attempt).
-  - `gh auth status`: Shows fine-grained PAT with 'repo' scope
-  - `gh pr create` via CLI: Same GraphQL error - "Resource not accessible by personal access token"
-  - **Retry #7 confirmed**: Token needs explicit `pull_requests:write` permission on trilogy-group/StackPerf repository
+- **2025-03-26 (Retry #7 - FINAL)**: Fresh session after LLM provider settings changed. Final attempt to create PR - **PAT permissions CONFIRMED BLOCKING**.
+  - GitHub REST API test: `POST /repos/trilogy-group/StackPerf/pulls` → 403
+  - Error: `{"message":"Resource not accessible by personal access token","status":"403"}`
+  - Read access confirmed: `GET /repos/trilogy-group/StackPerf` → 200
+  - **Root cause confirmed**: Fine-grained PAT lacks `pull_requests:write` permission
   - **All 100 unit tests passing** - implementation complete and validated
-  - **Current HEAD**: 9486904 (17 commits ahead of main)
+  - **Current HEAD**: 9b2b9fd (18 commits ahead of main after workpad update)
+  - **Status**: Moving to Human Review with blocker documentation
 - **2025-03-26 (Retry #6)**: Continuation session after LLM provider change. Retried PR creation - **PAT permissions still blocking**.
   - `gh pr create` via CLI: GraphQL "Resource not accessible by personal access token" error
   - Direct GitHub REST API: Connection timed out
@@ -93,29 +98,28 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@9486904
 
 ### Blockers
 
-1. **GitHub PR Creation**: **ACTIVE - Retry #7 Confirmed PAT Permission Issue**
-   - **Status**: Still blocked after retry #7. GitHub API returns 403/GraphQL error.
-   - **Error**: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
-   - **Token analysis**: GH_TOKEN has 'repo' scope but fine-grained PAT requires explicit repository-level permissions
-   - **Root cause**: The fine-grained PAT needs `pull_requests:write` permission explicitly granted on the trilogy-group/StackPerf repository
-   - **Retry #7 commands attempted**:
-     - `gh pr create --repo trilogy-group/StackPerf --head COE-306-litellm-collection --base main --title "..." --body-file PR_DESCRIPTION.md` (GraphQL error: Resource not accessible by personal access token)
-   - **Impact**: Cannot create PR programmatically; blocks transition to Human Review
+1. **GitHub PR Creation**: **FINAL CONFIRMATION - PAT Permission Issue Blocking**
+   - **Status**: Confirmed after retry #7. GitHub REST API returns 403.
+   - **Error**: `{"message":"Resource not accessible by personal access token","status":"403"}`
+   - **Root cause**: Fine-grained PAT has `repo` scope but lacks explicit `pull_requests:write` permission on trilogy-group/StackPerf repository
+   - **Evidence**:
+     - `GET /repos/trilogy-group/StackPerf` → 200 (read access works)
+     - `POST /repos/trilogy-group/StackPerf/pulls` → 403 (write access denied)
+   - **Impact**: Cannot create PR programmatically; moving to Human Review with blocker note
    - **Action required**: Human must create PR via GitHub UI
-     - Branch: `COE-306-litellm-collection` (commit 9486904, ahead of main)
+     - Branch: `COE-306-litellm-collection` (commit 9b2b9fd, 18 commits ahead of main)
      - Compare URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
      - PR Title: "COE-306: Build LiteLLM collection job for raw request records and correlation keys"
-     - Description: Copy from PR_DESCRIPTION.md (ready to use)
+     - Description: Use PR_DESCRIPTION.md (ready in repo root)
      - Labels to add: `symphony`, `review-this`
-   - **Resolution path**: Classic PAT with full `repo` access OR update fine-grained PAT with explicit `pull_requests:write` permission on trilogy-group/StackPerf
+   - **Resolution path**: Update fine-grained PAT with `pull_requests:write` permission on trilogy-group/StackPerf OR use classic PAT with full `repo` scope
 
-2. **Linear API**: **UNAVAILABLE - `linear_graphql` tool not configured**
-   - **Status**: No Linear MCP server or `linear_graphql` tool available in session
+2. **Linear API**: **UNAVAILABLE - No MCP/tool configured**
+   - **Status**: No Linear MCP server or `linear_graphql` tool available
    - **Impact**: Cannot query/update Linear issue programmatically
    - **Action required**: Human must manually:
-     - Verify issue is in "In Progress" state
-     - Transition issue from "In Progress" to "Human Review" after PR is created
-     - Attach PR URL to Linear issue
+     - Transition issue from "In Progress" to "Human Review"
+     - Attach PR URL to Linear issue once created
 
 ### Implementation Summary
 
