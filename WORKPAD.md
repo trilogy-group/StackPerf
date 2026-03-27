@@ -1,13 +1,13 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@8baee38
+macos:/Users/magos/.opensymphony/workspaces/COE-306@9486904
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
 **Issue ID:** ff8c37dc-4abb-4153-a625-40a15d20a873
 **Branch:** COE-306-litellm-collection
-**Status:** In Progress → Human Review (BLOCKED: GitHub PAT permissions - Retry #6 Confirmed)
+**Status:** In Progress → Human Review (BLOCKED: GitHub PAT permissions - Retry #7 Confirmed)
 
 ### Plan
 
@@ -66,6 +66,12 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@8baee38
 
 ### Notes
 
+- **2025-03-26 (Retry #7)**: Fresh session after LLM provider settings changed. Retried PR creation - **PAT permissions STILL blocking** (confirmed 7th attempt).
+  - `gh auth status`: Shows fine-grained PAT with 'repo' scope
+  - `gh pr create` via CLI: Same GraphQL error - "Resource not accessible by personal access token"
+  - **Retry #7 confirmed**: Token needs explicit `pull_requests:write` permission on trilogy-group/StackPerf repository
+  - **All 100 unit tests passing** - implementation complete and validated
+  - **Current HEAD**: 9486904 (17 commits ahead of main)
 - **2025-03-26 (Retry #6)**: Continuation session after LLM provider change. Retried PR creation - **PAT permissions still blocking**.
   - `gh pr create` via CLI: GraphQL "Resource not accessible by personal access token" error
   - Direct GitHub REST API: Connection timed out
@@ -82,22 +88,21 @@ macos:/Users/magos/.opensymphony/workspaces/COE-306@8baee38
   - ff092d4 - COE-306: Final workpad - document complete blockers status
   - 3638617 - COE-306: Update workpad for retry #2 - document PR creation blocker
   - 87eb869 - COE-306: Build LiteLLM collection job for raw request records and correlation keys (main implementation)
-- **Tests**: All 100 unit tests passing, including 29 collector-specific tests (verified in Retry #4-6)
-- **Branch**: `COE-306-litellm-collection` pushed to origin (8baee38)
+- **Tests**: All 100 unit tests passing, including 29 collector-specific tests (verified in Retry #4-7)
+- **Branch**: `COE-306-litellm-collection` pushed to origin (9486904)
 
 ### Blockers
 
-1. **GitHub PR Creation**: **ACTIVE - Retry #6 Confirmed PAT Permission Issue**
-   - **Status**: Still blocked after retry #6. GitHub API returns 403/GraphQL error.
+1. **GitHub PR Creation**: **ACTIVE - Retry #7 Confirmed PAT Permission Issue**
+   - **Status**: Still blocked after retry #7. GitHub API returns 403/GraphQL error.
    - **Error**: `GraphQL: Resource not accessible by personal access token (createPullRequest)`
    - **Token analysis**: GH_TOKEN has 'repo' scope but fine-grained PAT requires explicit repository-level permissions
    - **Root cause**: The fine-grained PAT needs `pull_requests:write` permission explicitly granted on the trilogy-group/StackPerf repository
-   - **Retry #6 commands attempted**:
+   - **Retry #7 commands attempted**:
      - `gh pr create --repo trilogy-group/StackPerf --head COE-306-litellm-collection --base main --title "..." --body-file PR_DESCRIPTION.md` (GraphQL error: Resource not accessible by personal access token)
-     - Direct GitHub REST API call with curl (timed out)
    - **Impact**: Cannot create PR programmatically; blocks transition to Human Review
    - **Action required**: Human must create PR via GitHub UI
-     - Branch: `COE-306-litellm-collection` (commit 8baee38, ahead of main)
+     - Branch: `COE-306-litellm-collection` (commit 9486904, ahead of main)
      - Compare URL: https://github.com/trilogy-group/StackPerf/compare/main...COE-306-litellm-collection
      - PR Title: "COE-306: Build LiteLLM collection job for raw request records and correlation keys"
      - Description: Copy from PR_DESCRIPTION.md (ready to use)
