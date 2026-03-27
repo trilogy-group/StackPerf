@@ -1,17 +1,23 @@
 """SQLAlchemy repository implementations for session and request storage."""
 
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
+    Experiment,
     Request as DBRequest,
-)
-from benchmark_core.db.models import (
     Session as DBSession,
+    TaskCard,
+    Variant,
 )
 from benchmark_core.models import Request, Session
 from benchmark_core.repositories import RequestRepository, SessionRepository
+from benchmark_core.repositories.base import (
+    DuplicateIdentifierError,
+    ReferentialIntegrityError,
+)
 
 
 class SQLAlchemySessionRepository(SessionRepository):
@@ -128,6 +134,130 @@ class SQLAlchemySessionRepository(SessionRepository):
             )
             for s in db_sessions
         ]
+
+    async def create_session_safe(
+        self,
+        experiment_id: UUID,
+        variant_id: UUID,
+        task_card_id: UUID,
+        harness_profile: str,
+        repo_path: str,
+        git_branch: str,
+        git_commit: str,
+        git_dirty: bool = False,
+        operator_label: str | None = None,
+        proxy_credential_id: str | None = None,
+    ) -> DBSession:
+        """Safely create a session with validation and duplicate rejection.
+
+        Args:
+            experiment_id: The experiment UUID.
+            variant_id: The variant UUID.
+            task_card_id: The task card UUID.
+            harness_profile: The harness profile name.
+            repo_path: Absolute path to the repository.
+            git_branch: Active git branch.
+            git_commit: Commit SHA.
+            git_dirty: Whether the working tree is dirty.
+            operator_label: Optional operator-provided label.
+            proxy_credential_id: Optional proxy credential identifier.
+
+        Returns:
+            The created session.
+
+        Raises:
+            DuplicateIdentifierError: If a session with the same operator_label exists.
+            ReferentialIntegrityError: If any referenced entity does not exist.
+        """
+        from datetime import UTC, datetime
+
+        # Check for duplicate operator_label if provided
+        if operator_label:
+            existing = (
+                self._session.query(DBSession)
+                .filter_by(operator_label=operator_label)
+                .first()
+            )
+            if existing:
+                raise DuplicateIdentifierError(
+                    f"Session with identifier '{operator_label}' already exists"
+                )
+
+        # Verify referential integrity
+        # Convert UUIDs to ensure proper type handling
+        exp_id = experiment_id if isinstance(experiment_id, UUID) else UUID(experiment_id)
+        var_id = variant_id if isinstance(variant_id, UUID) else UUID(variant_id)
+        task_id = task_card_id if isinstance(task_card_id, UUID) else UUID(task_card_id)
+
+        experiment = self._session.get(Experiment, exp_id)
+        if experiment is None:
+            raise ReferentialIntegrityError(
+                f"Experiment '{experiment_id}' does not exist"
+            )
+
+        variant = self._session.get(Variant, var_id)
+        if variant is None:
+            raise ReferentialIntegrityError(
+                f"Variant '{variant_id}' does not exist"
+            )
+
+        task_card = self._session.get(TaskCard, task_id)
+        if task_card is None:
+            raise ReferentialIntegrityError(
+                f"TaskCard '{task_card_id}' does not exist"
+            )
+
+        # Create the session with proper UUID types
+        from uuid import uuid4
+
+        session = DBSession(
+            id=uuid4(),
+            experiment_id=exp_id,
+            variant_id=var_id,
+            task_card_id=task_id,
+            harness_profile=harness_profile,
+            repo_path=repo_path,
+            git_branch=git_branch,
+            git_commit=git_commit,
+            git_dirty=git_dirty,
+            operator_label=operator_label,
+            proxy_credential_id=proxy_credential_id,
+            started_at=datetime.now(UTC),
+            status="active",
+        )
+        self._session.add(session)
+        self._session.flush()
+        return session
+
+    async def finalize_session(
+        self,
+        session_id: UUID,
+        status: str = "completed",
+        ended_at: datetime | None = None,
+    ) -> DBSession | None:
+        """Finalize a session with end time and status.
+
+        Args:
+            session_id: UUID of the session to finalize.
+            status: Final status (completed, failed, cancelled).
+            ended_at: Optional end timestamp. Defaults to current UTC time.
+
+        Returns:
+            The updated session, or None if not found.
+        """
+        from datetime import UTC, datetime
+
+        db_session = self._session.query(DBSession).filter_by(id=session_id).first()
+        if db_session is None:
+            return None
+
+        if ended_at is None:
+            ended_at = datetime.now(UTC)
+
+        db_session.ended_at = ended_at
+        db_session.status = status
+        self._session.flush()
+        return db_session
 
 
 class SQLAlchemyRequestRepository(RequestRepository):

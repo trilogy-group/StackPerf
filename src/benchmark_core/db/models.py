@@ -30,9 +30,7 @@ class Provider(Base):
 
     __tablename__ = "providers"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     route_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     protocol_surface: Mapped[str] = mapped_column(
@@ -61,9 +59,7 @@ class ProviderModel(Base):
 
     __tablename__ = "provider_models"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     provider_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("providers.id", ondelete="CASCADE"), nullable=False
     )
@@ -82,9 +78,7 @@ class HarnessProfile(Base):
 
     __tablename__ = "harness_profiles"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     protocol_surface: Mapped[str] = mapped_column(
         String(50), nullable=False
@@ -93,9 +87,7 @@ class HarnessProfile(Base):
     api_key_env: Mapped[str] = mapped_column(String(255), nullable=False)
     model_env: Mapped[str] = mapped_column(String(255), nullable=False)
     extra_env: Mapped[dict[str, str]] = mapped_column(JSON, default=dict)
-    render_format: Mapped[str] = mapped_column(
-        String(20), default="shell"
-    )  # shell or dotenv
+    render_format: Mapped[str] = mapped_column(String(20), default="shell")  # shell or dotenv
     launch_checks: Mapped[list[str]] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
@@ -112,9 +104,7 @@ class Variant(Base):
 
     __tablename__ = "variants"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     provider: Mapped[str] = mapped_column(String(255), nullable=False)
     provider_route: Mapped[str | None] = mapped_column(String(255), nullable=True)
@@ -145,9 +135,7 @@ class Experiment(Base):
 
     __tablename__ = "experiments"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     description: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(
@@ -178,9 +166,7 @@ class ExperimentVariant(Base):
         UniqueConstraint("experiment_id", "variant_id", name="uq_experiment_variant"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     experiment_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("experiments.id", ondelete="CASCADE"), nullable=False, index=True
     )
@@ -201,9 +187,7 @@ class TaskCard(Base):
 
     __tablename__ = "task_cards"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     repo_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     goal: Mapped[str] = mapped_column(Text, nullable=False)
@@ -231,9 +215,7 @@ class Session(Base):
 
     __tablename__ = "sessions"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     experiment_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("experiments.id", ondelete="RESTRICT"), nullable=False, index=True
     )
@@ -275,9 +257,7 @@ class Request(Base):
 
     __tablename__ = "requests"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     request_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     session_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True
@@ -303,9 +283,7 @@ class MetricRollup(Base):
 
     __tablename__ = "rollups"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     dimension_type: Mapped[str] = mapped_column(
         String(50), nullable=False
     )  # request, session, variant, or experiment
@@ -326,9 +304,7 @@ class Artifact(Base):
 
     __tablename__ = "artifacts"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     session_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True
     )

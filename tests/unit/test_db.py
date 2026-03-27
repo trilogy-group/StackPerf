@@ -33,6 +33,7 @@ from benchmark_core.db.session import (
 @pytest.fixture
 def test_engine():
     """Create an in-memory SQLite engine for testing."""
+
     # Enable foreign key support for cascade delete to work
     def _fk_pragma_on_connect(dbapi_conn, connection_record):
         dbapi_conn.execute("PRAGMA foreign_keys=ON")

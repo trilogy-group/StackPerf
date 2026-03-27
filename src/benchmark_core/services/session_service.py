@@ -1,54 +1,174 @@
-"""Core domain services for session management, credential issuance, and request collection."""
+"""Service for managing benchmark session lifecycle safely."""
 
-from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID
 
 from benchmark_core.models import Session
-from benchmark_core.repositories import RequestRepository, SessionRepository
-from collectors.litellm_collector import (
-    CollectionDiagnostics,
-    IngestWatermark,
-    LiteLLMCollector,
+from benchmark_core.repositories.base import (
+    DuplicateIdentifierError,
+    ReferentialIntegrityError,
+    RepositoryError,
 )
+from benchmark_core.repositories.session_repository import SQLSessionRepository
+
+
+class SessionValidationError(Exception):
+    """Raised when session validation fails."""
+
+    pass
 
 
 class SessionService:
-    """Service for managing benchmark session lifecycle."""
+    """Service for managing benchmark session lifecycle with safety guarantees.
 
-    def __init__(self, repository: SessionRepository) -> None:
-        self._repository = repository
+    This service ensures:
+    - Sessions are created with all required metadata before harness traffic starts
+    - Duplicate session identifiers are rejected
+    - Session finalization is atomic and safe
+    - Referential integrity is preserved throughout the lifecycle
+    """
+
+    def __init__(
+        self,
+        repository: SQLSessionRepository,
+    ) -> None:
+        """Initialize the session service.
+
+        Args:
+            repository: SessionRepository instance for database operations.
+        """
+        self._session_repo = repository
+        # Store db_session for operations that need it
+        self._db_session = repository._session
 
     async def create_session(
         self,
-        experiment_id: str,
-        variant_id: str,
-        task_card_id: str,
+        experiment_id: UUID,
+        variant_id: UUID,
+        task_card_id: UUID,
         harness_profile: str,
         repo_path: str,
         git_branch: str,
         git_commit: str,
         git_dirty: bool = False,
         operator_label: str | None = None,
+        proxy_credential_id: str | None = None,
     ) -> Session:
-        """Create a new benchmark session record."""
-        session = Session(
-            experiment_id=experiment_id,
-            variant_id=variant_id,
-            task_card_id=task_card_id,
-            harness_profile=harness_profile,
-            repo_path=repo_path,
-            git_branch=git_branch,
-            git_commit=git_commit,
-            git_dirty=git_dirty,
-            operator_label=operator_label,
-        )
-        return await self._repository.create(session)
+        """Create a new benchmark session safely.
+
+        This method ensures:
+        1. The session identifier is unique (if operator_label provided)
+        2. All referenced entities exist (experiment, variant, task_card)
+        3. The session captures all metadata before harness traffic starts
+        4. The operation is atomic
+
+        Args:
+            experiment_id: The experiment UUID.
+            variant_id: The variant UUID.
+            task_card_id: The task card UUID.
+            harness_profile: The harness profile name.
+            repo_path: Absolute path to the repository.
+            git_branch: Active git branch.
+            git_commit: Commit SHA.
+            git_dirty: Whether the working tree is dirty.
+            operator_label: Optional operator-provided label (acts as external session ID).
+            proxy_credential_id: Optional proxy credential identifier.
+
+        Returns:
+            The created session with all metadata populated.
+
+        Raises:
+            SessionValidationError: If validation fails (duplicate ID, missing refs).
+            RepositoryError: If a database error occurs.
+        """
+        # Validate required fields
+        if not experiment_id:
+            raise SessionValidationError("experiment_id is required")
+        if not variant_id:
+            raise SessionValidationError("variant_id is required")
+        if not task_card_id:
+            raise SessionValidationError("task_card_id is required")
+        if not harness_profile:
+            raise SessionValidationError("harness_profile is required")
+        if not repo_path:
+            raise SessionValidationError("repo_path is required")
+        if not git_branch:
+            raise SessionValidationError("git_branch is required")
+        if not git_commit:
+            raise SessionValidationError("git_commit is required")
+
+        # Validate git commit format (should be 7-64 hex chars)
+        if len(git_commit) < 7 or len(git_commit) > 64:
+            raise SessionValidationError(
+                f"git_commit must be between 7 and 64 characters, got {len(git_commit)}"
+            )
+
+        try:
+            db_session = await self._session_repo.create_session_safe(
+                experiment_id=experiment_id,
+                variant_id=variant_id,
+                task_card_id=task_card_id,
+                harness_profile=harness_profile,
+                repo_path=repo_path,
+                git_branch=git_branch,
+                git_commit=git_commit,
+                git_dirty=git_dirty,
+                operator_label=operator_label,
+                proxy_credential_id=proxy_credential_id,
+            )
+            # Convert DBSession to domain Session model
+            return Session(
+                session_id=db_session.id,
+                experiment_id=str(db_session.experiment_id),
+                variant_id=str(db_session.variant_id),
+                task_card_id=str(db_session.task_card_id),
+                harness_profile=db_session.harness_profile,
+                repo_path=db_session.repo_path,
+                git_branch=db_session.git_branch,
+                git_commit=db_session.git_commit,
+                git_dirty=db_session.git_dirty,
+                operator_label=db_session.operator_label,
+                proxy_credential_id=db_session.proxy_credential_id,
+                started_at=db_session.started_at,
+                ended_at=db_session.ended_at,
+                status=db_session.status,
+            )
+        except DuplicateIdentifierError as e:
+            raise SessionValidationError(f"Duplicate session identifier: {e}") from e
+        except ReferentialIntegrityError as e:
+            raise SessionValidationError(f"Invalid reference: {e}") from e
+        except RepositoryError as e:
+            raise SessionValidationError(f"Failed to create session: {e}") from e
 
     async def get_session(self, session_id: UUID) -> Session | None:
-        """Retrieve a session by ID."""
-        return await self._repository.get_by_id(session_id)
+        """Retrieve a session by ID.
+
+        Args:
+            session_id: The session UUID.
+
+        Returns:
+            The session with experiment, variant, and task card loaded, or None.
+        """
+        db_session = await self._session_repo.get_by_id(session_id)
+        if db_session is None:
+            return None
+        # Convert DBSession to domain Session model
+        return Session(
+            session_id=db_session.id,
+            experiment_id=str(db_session.experiment_id),
+            variant_id=str(db_session.variant_id),
+            task_card_id=str(db_session.task_card_id),
+            harness_profile=db_session.harness_profile,
+            repo_path=db_session.repo_path,
+            git_branch=db_session.git_branch,
+            git_commit=db_session.git_commit,
+            git_dirty=db_session.git_dirty,
+            operator_label=db_session.operator_label,
+            proxy_credential_id=db_session.proxy_credential_id,
+            started_at=db_session.started_at,
+            ended_at=db_session.ended_at,
+            status=db_session.status,
+        )
 
     async def finalize_session(
         self,
@@ -56,61 +176,201 @@ class SessionService:
         status: str = "completed",
         ended_at: datetime | None = None,
     ) -> Session | None:
-        """Finalize a session with end time and status.
+        """Finalize a session safely with end time and status.
+
+        This method atomically:
+        1. Retrieves the session
+        2. Validates it exists and is active
+        3. Sets ended_at to provided time or current UTC time
+        4. Updates status
+        5. Commits changes
 
         Args:
-            session_id: UUID of the session to finalize.
-            status: Final status (completed, failed, cancelled).
+            session_id: The session UUID to finalize.
+            status: The final status (default: 'completed', alternatives: 'failed', 'cancelled').
             ended_at: Optional end timestamp. Defaults to current UTC time.
 
         Returns:
-            Updated session or None if not found.
+            The finalized session, or None if not found.
+
+        Raises:
+            SessionValidationError: If the session cannot be finalized.
         """
+        # Validate status
+        valid_statuses = ["completed", "failed", "cancelled"]
+        if status not in valid_statuses:
+            raise SessionValidationError(
+                f"Invalid status '{status}'. Must be one of: {valid_statuses}"
+            )
+
+        # Set default ended_at if not provided
         if ended_at is None:
             ended_at = datetime.now(UTC)
 
-        session = await self._repository.get_by_id(session_id)
+        session = await self._session_repo.get_by_id(session_id)
         if session is None:
             return None
 
-        updated = session.model_copy(update={"ended_at": ended_at, "status": status})
-        return await self._repository.update(updated)
+        # Check if already finalized
+        if session.ended_at is not None:
+            raise SessionValidationError(
+                f"Session {session_id} is already finalized (ended_at={session.ended_at})"
+            )
 
+        try:
+            db_finalized = await self._session_repo.finalize_session(session_id, status, ended_at)
+            if db_finalized is None:
+                return None
+            # Convert DBSession to domain Session model
+            return Session(
+                session_id=db_finalized.id,
+                experiment_id=str(db_finalized.experiment_id),
+                variant_id=str(db_finalized.variant_id),
+                task_card_id=str(db_finalized.task_card_id),
+                harness_profile=db_finalized.harness_profile,
+                repo_path=db_finalized.repo_path,
+                git_branch=db_finalized.git_branch,
+                git_commit=db_finalized.git_commit,
+                git_dirty=db_finalized.git_dirty,
+                operator_label=db_finalized.operator_label,
+                proxy_credential_id=db_finalized.proxy_credential_id,
+                started_at=db_finalized.started_at,
+                ended_at=db_finalized.ended_at,
+                status=db_finalized.status,
+            )
+        except ReferentialIntegrityError as e:
+            raise SessionValidationError(f"Failed to finalize session: {e}") from e
 
+    async def fail_session(
+        self, session_id: UUID, error_message: str | None = None
+    ) -> Session | None:
+        """Mark a session as failed.
 
-class CredentialService:
-    """Service for rendering and managing session-scoped proxy credentials."""
+        Convenience method that calls finalize_session with status='failed'.
 
-    async def issue_credential(
-        self,
-        session_id: UUID,
-        experiment_id: str,
-        variant_id: str,
-        harness_profile: str,
-    ) -> str:
-        """Generate a session-scoped proxy credential.
+        Args:
+            session_id: The session UUID to fail.
+            error_message: Optional error message to log.
 
-        Currently returns a placeholder credential. The actual implementation
-        will integrate with LiteLLM API for short-lived credential issuance.
-
-        The credential encodes session metadata for correlation.
+        Returns:
+            The failed session, or None if not found.
         """
-        # Placeholder: actual implementation will integrate with LiteLLM API
-        return f"sk-benchmark-{session_id}-{experiment_id[:8]}"
+        session = await self.finalize_session(session_id, status="failed")
+        if session and error_message:
+            # Store error message in metadata if needed
+            # For now, this is a placeholder for future enhancement
+            pass
+        return session
 
-    def render_env_snippet(
-        self,
-        credential: str,
-        proxy_base_url: str,
-        model: str,
-        harness_profile: str,
-    ) -> dict[str, str]:
-        """Render environment variable snippet for a harness."""
+    async def cancel_session(self, session_id: UUID) -> Session | None:
+        """Cancel an active session.
+
+        Convenience method that calls finalize_session with status='cancelled'.
+
+        Args:
+            session_id: The session UUID to cancel.
+
+        Returns:
+            The cancelled session, or None if not found.
+        """
+        return await self.finalize_session(session_id, status="cancelled")
+
+    async def list_sessions_by_experiment(
+        self, experiment_id: UUID, limit: int = 100, offset: int = 0
+    ) -> list[Session]:
+        """List all sessions for an experiment.
+
+        Args:
+            experiment_id: The experiment UUID.
+            limit: Maximum number of sessions to return.
+            offset: Number of sessions to skip.
+
+        Returns:
+            List of sessions.
+        """
+        return await self._session_repo.list_by_experiment(experiment_id, limit, offset)
+
+    async def list_active_sessions(self, limit: int = 100) -> list[Session]:
+        """List all active sessions.
+
+        Args:
+            limit: Maximum number of sessions to return.
+
+        Returns:
+            List of active sessions.
+        """
+        return await self._session_repo.list_active(limit)
+
+    async def validate_session_exists(self, session_id: UUID) -> bool:
+        """Check if a session exists.
+
+        Args:
+            session_id: The session UUID to check.
+
+        Returns:
+            True if the session exists.
+        """
+        return await self._session_repo.exists(session_id)
+
+    async def is_session_active(self, session_id: UUID) -> bool:
+        """Check if a session is active (not finalized).
+
+        Args:
+            session_id: The session UUID to check.
+
+        Returns:
+            True if the session exists and is active.
+        """
+        session = await self._session_repo.get_by_id(session_id)
+        if session is None:
+            return False
+        return session.status == "active" and session.ended_at is None
+
+    async def get_session_summary(self, session_id: UUID) -> dict | None:
+        """Get a summary of session information.
+
+        Args:
+            session_id: The session UUID.
+
+        Returns:
+            Dictionary with session summary, or None if not found.
+        """
+        db_session = await self._session_repo.get_by_id(session_id)
+        if db_session is None:
+            return None
+
         return {
-            "OPENAI_API_BASE": proxy_base_url,
-            "OPENAI_API_KEY": credential,
-            "OPENAI_MODEL": model,
+            "id": str(db_session.id),
+            "status": db_session.status,
+            "experiment_id": str(db_session.experiment_id),
+            "variant_id": str(db_session.variant_id),
+            "task_card_id": str(db_session.task_card_id),
+            "harness_profile": db_session.harness_profile,
+            "repo_path": db_session.repo_path,
+            "git_branch": db_session.git_branch,
+            "git_commit": db_session.git_commit,
+            "git_dirty": db_session.git_dirty,
+            "operator_label": db_session.operator_label,
+            "started_at": db_session.started_at.isoformat() if db_session.started_at else None,
+            "ended_at": db_session.ended_at.isoformat() if db_session.ended_at else None,
+            "duration_seconds": (
+                (db_session.ended_at - db_session.started_at).total_seconds()
+                if db_session.ended_at and db_session.started_at
+                else None
+            ),
         }
+
+
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+from collectors.litellm_collector import (
+    CollectionDiagnostics,
+    IngestWatermark,
+    LiteLLMCollector,
+)
+from benchmark_core.repositories.request_repository import SQLRequestRepository
 
 
 @dataclass
@@ -136,8 +396,15 @@ class CollectionJobService:
         self,
         litellm_base_url: str,
         litellm_api_key: str,
-        repository: RequestRepository,
+        repository: SQLRequestRepository,
     ) -> None:
+        """Initialize the collection job service.
+
+        Args:
+            litellm_base_url: LiteLLM proxy base URL.
+            litellm_api_key: LiteLLM API key.
+            repository: Repository for persisting normalized requests.
+        """
         self._collector = LiteLLMCollector(
             base_url=litellm_base_url,
             api_key=litellm_api_key,
@@ -152,72 +419,78 @@ class CollectionJobService:
         end_time: str | None = None,
         watermark: IngestWatermark | None = None,
     ) -> CollectionJobResult:
-        """Execute a collection job for a session.
+        """Run a collection job for a specific session.
 
-        This job is idempotent - re-running with the same watermark
-        will not duplicate records.
+        Fetches raw requests from LiteLLM, normalizes them, and persists
+        to the database. Uses watermark-based idempotency to avoid duplicates.
 
         Args:
-            session_id: The benchmark session ID
-            start_time: Optional ISO format start time filter
-            end_time: Optional ISO format end time filter
-            watermark: Optional ingest watermark to resume from last position
+            session_id: The benchmark session ID to collect for.
+            start_time: Optional ISO format start time filter.
+            end_time: Optional ISO format end time filter.
+            watermark: Optional ingest watermark to resume from.
 
         Returns:
-            CollectionJobResult with success status, counts, diagnostics, and new watermark
+            CollectionJobResult with collection outcome
         """
+        diagnostics = CollectionDiagnostics()
+
         try:
-            # Collect requests from LiteLLM
-            collected, diagnostics, new_watermark = await self._collector.collect_requests(
+            # Fetch and normalize requests from LiteLLM
+            requests, new_watermark = await self._collector.collect(
                 session_id=session_id,
                 start_time=start_time,
                 end_time=end_time,
                 watermark=watermark,
             )
 
-            # Count how many were normalized (ready for ingest)
-            # The repository's create_many handles idempotency for duplicates
-            requests_normalized = len(collected)
+            if not requests:
+                return CollectionJobResult(
+                    success=True,
+                    requests_collected=0,
+                    requests_normalized=0,
+                    diagnostics=diagnostics,
+                    watermark=new_watermark,
+                )
 
-            # Determine success based on diagnostics
-            success = len(diagnostics.errors) == 0 or requests_normalized > 0
+            # Persist normalized requests
+            created = await self._repository.create_many(requests)
 
             return CollectionJobResult(
-                success=success,
-                requests_collected=diagnostics.total_raw_records,
-                requests_normalized=requests_normalized,
+                success=True,
+                requests_collected=len(requests),
+                requests_normalized=len(created),
                 diagnostics=diagnostics,
                 watermark=new_watermark,
             )
 
         except Exception as e:
+            diagnostics.add_error(str(e))
             return CollectionJobResult(
                 success=False,
                 requests_collected=0,
                 requests_normalized=0,
-                diagnostics=CollectionDiagnostics(),
-                watermark=IngestWatermark(),
+                diagnostics=diagnostics,
+                watermark=IngestWatermark(cursor=""),
                 error_message=str(e),
             )
 
-    async def run_collection_job_with_window(
+    async def run_collection_lookback(
         self,
         session_id: UUID,
         lookback_hours: int = 24,
         watermark: IngestWatermark | None = None,
     ) -> CollectionJobResult:
-        """Execute collection job with automatic time window.
+        """Run a collection job with lookback window.
 
         Args:
-            session_id: The benchmark session ID
+            session_id: The benchmark session ID to collect for.
             lookback_hours: Hours to look back from now (default 24)
             watermark: Optional ingest watermark to resume from
 
         Returns:
             CollectionJobResult with collection outcome
         """
-        from datetime import UTC, datetime, timedelta
-
         end_time = datetime.now(UTC)
         start_time = end_time - timedelta(hours=lookback_hours)
 
