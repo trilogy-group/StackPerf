@@ -8,12 +8,14 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.schemas import (
+    ExperimentComparisonResponse,
     ExperimentListResponse,
     ExperimentResponse,
     MetricRollupResponse,
     RequestResponse,
     SessionDetailResponse,
     SessionResponse,
+    VariantComparisonResponse,
     VariantResponse,
 )
 
@@ -186,6 +188,43 @@ class TestSchemas:
         )
         assert session.experiment_name == "test-exp"
         assert session.request_count == 5
+
+    def test_variant_comparison_response(self) -> None:
+        """Test VariantComparisonResponse schema."""
+        variant_comp = VariantComparisonResponse(
+            variant_id=uuid.uuid4(),
+            variant_name="test-variant",
+            session_count=10,
+            total_requests=100,
+            avg_latency_ms=150.5,
+            avg_ttft_ms=50.0,
+            total_errors=2,
+        )
+        assert variant_comp.variant_name == "test-variant"
+        assert variant_comp.session_count == 10
+        assert variant_comp.avg_latency_ms == 150.5
+
+    def test_experiment_comparison_response(self) -> None:
+        """Test ExperimentComparisonResponse schema."""
+        from datetime import datetime
+
+        variant_comp = VariantComparisonResponse(
+            variant_id=uuid.uuid4(),
+            variant_name="test-variant",
+            session_count=5,
+            total_requests=50,
+            avg_latency_ms=100.0,
+            avg_ttft_ms=30.0,
+            total_errors=0,
+        )
+        comparison = ExperimentComparisonResponse(
+            experiment_id=uuid.uuid4(),
+            experiment_name="test-experiment",
+            variants=[variant_comp],
+        )
+        assert comparison.experiment_name == "test-experiment"
+        assert len(comparison.variants) == 1
+        assert comparison.variants[0].variant_name == "test-variant"
 
 
 # ============================================================================

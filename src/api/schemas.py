@@ -208,3 +208,26 @@ class MetricRollupFilter(BaseModel):
     )
     dimension_id: str | None = Field(default=None, description="Filter by dimension ID")
     metric_name: str | None = Field(default=None, description="Filter by metric name")
+
+
+# Comparison endpoint response schemas
+class VariantComparisonResponse(BaseModel):
+    """Response schema for a single variant in experiment comparison."""
+
+    variant_id: UUID = Field(..., description="Variant UUID")
+    variant_name: str = Field(..., description="Variant name")
+    session_count: int = Field(default=0, description="Number of sessions")
+    total_requests: int = Field(default=0, description="Total request count")
+    avg_latency_ms: float | None = Field(default=None, description="Average latency in ms")
+    avg_ttft_ms: float | None = Field(default=None, description="Average time to first token in ms")
+    total_errors: int = Field(default=0, description="Total error count")
+
+
+class ExperimentComparisonResponse(BaseModel):
+    """Response schema for experiment comparison endpoint."""
+
+    experiment_id: UUID = Field(..., description="Experiment UUID")
+    experiment_name: str = Field(..., description="Experiment name")
+    variants: list[VariantComparisonResponse] = Field(
+        default_factory=list, description="Variant comparison data"
+    )

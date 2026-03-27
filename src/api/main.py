@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy.orm import sessionmaker
 
 from api.schemas import (
+    ExperimentComparisonResponse,
     ExperimentDetailResponse,
     ExperimentListResponse,
     ExperimentResponse,
@@ -22,6 +23,7 @@ from api.schemas import (
     SessionDetailResponse,
     SessionListResponse,
     SessionResponse,
+    VariantComparisonResponse,
     VariantListResponse,
     VariantResponse,
 )
@@ -29,6 +31,7 @@ from benchmark_core.db.models import (
     Experiment,
     ExperimentVariant,
     MetricRollup,
+    TaskCard,
     Variant,
 )
 from benchmark_core.db.models import (
@@ -286,6 +289,7 @@ async def get_session(session_id: UUID, db: DBSession) -> SessionDetailResponse:
         .options(
             joinedload(SessionORM.experiment),
             joinedload(SessionORM.variant),
+            joinedload(SessionORM.task_card),
         )
     )
     result = db.execute(stmt).scalars().unique().one_or_none()
@@ -318,7 +322,7 @@ async def get_session(session_id: UUID, db: DBSession) -> SessionDetailResponse:
         updated_at=result.updated_at,
         experiment_name=result.experiment.name if result.experiment else None,
         variant_name=result.variant.name if result.variant else None,
-        task_card_name=None,  # Would need joinedload for task_card
+        task_card_name=result.task_card.name if result.task_card else None,
         request_count=request_count,
     )
     return response
@@ -457,8 +461,14 @@ async def get_rollup(rollup_id: UUID, db: DBSession) -> MetricRollupResponse:
 # ============================================================================
 
 
-@app.get("/experiments/{experiment_id}/comparison", tags=["experiments"])
-async def get_experiment_comparison(experiment_id: UUID, db: DBSession) -> dict[str, Any]:
+@app.get(
+    "/experiments/{experiment_id}/comparison",
+    response_model=ExperimentComparisonResponse,
+    tags=["experiments"],
+)
+async def get_experiment_comparison(
+    experiment_id: UUID, db: DBSession
+) -> ExperimentComparisonResponse:
     """Get comparison data for an experiment.
 
     Returns variant-level aggregations for the experiment.
@@ -493,22 +503,22 @@ async def get_experiment_comparison(experiment_id: UUID, db: DBSession) -> dict[
     variants = []
     for row in results:
         variants.append(
-            {
-                "variant_id": str(row.variant_id),
-                "variant_name": row.variant_name,
-                "session_count": row.session_count or 0,
-                "total_requests": row.total_requests or 0,
-                "avg_latency_ms": row.avg_latency_ms,
-                "avg_ttft_ms": row.avg_ttft_ms,
-                "total_errors": row.total_errors or 0,
-            }
+            VariantComparisonResponse(
+                variant_id=row.variant_id,
+                variant_name=row.variant_name,
+                session_count=row.session_count or 0,
+                total_requests=row.total_requests or 0,
+                avg_latency_ms=row.avg_latency_ms,
+                avg_ttft_ms=row.avg_ttft_ms,
+                total_errors=row.total_errors or 0,
+            )
         )
 
-    return {
-        "experiment_id": str(experiment_id),
-        "experiment_name": experiment.name,
-        "variants": variants,
-    }
+    return ExperimentComparisonResponse(
+        experiment_id=experiment_id,
+        experiment_name=experiment.name,
+        variants=variants,
+    )
 
 
 # ============================================================================
