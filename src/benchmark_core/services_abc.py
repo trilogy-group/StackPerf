@@ -1,87 +1,14 @@
-"""Core domain services for session management and credential issuance."""
+"""Abstract service definitions for the benchmark core.
 
-from datetime import UTC, datetime
+Note: The concrete implementations have been moved to the services/ package.
+This file is kept for backward compatibility and will be deprecated.
+"""
+
 from typing import Any
 from uuid import UUID
 
-from benchmark_core.models import Artifact, Session, SessionOutcomeState
-from benchmark_core.repositories import ArtifactRepository, SessionRepository
-
-
-class SessionService:
-    """Service for managing benchmark session lifecycle."""
-
-    def __init__(self, repository: SessionRepository) -> None:
-        self._repository = repository
-
-    async def create_session(
-        self,
-        experiment_id: str,
-        variant_id: str,
-        task_card_id: str,
-        harness_profile: str,
-        repo_path: str,
-        git_branch: str,
-        git_commit: str,
-        git_dirty: bool = False,
-        operator_label: str | None = None,
-        notes: str | None = None,
-    ) -> Session:
-        """Create a new benchmark session record."""
-        session = Session(
-            experiment_id=experiment_id,
-            variant_id=variant_id,
-            task_card_id=task_card_id,
-            harness_profile=harness_profile,
-            repo_path=repo_path,
-            git_branch=git_branch,
-            git_commit=git_commit,
-            git_dirty=git_dirty,
-            operator_label=operator_label,
-            notes=notes,
-        )
-        return await self._repository.create(session)
-
-    async def get_session(self, session_id: UUID) -> Session | None:
-        """Retrieve a session by ID."""
-        return await self._repository.get_by_id(session_id)
-
-    async def update_session_notes(self, session_id: UUID, notes: str | None) -> Session | None:
-        """Update session notes."""
-        session = await self._repository.get_by_id(session_id)
-        if session is None:
-            return None
-
-        updated = session.model_copy(update={"notes": notes})
-        return await self._repository.update(updated)
-
-    async def finalize_session(
-        self,
-        session_id: UUID,
-        outcome_state: SessionOutcomeState | None = None,
-    ) -> Session | None:
-        """Finalize a session with end time, summary rollups, and outcome state.
-
-        Args:
-            session_id: The session ID to finalize
-            outcome_state: The outcome state (valid, invalid, or aborted).
-                          Defaults to VALID if not specified.
-        """
-        session = await self._repository.get_by_id(session_id)
-        if session is None:
-            return None
-
-        # Default to VALID outcome if not specified
-        final_outcome = outcome_state.value if outcome_state else SessionOutcomeState.VALID.value
-
-        updated = session.model_copy(
-            update={
-                "ended_at": datetime.now(UTC),
-                "status": "completed",
-                "outcome_state": final_outcome,
-            }
-        )
-        return await self._repository.update(updated)
+from benchmark_core.models import Artifact
+from benchmark_core.repositories import ArtifactRepository
 
 
 class CredentialService:

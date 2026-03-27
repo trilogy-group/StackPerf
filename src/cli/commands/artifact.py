@@ -152,9 +152,9 @@ def list_artifacts(
             for art in artifacts:
                 # Determine scope
                 if art.session_id:
-                    scope = f"session:{art.session_id[:8]}"
+                    scope = f"session:{str(art.session_id)[:8]}"
                 elif art.experiment_id:
-                    scope = f"experiment:{art.experiment_id[:8]}"
+                    scope = f"experiment:{str(art.experiment_id)[:8]}"
                 else:
                     scope = "none"
 
