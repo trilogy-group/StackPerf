@@ -9,20 +9,20 @@ showing:
 """
 
 import asyncio
-from datetime import UTC, datetime
-from uuid import uuid4
 
 # Set up path for imports
 import sys
+from datetime import UTC, datetime
+from uuid import uuid4
+
 sys.path.insert(0, "src")
 
+from benchmark_core.models import Request
+from benchmark_core.services import CollectionJobService
 from collectors.litellm_collector import (
     CollectionDiagnostics,
     IngestWatermark,
-    LiteLLMCollector,
 )
-from benchmark_core.models import Request
-from benchmark_core.services import CollectionJobService
 
 
 class MockRepository:
@@ -107,13 +107,13 @@ async def demo_collector():
         else:
             print(f"✗ Skipped: {raw.get('request_id', 'unknown')}")
 
-    print(f"\n--- Diagnostics Summary ---")
+    print("\n--- Diagnostics Summary ---")
     print(f"Total raw records processed: {len(mock_raw_data)}")
     print(f"Successfully normalized: {len(normalized_requests)}")
     print(f"Skipped: {diagnostics.skipped_count}")
 
     if diagnostics.missing_fields:
-        print(f"\nMissing fields detected:")
+        print("\nMissing fields detected:")
         for field, count in diagnostics.missing_fields.items():
             print(f"  - {field}: {count} occurrences")
 

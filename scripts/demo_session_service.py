@@ -16,14 +16,9 @@ from uuid import uuid4
 sys.path.insert(0, "src")
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session as SQLAlchemySession
 from sqlalchemy.orm import sessionmaker
 
 from benchmark_core.db.models import Base
-from benchmark_core.repositories.base import (
-    DuplicateIdentifierError,
-    ReferentialIntegrityError,
-)
 from benchmark_core.repositories.session_repository import SQLSessionRepository
 from benchmark_core.services.benchmark_metadata_service import BenchmarkMetadataService
 from benchmark_core.services.session_service import SessionService, SessionValidationError
@@ -125,7 +120,6 @@ async def demo_create_and_finalize_session():
         print("\n4. Finalizing the session...")
         finalized = await session_service.finalize_session(session.session_id, status="completed")
         print(f"   ✓ Session finalized")
-        print(f"   ✓ Status: {finalized.status}")
         print(f"   ✓ Ended at: {finalized.ended_at}")
         # Handle timezone-aware/naive datetime comparison for SQLite compatibility
         started = finalized.started_at

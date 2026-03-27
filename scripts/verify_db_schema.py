@@ -18,7 +18,6 @@ from sqlalchemy.orm import Session
 
 from benchmark_core.db.models import (
     Artifact,
-    Base,
     Experiment,
     ExperimentVariant,
     HarnessProfile,
@@ -26,9 +25,11 @@ from benchmark_core.db.models import (
     Provider,
     ProviderModel,
     Request,
-    Session as DBSession,
     TaskCard,
     Variant,
+)
+from benchmark_core.db.models import (
+    Session as DBSession,
 )
 from benchmark_core.db.session import init_db
 
@@ -285,8 +286,8 @@ def verify_schema():
         req_count_after = session.query(Request).count()
         art_count_after = session.query(Artifact).count()
 
-        assert req_count_after == req_count_before - 1, f"Request cascade delete failed"
-        assert art_count_after == art_count_before - 1, f"Artifact cascade delete failed"
+        assert req_count_after == req_count_before - 1, "Request cascade delete failed"
+        assert art_count_after == art_count_before - 1, "Artifact cascade delete failed"
         print("   ✓ Cascade delete works correctly")
 
     # Verify migration baseline exists
