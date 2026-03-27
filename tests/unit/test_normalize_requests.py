@@ -564,7 +564,7 @@ class TestRequestNormalizerJob:
 
     @pytest.mark.asyncio
     async def test_run_repository_failure(self) -> None:
-        """Test handling of repository failure."""
+        """Test handling of repository failure - should raise RuntimeError."""
         mock_repo = MagicMock()
         mock_repo.create_many = AsyncMock(side_effect=Exception("DB Error"))
 
@@ -579,11 +579,12 @@ class TestRequestNormalizerJob:
             },
         ]
 
-        written, report = await job.run(raw_requests)
+        # Repository failures now propagate as RuntimeError
+        with pytest.raises(RuntimeError) as exc_info:
+            await job.run(raw_requests)
 
-        assert written == []
-        assert report.total_rows == 2  # 1 mapped + 1 failed insert
-        assert report.unmapped_count == 1  # The failed insert
+        assert "Bulk insert failed" in str(exc_info.value)
+        assert "DB Error" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_run_all_invalid_data(self) -> None:

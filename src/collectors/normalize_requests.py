@@ -520,14 +520,11 @@ class RequestNormalizerJob:
                 written = await self._repository.create_many(requests_to_ingest)
                 return written, report
             except Exception as e:
-                # If bulk insert fails, mark all as unmapped
-                for req in requests_to_ingest:
-                    report.add_unmapped(
-                        raw_data={"request_id": req.request_id},
-                        reason="Repository bulk insert failed",
-                        error_message=str(e),
-                    )
-                return [], report
+                # Database/repository failures are distinct from data quality issues.
+                # Data quality issues were already tracked during normalization above.
+                # Here we just need to report the infrastructure failure.
+                # Re-raise to let caller handle (e.g., transaction rollback, alerting)
+                raise RuntimeError(f"Bulk insert failed after normalizing {len(requests_to_ingest)} requests: {e}") from e
 
         return [], report
 
