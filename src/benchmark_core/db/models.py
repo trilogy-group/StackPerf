@@ -7,14 +7,15 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
     Integer,
     String,
     Text,
-    Uuid,
     UniqueConstraint,
+    Uuid,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -308,7 +309,10 @@ class Artifact(Base):
 
     __table_args__ = (
         # Ensure at least one of session_id or experiment_id is provided
-        # This is enforced at application level since SQL CHECK with OR is complex
+        CheckConstraint(
+            'session_id IS NOT NULL OR experiment_id IS NOT NULL',
+            name='ck_artifact_scope'
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)

@@ -17,8 +17,9 @@ def test_import_main_app() -> None:
 
 def test_import_commands() -> None:
     """Smoke test: command modules import successfully."""
-    from cli.commands import config, export, session
+    from cli.commands import artifact, config, export, session
 
     assert config.app is not None
     assert session.app is not None
     assert export.app is not None
+    assert artifact.app is not None

@@ -111,3 +111,69 @@ class DashboardQueries:
         ORDER BY timestamp
         """
         return query, placeholders
+
+    @staticmethod
+    def experiment_summary_valid_only() -> tuple[str, dict[str, Any]]:
+        """Generate parameterized SQL for experiment summary (valid sessions only).
+
+        Excludes sessions with outcome_state='invalid' for clean comparisons.
+        Sessions with outcome_state='valid' or outcome_state IS NULL are included.
+
+        Returns:
+            Tuple of (SQL query string with :experiment_id placeholder,
+                     parameter template dict)
+
+        Example:
+            sql, params = DashboardQueries.experiment_summary_valid_only()
+            # Execute with driver parameter binding:
+            # await db.fetch_all(sql, {"experiment_id": experiment_id})
+        """
+        query = """
+        SELECT
+            v.variant_id,
+            COUNT(DISTINCT s.session_id) as session_count,
+            COUNT(r.request_id) as total_requests,
+            AVG(r.latency_ms) as avg_latency_ms,
+            AVG(r.ttft_ms) as avg_ttft_ms,
+            SUM(CASE WHEN r.error THEN 1 ELSE 0 END) as total_errors
+        FROM variants v
+        JOIN sessions s ON s.variant_id = v.variant_id
+        LEFT JOIN requests r ON s.session_id = r.session_id
+        WHERE s.experiment_id = :experiment_id
+          AND (s.outcome_state IS NULL OR s.outcome_state != 'invalid')
+        GROUP BY v.variant_id
+        """
+        return query, {"experiment_id": None}  # Params set by caller with proper binding
+
+    @staticmethod
+    def list_sessions_with_outcome() -> tuple[str, dict[str, Any]]:
+        """Generate parameterized SQL to list sessions with their outcome state.
+
+        Returns:
+            Tuple of (SQL query string with optional filters,
+                     parameter template dict with :experiment_id)
+
+        Example:
+            sql, params = DashboardQueries.list_sessions_with_outcome()
+            # Execute with driver parameter binding:
+            # await db.fetch_all(sql, {"experiment_id": exp_id})
+        """
+        query = """
+        SELECT
+            s.id as session_id,
+            s.status,
+            s.outcome_state,
+            s.started_at,
+            s.ended_at,
+            s.notes,
+            e.name as experiment_name,
+            v.name as variant_name,
+            t.name as task_card_name
+        FROM sessions s
+        JOIN experiments e ON s.experiment_id = e.id
+        JOIN variants v ON s.variant_id = v.id
+        JOIN task_cards t ON s.task_card_id = t.id
+        WHERE s.experiment_id = :experiment_id
+        ORDER BY s.started_at DESC
+        """
+        return query, {"experiment_id": None}
