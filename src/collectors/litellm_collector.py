@@ -1,5 +1,6 @@
 """LiteLLM request collection and normalization."""
 
+import contextlib
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -51,10 +52,8 @@ class IngestWatermark:
         """Deserialize watermark from dictionary."""
         timestamp = None
         if data.get("last_timestamp"):
-            try:
+            with contextlib.suppress(ValueError):
                 timestamp = datetime.fromisoformat(data["last_timestamp"])
-            except ValueError:
-                pass
         return cls(
             last_request_id=data.get("last_request_id"),
             last_timestamp=timestamp,
