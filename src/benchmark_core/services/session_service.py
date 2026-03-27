@@ -1,6 +1,8 @@
 """Service for managing benchmark session lifecycle safely."""
 
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from benchmark_core.models import Session
@@ -9,7 +11,13 @@ from benchmark_core.repositories.base import (
     ReferentialIntegrityError,
     RepositoryError,
 )
+from benchmark_core.repositories.request_repository import SQLRequestRepository
 from benchmark_core.repositories.session_repository import SQLSessionRepository
+from collectors.litellm_collector import (
+    CollectionDiagnostics,
+    IngestWatermark,
+    LiteLLMCollector,
+)
 
 
 class SessionValidationError(Exception):
@@ -359,18 +367,6 @@ class SessionService:
                 else None
             ),
         }
-
-
-from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
-from typing import Any
-
-from collectors.litellm_collector import (
-    CollectionDiagnostics,
-    IngestWatermark,
-    LiteLLMCollector,
-)
-from benchmark_core.repositories.request_repository import SQLRequestRepository
 
 
 @dataclass
