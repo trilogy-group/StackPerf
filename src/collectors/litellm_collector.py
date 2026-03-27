@@ -314,7 +314,7 @@ class LiteLLMCollector:
         # Collect metadata including session correlation keys
         metadata: dict[str, Any] = {}
 
-        # Preserve session correlation keys from raw data if present
+        # Preserve session correlation keys from raw data or nested metadata
         correlation_keys = [
             "session_id",
             "experiment_id",
@@ -325,9 +325,13 @@ class LiteLLMCollector:
             "span_id",
             "parent_span_id",
         ]
+        # Check both top-level and nested metadata for correlation keys
+        raw_metadata = raw_data.get("metadata", {})
         for key in correlation_keys:
             if key in raw_data:
                 metadata[key] = raw_data[key]
+            elif key in raw_metadata:
+                metadata[key] = raw_metadata[key]
 
         # Store raw data reference for debugging
         metadata["litellm_raw_keys"] = list(raw_data.keys())
