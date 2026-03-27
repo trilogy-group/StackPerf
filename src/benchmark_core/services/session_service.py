@@ -454,7 +454,7 @@ class CollectionJobService:
                 )
 
             # Persist normalized requests
-            created = await self._repository.create_batch(requests)
+            created = await self._repository.create_many(requests)
 
             return CollectionJobResult(
                 success=True,
