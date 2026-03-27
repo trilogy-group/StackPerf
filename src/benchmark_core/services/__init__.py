@@ -21,7 +21,6 @@ from benchmark_core.services.variant_service import VariantService
 
 # ABC service exports - Note: old services_abc SessionService removed, use services.session_service
 from benchmark_core.services_abc import (
-    ArtifactRegistryService,
     CredentialService as CredentialServiceABC,
 )
 
@@ -40,6 +39,5 @@ __all__ = [
     "CollectionJobService",
     "CollectionJobResult",
     # ABC services
-    "ArtifactRegistryService",
     "CredentialServiceABC",
 ]
