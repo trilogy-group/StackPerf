@@ -144,7 +144,7 @@ class SessionService:
             return None
 
         # Revoke credential if present and repository available
-        if session.proxy_credential_id and self._credential_repo:
+        if session.proxy_credential_alias and self._credential_repo:
             await self._credential_repo.revoke(session_id)
 
         updated = session.model_copy(update={"ended_at": datetime.now(UTC), "status": "completed"})

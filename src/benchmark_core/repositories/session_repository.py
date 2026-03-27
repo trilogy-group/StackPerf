@@ -283,7 +283,7 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
         git_commit: str,
         git_dirty: bool = False,
         operator_label: str | None = None,
-        proxy_credential_id: str | None = None,
+        proxy_credential_alias: str | None = None,
     ) -> SessionORM:
         """Safely create a session with validation and duplicate rejection.
 
@@ -302,7 +302,7 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
             git_commit: Commit SHA.
             git_dirty: Whether the working tree is dirty.
             operator_label: Optional operator-provided label (used as external session ID).
-            proxy_credential_id: Optional proxy credential identifier.
+            proxy_credential_alias: Optional proxy credential key alias.
 
         Returns:
             The created session.
@@ -359,7 +359,7 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
             git_commit=git_commit,
             git_dirty=git_dirty,
             operator_label=operator_label,
-            proxy_credential_id=proxy_credential_id,
+            proxy_credential_alias=proxy_credential_alias,
             status="active",
         )
 

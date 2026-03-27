@@ -60,7 +60,7 @@ class SessionService:
         git_commit: str,
         git_dirty: bool = False,
         operator_label: str | None = None,
-        proxy_credential_id: str | None = None,
+        proxy_credential_alias: str | None = None,
     ) -> Session:
         """Create a new benchmark session safely.
 
@@ -80,7 +80,7 @@ class SessionService:
             git_commit: Commit SHA.
             git_dirty: Whether the working tree is dirty.
             operator_label: Optional operator-provided label (acts as external session ID).
-            proxy_credential_id: Optional proxy credential identifier.
+            proxy_credential_alias: Optional proxy credential key alias.
 
         Returns:
             The created session with all metadata populated.
@@ -122,7 +122,7 @@ class SessionService:
                 git_commit=git_commit,
                 git_dirty=git_dirty,
                 operator_label=operator_label,
-                proxy_credential_id=proxy_credential_id,
+                proxy_credential_alias=proxy_credential_alias,
             )
             # Convert DBSession to domain Session model
             return Session(
@@ -136,7 +136,7 @@ class SessionService:
                 git_commit=db_session.git_commit,
                 git_dirty=db_session.git_dirty,
                 operator_label=db_session.operator_label,
-                proxy_credential_id=db_session.proxy_credential_id,
+                proxy_credential_alias=db_session.proxy_credential_alias,
                 started_at=db_session.started_at,
                 ended_at=db_session.ended_at,
                 status=db_session.status,
@@ -172,7 +172,7 @@ class SessionService:
             git_commit=db_session.git_commit,
             git_dirty=db_session.git_dirty,
             operator_label=db_session.operator_label,
-            proxy_credential_id=db_session.proxy_credential_id,
+            proxy_credential_alias=db_session.proxy_credential_alias,
             started_at=db_session.started_at,
             ended_at=db_session.ended_at,
             status=db_session.status,
@@ -241,7 +241,7 @@ class SessionService:
                 git_commit=db_finalized.git_commit,
                 git_dirty=db_finalized.git_dirty,
                 operator_label=db_finalized.operator_label,
-                proxy_credential_id=db_finalized.proxy_credential_id,
+                proxy_credential_alias=db_finalized.proxy_credential_alias,
                 started_at=db_finalized.started_at,
                 ended_at=db_finalized.ended_at,
                 status=db_finalized.status,

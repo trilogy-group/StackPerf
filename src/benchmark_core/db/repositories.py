@@ -1,7 +1,7 @@
 """SQLAlchemy repository implementations for session, request, and credential storage."""
 
 from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import SecretStr
 from sqlalchemy import select
@@ -10,15 +10,23 @@ from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
     Experiment,
-    ProxyCredential as ProxyCredentialORM,
-    Request as DBRequest,
-    Session as DBSession,
     TaskCard,
     Variant,
+)
+from benchmark_core.db.models import (
+    ProxyCredential as ProxyCredentialORM,
+)
+from benchmark_core.db.models import (
+    Request as DBRequest,
+)
+from benchmark_core.db.models import (
+    Session as DBSession,
 )
 from benchmark_core.models import ProxyCredential, Request, Session
 from benchmark_core.repositories import (
     ProxyCredentialRepository as AbstractProxyCredentialRepository,
+)
+from benchmark_core.repositories import (
     RequestRepository,
     SessionRepository,
 )
@@ -53,7 +61,7 @@ class SQLAlchemySessionRepository(SessionRepository):
             git_commit=session.git_commit,
             git_dirty=session.git_dirty,
             operator_label=session.operator_label,
-            proxy_credential_id=session.proxy_credential_id,
+            proxy_credential_alias=session.proxy_credential_alias,
             started_at=session.started_at,
             ended_at=session.ended_at,
             status=session.status,
@@ -77,7 +85,7 @@ class SQLAlchemySessionRepository(SessionRepository):
 
         db_session.status = session.status
         db_session.ended_at = session.ended_at
-        db_session.proxy_credential_id = session.proxy_credential_id
+        db_session.proxy_credential_alias = session.proxy_credential_alias
         db_session.operator_label = session.operator_label
         self._session.flush()
         return session
@@ -101,7 +109,7 @@ class SQLAlchemySessionRepository(SessionRepository):
             git_commit=db_session.git_commit,
             git_dirty=db_session.git_dirty,
             operator_label=db_session.operator_label,
-            proxy_credential_id=db_session.proxy_credential_id,
+            proxy_credential_alias=db_session.proxy_credential_alias,
             started_at=db_session.started_at,
             ended_at=db_session.ended_at,
             status=db_session.status,
@@ -118,7 +126,7 @@ class SQLAlchemySessionRepository(SessionRepository):
         git_commit: str,
         git_dirty: bool = False,
         operator_label: str | None = None,
-        proxy_credential_id: str | None = None,
+        proxy_credential_alias: str | None = None,
     ) -> DBSession:
         """Safely create a session with validation and duplicate rejection.
 
@@ -132,7 +140,7 @@ class SQLAlchemySessionRepository(SessionRepository):
             git_commit: Commit SHA.
             git_dirty: Whether the working tree is dirty.
             operator_label: Optional operator-provided label.
-            proxy_credential_id: Optional proxy credential identifier.
+            proxy_credential_alias: Optional proxy credential key alias.
 
         Returns:
             The created session.
@@ -181,7 +189,7 @@ class SQLAlchemySessionRepository(SessionRepository):
             git_commit=git_commit,
             git_dirty=git_dirty,
             operator_label=operator_label,
-            proxy_credential_id=proxy_credential_id,
+            proxy_credential_alias=proxy_credential_alias,
             started_at=datetime.now(UTC),
             status="active",
         )
