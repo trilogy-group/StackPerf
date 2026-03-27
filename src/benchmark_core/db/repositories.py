@@ -7,10 +7,14 @@ from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
     Experiment,
-    Request as DBRequest,
-    Session as DBSession,
     TaskCard,
     Variant,
+)
+from benchmark_core.db.models import (
+    Request as DBRequest,
+)
+from benchmark_core.db.models import (
+    Session as DBSession,
 )
 from benchmark_core.models import Request, Session
 from benchmark_core.repositories import RequestRepository, SessionRepository
