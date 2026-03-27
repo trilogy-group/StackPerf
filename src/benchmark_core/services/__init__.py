@@ -1,9 +1,18 @@
 """Services package for benchmark core.
 
-Provides session management and credential services.
+Provides session management, credential, and collection job services.
 """
 
-from benchmark_core.services.credential_service import CredentialService
-from benchmark_core.services.session_service import SessionService
+from benchmark_core.services.session_service import (
+    CollectionJobResult,
+    CollectionJobService,
+    CredentialService,
+    SessionService,
+)
 
-__all__ = ["SessionService", "CredentialService"]
+__all__ = [
+    "SessionService",
+    "CredentialService",
+    "CollectionJobService",
+    "CollectionJobResult",
+]

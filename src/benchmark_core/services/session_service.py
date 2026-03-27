@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from benchmark_core.models import Request, Session
+from benchmark_core.models import Session
 from benchmark_core.repositories import RequestRepository, SessionRepository
 from collectors.litellm_collector import (
     CollectionDiagnostics,
