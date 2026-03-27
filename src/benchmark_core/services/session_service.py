@@ -369,18 +369,6 @@ class SessionService:
         }
 
 
-from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
-from typing import Any
-
-from collectors.litellm_collector import (
-    CollectionDiagnostics,
-    IngestWatermark,
-    LiteLLMCollector,
-)
-from benchmark_core.repositories.request_repository import SQLRequestRepository
-
-
 @dataclass
 class CollectionJobResult:
     """Result of a collection job execution."""
