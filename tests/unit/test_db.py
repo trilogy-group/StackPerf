@@ -337,7 +337,7 @@ class TestDatabaseModels:
         """Test that requests and artifacts are deleted when session is deleted."""
         # Create fresh session with proper engine
         session_local = sessionmaker(bind=test_engine)
-        db_session = session_local()
+        test_session = session_local()
 
         # Create prerequisite records
         experiment = Experiment(name="cascade-test-exp", description="Test")
@@ -353,8 +353,8 @@ class TestDatabaseModels:
             starting_prompt="Test prompt",
             stop_condition="Test condition",
         )
-        db_session.add_all([experiment, variant, task])
-        db_session.flush()
+        test_session.add_all([experiment, variant, task])
+        test_session.flush()
 
         # Create session with proper FKs
         session = DBSession(
@@ -367,8 +367,8 @@ class TestDatabaseModels:
             git_commit="abc123",
             status="active",
         )
-        db_session.add(session)
-        db_session.flush()
+        test_session.add(session)
+        test_session.flush()
 
         # Create request and artifact
         request = Request(
@@ -385,22 +385,22 @@ class TestDatabaseModels:
             content_type="text/plain",
             storage_path="/storage/test.log",
         )
-        db_session.add(request)
-        db_session.add(artifact)
-        db_session.commit()
+        test_session.add(request)
+        test_session.add(artifact)
+        test_session.commit()
 
         # Verify they exist
-        assert db_session.query(Request).count() == 1
-        assert db_session.query(Artifact).count() == 1
+        assert test_session.query(Request).count() == 1
+        assert test_session.query(Artifact).count() == 1
 
         # Delete session
-        db_session.delete(session)
-        db_session.commit()
+        test_session.delete(session)
+        test_session.commit()
 
         # Verify cascade delete worked
-        assert db_session.query(Request).count() == 0
-        assert db_session.query(Artifact).count() == 0
-        db_session.close()
+        assert test_session.query(Request).count() == 0
+        assert test_session.query(Artifact).count() == 0
+        test_session.close()
 
 
 class TestSessionUtilities:
