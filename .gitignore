@@ -30,6 +30,7 @@ htmlcov/
 # Project
 .opensymphony/
 .opensymphony.after_create.json
+WORKPAD.md
 
 # Database
 *.db
