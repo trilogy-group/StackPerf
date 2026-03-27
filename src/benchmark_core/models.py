@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 
 
 def _utc_now() -> datetime:
@@ -25,13 +25,56 @@ class Session(BaseModel):
     git_commit: str = Field(..., description="Commit SHA")
     git_dirty: bool = Field(default=False, description="Dirty state flag")
     operator_label: str | None = Field(default=None, description="Operator-provided label")
-    proxy_credential_id: str | None = Field(
+    proxy_credential_alias: str | None = Field(
         default=None,
-        description="Session-scoped proxy credential",
+        description="Session-scoped proxy credential key alias",
     )
     started_at: datetime = Field(default_factory=_utc_now)
     ended_at: datetime | None = Field(default=None)
     status: str = Field(default="active", description="Session status")
+
+
+class ProxyCredential(BaseModel):
+    """A session-scoped proxy credential for LiteLLM authentication.
+
+    Stores metadata and reference information. The actual secret key
+    is managed by LiteLLM and is never stored in the benchmark database.
+    """
+
+    credential_id: UUID = Field(default_factory=uuid4)
+    session_id: UUID = Field(..., description="Benchmark session ID")
+    key_alias: str = Field(..., description="Human-readable key alias for correlation")
+    # Secret is stored only in memory, never persisted to benchmark DB
+    api_key: SecretStr = Field(..., description="LiteLLM API key (session-scoped)")
+    # Metadata tags for joining back to session
+    experiment_id: str = Field(..., description="Experiment identifier")
+    variant_id: str = Field(..., description="Variant identifier")
+    harness_profile: str = Field(..., description="Harness profile name")
+    # Metadata tags to send to LiteLLM for correlation
+    metadata_tags: dict[str, str] = Field(
+        default_factory=dict,
+        description="Tags for LiteLLM request correlation",
+    )
+    # LiteLLM-specific reference
+    litellm_key_id: str | None = Field(
+        default=None,
+        description="LiteLLM internal key ID for revocation",
+    )
+    # Expiration and lifecycle
+    expires_at: datetime | None = Field(
+        default=None,
+        description="Credential expiration time",
+    )
+    is_active: bool = Field(default=True, description="Credential active status")
+    created_at: datetime = Field(default_factory=_utc_now)
+    revoked_at: datetime | None = Field(default=None)
+
+    def get_redacted_key(self) -> str:
+        """Return a redacted version of the API key for logging."""
+        key_value = self.api_key.get_secret_value()
+        if len(key_value) <= 12:
+            return "***"
+        return f"{key_value[:4]}...{key_value[-4:]}"
 
 
 class Request(BaseModel):

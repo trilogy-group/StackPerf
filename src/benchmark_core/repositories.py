@@ -3,7 +3,44 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from benchmark_core.models import Request, Session
+from benchmark_core.models import ProxyCredential, Request, Session
+
+
+class ProxyCredentialRepository(ABC):
+    """Abstract repository for proxy credential metadata persistence.
+
+    Note: This repository stores credential metadata (alias, tags, references)
+    but NOT the actual API key secrets. Secrets are managed by LiteLLM.
+    """
+
+    @abstractmethod
+    async def create(self, credential: ProxyCredential) -> ProxyCredential:
+        """Persist credential metadata (without the secret key).
+
+        Stores the key alias, metadata tags, and references for correlation.
+        The actual API key is NOT stored in the benchmark database.
+        """
+        ...
+
+    @abstractmethod
+    async def get_by_session(self, session_id: UUID) -> ProxyCredential | None:
+        """Retrieve credential metadata by session ID."""
+        ...
+
+    @abstractmethod
+    async def get_by_alias(self, key_alias: str) -> ProxyCredential | None:
+        """Retrieve credential metadata by key alias."""
+        ...
+
+    @abstractmethod
+    async def update(self, credential: ProxyCredential) -> ProxyCredential:
+        """Update credential metadata (e.g., revocation status)."""
+        ...
+
+    @abstractmethod
+    async def revoke(self, session_id: UUID) -> ProxyCredential | None:
+        """Mark a credential as revoked in the metadata store."""
+        ...
 
 
 class SessionRepository(ABC):

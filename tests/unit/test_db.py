@@ -1,6 +1,5 @@
 """Tests for database models and session utilities."""
 
-import uuid
 from datetime import UTC, datetime
 
 import pytest
@@ -17,9 +16,11 @@ from benchmark_core.db.models import (
     Provider,
     ProviderModel,
     Request,
-    Session as DBSession,
     TaskCard,
     Variant,
+)
+from benchmark_core.db.models import (
+    Session as DBSession,
 )
 from benchmark_core.db.session import (
     create_database_engine,
@@ -32,6 +33,7 @@ from benchmark_core.db.session import (
 @pytest.fixture
 def test_engine():
     """Create an in-memory SQLite engine for testing."""
+
     # Enable foreign key support for cascade delete to work
     def _fk_pragma_on_connect(dbapi_conn, connection_record):
         dbapi_conn.execute("PRAGMA foreign_keys=ON")
