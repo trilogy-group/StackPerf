@@ -24,6 +24,7 @@ from benchmark_core.repositories.base import (
     DuplicateIdentifierError,
     ReferentialIntegrityError,
 )
+from benchmark_core.repositories.session_repository import SQLSessionRepository
 from benchmark_core.services.benchmark_metadata_service import BenchmarkMetadataService
 from benchmark_core.services.session_service import SessionService, SessionValidationError
 
@@ -45,7 +46,7 @@ async def demo_create_and_finalize_session():
 
     with SessionLocal() as db_session:
         metadata_service = BenchmarkMetadataService(db_session)
-        session_service = SessionService(db_session)
+        session_service = SessionService(SQLSessionRepository(db_session))
 
         # Step 1: Create prerequisite entities
         print("\n1. Creating prerequisite entities...")
@@ -103,14 +104,14 @@ async def demo_create_and_finalize_session():
             git_dirty=False,
             operator_label="demo-session-001",
         )
-        print(f"   ✓ Created session: {session.id}")
+        print(f"   ✓ Created session: {session.session_id}")
         print(f"   ✓ Status: {session.status}")
         print(f"   ✓ Started at: {session.started_at}")
         print(f"   ✓ Operator label: {session.operator_label}")
 
         # Step 3: Get session summary
         print("\n3. Retrieving session summary...")
-        summary = await session_service.get_session_summary(session.id)
+        summary = await session_service.get_session_summary(session.session_id)
         print(f"   ✓ Session summary retrieved:")
         print(f"     - ID: {summary['id']}")
         print(f"     - Status: {summary['status']}")
@@ -122,11 +123,18 @@ async def demo_create_and_finalize_session():
 
         # Step 4: Finalize the session
         print("\n4. Finalizing the session...")
-        finalized = await session_service.finalize_session(session.id, status="completed")
+        finalized = await session_service.finalize_session(session.session_id, status="completed")
         print(f"   ✓ Session finalized")
         print(f"   ✓ Status: {finalized.status}")
         print(f"   ✓ Ended at: {finalized.ended_at}")
-        print(f"   ✓ Duration: {(finalized.ended_at - finalized.started_at).total_seconds():.2f} seconds")
+        # Handle timezone-aware/naive datetime comparison for SQLite compatibility
+        started = finalized.started_at
+        ended = finalized.ended_at
+        if started.tzinfo is not None and ended.tzinfo is None:
+            ended = ended.replace(tzinfo=started.tzinfo)
+        elif started.tzinfo is None and ended.tzinfo is not None:
+            started = started.replace(tzinfo=ended.tzinfo)
+        print(f"   ✓ Duration: {(ended - started).total_seconds():.2f} seconds")
 
     print("\n✅ DEMO 1 PASSED: Sessions can be created and finalized safely")
     return True
@@ -142,7 +150,7 @@ async def demo_referential_integrity():
 
     with SessionLocal() as db_session:
         metadata_service = BenchmarkMetadataService(db_session)
-        session_service = SessionService(db_session)
+        session_service = SessionService(SQLSessionRepository(db_session))
 
         # Create valid entities
         provider = await metadata_service.create_provider_with_models(
@@ -190,7 +198,9 @@ async def demo_referential_integrity():
             print(f"   ✓ Correctly rejected: {e}")
 
         fake_variant_uuid = uuid4()
-        print(f"\n2. Attempting to create session with non-existent variant ({fake_variant_uuid})...")
+        print(
+            f"\n2. Attempting to create session with non-existent variant ({fake_variant_uuid})..."
+        )
         experiment = await metadata_service.create_experiment(
             name="integrity-exp",
             variant_ids=[variant.id],
@@ -211,7 +221,9 @@ async def demo_referential_integrity():
             print(f"   ✓ Correctly rejected: {e}")
 
         fake_task_uuid = uuid4()
-        print(f"\n3. Attempting to create session with non-existent task card ({fake_task_uuid})...")
+        print(
+            f"\n3. Attempting to create session with non-existent task card ({fake_task_uuid})..."
+        )
         try:
             await session_service.create_session(
                 experiment_id=experiment.id,
@@ -241,7 +253,7 @@ async def demo_duplicate_rejection():
 
     with SessionLocal() as db_session:
         metadata_service = BenchmarkMetadataService(db_session)
-        session_service = SessionService(db_session)
+        session_service = SessionService(SQLSessionRepository(db_session))
 
         # Create prerequisite entities
         provider = await metadata_service.create_provider_with_models(
@@ -288,9 +300,11 @@ async def demo_duplicate_rejection():
             git_commit="abc1234",
             operator_label=operator_label,
         )
-        print(f"   ✓ First session created: {session1.id}")
+        print(f"   ✓ First session created: {session1.session_id}")
 
-        print(f"\n2. Attempting to create second session with same operator_label='{operator_label}'...")
+        print(
+            f"\n2. Attempting to create second session with same operator_label='{operator_label}'..."
+        )
         try:
             await session_service.create_session(
                 experiment_id=experiment.id,
@@ -318,7 +332,7 @@ async def demo_duplicate_rejection():
             git_commit="ghi9012",
             operator_label="different-identifier-456",
         )
-        print(f"   ✓ Different label accepted: {session3.id}")
+        print(f"   ✓ Different label accepted: {session3.session_id}")
 
     print("\n✅ DEMO 3 PASSED: Duplicate session identifiers are rejected")
     return True
