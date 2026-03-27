@@ -35,3 +35,4 @@ htmlcov/
 *.db
 *.sqlite
 *.sqlite3
+.codex_workpad.md

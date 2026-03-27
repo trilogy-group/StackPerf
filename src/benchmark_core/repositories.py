@@ -1,9 +1,9 @@
-"""Repository interfaces for session and request storage."""
+"""Repository interfaces for session, request, and artifact storage."""
 
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from benchmark_core.models import Request, Session
+from benchmark_core.models import Artifact, Request, Session
 
 
 class SessionRepository(ABC):
@@ -51,4 +51,33 @@ class RequestRepository(ABC):
     @abstractmethod
     async def get_by_request_id(self, request_id: str) -> Request | None:
         """Get a request by its LiteLLM request ID."""
+        ...
+
+
+class ArtifactRepository(ABC):
+    """Abstract repository for artifact persistence."""
+
+    @abstractmethod
+    async def create(self, artifact: Artifact) -> Artifact:
+        """Create a new artifact record."""
+        ...
+
+    @abstractmethod
+    async def get_by_id(self, artifact_id: UUID) -> Artifact | None:
+        """Retrieve an artifact by ID."""
+        ...
+
+    @abstractmethod
+    async def list_by_session(self, session_id: UUID) -> list[Artifact]:
+        """List all artifacts for a session."""
+        ...
+
+    @abstractmethod
+    async def list_by_experiment(self, experiment_id: UUID) -> list[Artifact]:
+        """List all artifacts for an experiment."""
+        ...
+
+    @abstractmethod
+    async def delete(self, artifact_id: UUID) -> bool:
+        """Delete an artifact record. Returns True if deleted."""
         ...
