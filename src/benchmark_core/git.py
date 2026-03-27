@@ -28,16 +28,16 @@ def get_git_metadata(repo_path: str | None = None) -> GitMetadata | None:
     if repo_path is None:
         repo_path = os.getcwd()
 
-    repo_path = Path(repo_path).resolve()
+    repo_path_obj = Path(repo_path).resolve()
 
     # Check if this is a git repository
-    git_dir = repo_path / ".git"
+    git_dir = repo_path_obj / ".git"
     if not git_dir.exists():
         # Try to find .git in parent directories
-        current = repo_path
+        current = repo_path_obj
         while current != current.parent:
             if (current / ".git").exists():
-                repo_path = current
+                repo_path_obj = current
                 break
             current = current.parent
         else:
@@ -46,7 +46,7 @@ def get_git_metadata(repo_path: str | None = None) -> GitMetadata | None:
     try:
         # Get branch name
         branch_result = subprocess.run(
-            ["git", "-C", str(repo_path), "branch", "--show-current"],
+            ["git", "-C", str(repo_path_obj), "branch", "--show-current"],
             capture_output=True,
             text=True,
             check=True,
@@ -58,7 +58,7 @@ def get_git_metadata(repo_path: str | None = None) -> GitMetadata | None:
 
         # Get commit SHA
         commit_result = subprocess.run(
-            ["git", "-C", str(repo_path), "rev-parse", "HEAD"],
+            ["git", "-C", str(repo_path_obj), "rev-parse", "HEAD"],
             capture_output=True,
             text=True,
             check=True,
@@ -67,7 +67,7 @@ def get_git_metadata(repo_path: str | None = None) -> GitMetadata | None:
 
         # Check for dirty state
         status_result = subprocess.run(
-            ["git", "-C", str(repo_path), "status", "--porcelain"],
+            ["git", "-C", str(repo_path_obj), "status", "--porcelain"],
             capture_output=True,
             text=True,
             check=True,
@@ -75,7 +75,7 @@ def get_git_metadata(repo_path: str | None = None) -> GitMetadata | None:
         dirty = len(status_result.stdout.strip()) > 0
 
         return GitMetadata(
-            repo_path=str(repo_path),
+            repo_path=str(repo_path_obj),
             branch=branch,
             commit=commit,
             dirty=dirty,
