@@ -7,14 +7,10 @@ from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
     Experiment,
+    Request as DBRequest,
+    Session as DBSession,
     TaskCard,
     Variant,
-)
-from benchmark_core.db.models import (
-    Request as DBRequest,
-)
-from benchmark_core.db.models import (
-    Session as DBSession,
 )
 from benchmark_core.models import Request, Session
 from benchmark_core.repositories import RequestRepository, SessionRepository
@@ -178,9 +174,7 @@ class SQLAlchemySessionRepository(SessionRepository):
         # Check for duplicate operator_label if provided
         if operator_label:
             existing = (
-                self._session.query(DBSession)
-                .filter_by(operator_label=operator_label)
-                .first()
+                self._session.query(DBSession).filter_by(operator_label=operator_label).first()
             )
             if existing:
                 raise DuplicateIdentifierError(
@@ -195,21 +189,15 @@ class SQLAlchemySessionRepository(SessionRepository):
 
         experiment = self._session.get(Experiment, exp_id)
         if experiment is None:
-            raise ReferentialIntegrityError(
-                f"Experiment '{experiment_id}' does not exist"
-            )
+            raise ReferentialIntegrityError(f"Experiment '{experiment_id}' does not exist")
 
         variant = self._session.get(Variant, var_id)
         if variant is None:
-            raise ReferentialIntegrityError(
-                f"Variant '{variant_id}' does not exist"
-            )
+            raise ReferentialIntegrityError(f"Variant '{variant_id}' does not exist")
 
         task_card = self._session.get(TaskCard, task_id)
         if task_card is None:
-            raise ReferentialIntegrityError(
-                f"TaskCard '{task_card_id}' does not exist"
-            )
+            raise ReferentialIntegrityError(f"TaskCard '{task_card_id}' does not exist")
 
         # Create the session with proper UUID types
         from uuid import uuid4

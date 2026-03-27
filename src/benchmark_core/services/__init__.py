@@ -22,8 +22,6 @@ from benchmark_core.services.variant_service import VariantService
 # ABC services for interface contracts (backward compatible)
 from benchmark_core.services_abc import (
     CredentialService as CredentialServiceABC,
-)
-from benchmark_core.services_abc import (
     SessionService as SessionServiceABC,
 )
 

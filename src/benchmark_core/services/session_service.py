@@ -514,13 +514,14 @@ class CollectionJobService:
             "total_raw_records": total,
             "normalized_count": normalized,
             "skipped_count": skipped,
-            "success_rate": f"{normalized}/{total} ({normalized / total * 100:.1f}%)" if total > 0 else "N/A",
+            "success_rate": f"{normalized}/{total} ({normalized / total * 100:.1f}%)"
+            if total > 0
+            else "N/A",
         }
 
         if diagnostics.missing_fields:
             summary["missing_fields"] = {
-                field: f"{count} occurrences"
-                for field, count in diagnostics.missing_fields.items()
+                field: f"{count} occurrences" for field, count in diagnostics.missing_fields.items()
             }
 
         if diagnostics.errors:
