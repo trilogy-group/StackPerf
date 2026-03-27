@@ -300,8 +300,13 @@ Use this only when completion is blocked by missing required tools or missing au
 2. Poll for updates as needed, including GitHub PR review comments from humans and bots.
 3. If review feedback requires changes, move the issue to `Rework` and follow the rework flow.
 4. If approved, human moves the issue to `Merging`.
-5. When the issue is in `Merging`, open and follow `.codex/skills/land/SKILL.md`, then run the `land` skill in a loop until the PR is merged. Do not call `gh pr merge` directly.
-6. After merge is complete, move the issue to `Done`.
+5. When the issue is in `Merging`, re-run the PR feedback sweep protocol one final time. Do not proceed with merge if:
+   - Any critical/major feedback remains unaddressed (no code change or pushback reply)
+   - Required checks are failing
+   - Required validation items from the ticket are incomplete
+   Wait for the human to move the issue to `Merging` only when genuinely ready.
+6. When cleared to proceed, open and follow `.codex/skills/land/SKILL.md`, then run the `land` skill in a loop until the PR is merged. Do not call `gh pr merge` directly.
+7. After merge is complete, move the issue to `Done`.
 
 ## Step 4: Rework handling
 
@@ -374,6 +379,7 @@ For major rework:
   link to the current issue, and `blockedBy` when the follow-up depends on
   the current issue.
 - Do not move to `Human Review` unless the `Completion bar before Human Review` is satisfied.
+- **Never merge or allow merge of a PR with outstanding critical feedback or failing checks.** This includes not moving to `Merging` if feedback sweep shows unresolved comments.
 - In `Human Review`, do not make changes; wait and poll.
 - If state is terminal (`Done`), do nothing and shut down.
 - Keep issue text concise, specific, and reviewer-oriented.
