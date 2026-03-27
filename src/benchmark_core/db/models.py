@@ -13,8 +13,8 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    Uuid,
     UniqueConstraint,
+    Uuid,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 

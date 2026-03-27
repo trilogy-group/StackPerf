@@ -1,6 +1,5 @@
 """Tests for database models and session utilities."""
 
-import uuid
 from datetime import UTC, datetime
 
 import pytest
@@ -17,9 +16,11 @@ from benchmark_core.db.models import (
     Provider,
     ProviderModel,
     Request,
-    Session as DBSession,
     TaskCard,
     Variant,
+)
+from benchmark_core.db.models import (
+    Session as DBSession,
 )
 from benchmark_core.db.session import (
     create_database_engine,
@@ -47,8 +48,8 @@ def test_engine():
 @pytest.fixture
 def test_session(test_engine):
     """Create a database session for testing."""
-    SessionLocal = sessionmaker(bind=test_engine)
-    session = SessionLocal()
+    session_local = sessionmaker(bind=test_engine)
+    session = session_local()
     try:
         yield session
     finally:
@@ -335,8 +336,8 @@ class TestDatabaseModels:
     def test_cascade_delete(self, test_engine):
         """Test that requests and artifacts are deleted when session is deleted."""
         # Create fresh session with proper engine
-        SessionLocal = sessionmaker(bind=test_engine)
-        test_session = SessionLocal()
+        session_local = sessionmaker(bind=test_engine)
+        db_session = session_local()
 
         # Create prerequisite records
         experiment = Experiment(name="cascade-test-exp", description="Test")
@@ -352,8 +353,8 @@ class TestDatabaseModels:
             starting_prompt="Test prompt",
             stop_condition="Test condition",
         )
-        test_session.add_all([experiment, variant, task])
-        test_session.flush()
+        db_session.add_all([experiment, variant, task])
+        db_session.flush()
 
         # Create session with proper FKs
         session = DBSession(
@@ -366,8 +367,8 @@ class TestDatabaseModels:
             git_commit="abc123",
             status="active",
         )
-        test_session.add(session)
-        test_session.flush()
+        db_session.add(session)
+        db_session.flush()
 
         # Create request and artifact
         request = Request(
@@ -384,22 +385,22 @@ class TestDatabaseModels:
             content_type="text/plain",
             storage_path="/storage/test.log",
         )
-        test_session.add(request)
-        test_session.add(artifact)
-        test_session.commit()
+        db_session.add(request)
+        db_session.add(artifact)
+        db_session.commit()
 
         # Verify they exist
-        assert test_session.query(Request).count() == 1
-        assert test_session.query(Artifact).count() == 1
+        assert db_session.query(Request).count() == 1
+        assert db_session.query(Artifact).count() == 1
 
         # Delete session
-        test_session.delete(session)
-        test_session.commit()
+        db_session.delete(session)
+        db_session.commit()
 
         # Verify cascade delete worked
-        assert test_session.query(Request).count() == 0
-        assert test_session.query(Artifact).count() == 0
-        test_session.close()
+        assert db_session.query(Request).count() == 0
+        assert db_session.query(Artifact).count() == 0
+        db_session.close()
 
 
 class TestSessionUtilities:
