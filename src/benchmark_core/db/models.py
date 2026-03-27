@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
@@ -231,12 +232,14 @@ class Session(Base):
     git_commit: Mapped[str] = mapped_column(String(64), nullable=False)
     git_dirty: Mapped[bool] = mapped_column(Boolean, default=False)
     operator_label: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     proxy_credential_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     started_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="active")
+    outcome_state: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
@@ -300,13 +303,24 @@ class MetricRollup(Base):
 
 
 class Artifact(Base):
-    """Arbitrary files/data produced during a benchmark session."""
+    """Arbitrary files/data produced during a benchmark session or experiment."""
 
     __tablename__ = "artifacts"
 
+    __table_args__ = (
+        # Ensure at least one of session_id or experiment_id is provided
+        CheckConstraint(
+            'session_id IS NOT NULL OR experiment_id IS NOT NULL',
+            name='ck_artifact_scope'
+        ),
+    )
+
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    session_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True
+    session_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("sessions.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    experiment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("experiments.id", ondelete="CASCADE"), nullable=True, index=True
     )
     artifact_type: Mapped[str] = mapped_column(String(100), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
