@@ -1,6 +1,7 @@
 """Session lifecycle commands."""
 
 import asyncio
+from datetime import UTC, datetime
 from uuid import UUID
 
 import typer
@@ -9,11 +10,8 @@ from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
     Experiment as DBExperiment,
-)
-from benchmark_core.db.models import (
+    Session as DBSession,
     TaskCard as DBTaskCard,
-)
-from benchmark_core.db.models import (
     Variant as DBVariant,
 )
 from benchmark_core.db.repositories import SQLAlchemySessionRepository
@@ -151,8 +149,6 @@ def list_sessions(
     """List benchmark sessions."""
     with get_db_session() as db:
         try:
-            from benchmark_core.db.models import Session as DBSession
-
             query = db.query(DBSession)
 
             # Apply filters
@@ -212,8 +208,6 @@ def show(session_id: str) -> None:
                 raise typer.BadParameter(f"Invalid session ID: {session_id}") from err
 
             # Get session from database
-            from benchmark_core.db.models import Session as DBSession
-
             db_session = db.query(DBSession).filter_by(id=sess_uuid).first()
             if db_session is None:
                 console.print(f"[red]Session not found: {session_id}[/red]")
@@ -266,8 +260,6 @@ def finalize(
             service = SessionService(repository)
 
             # Finalize session
-            from datetime import UTC, datetime
-
             # Get current session
             session = asyncio.run(service.get_session(sess_uuid))
             if session is None:
@@ -310,8 +302,6 @@ def env(session_id: str) -> None:
                 raise typer.BadParameter(f"Invalid session ID: {session_id}") from err
 
             # Get session from database
-            from benchmark_core.db.models import Session as DBSession
-
             db_session = db.query(DBSession).filter_by(id=sess_uuid).first()
             if db_session is None:
                 console.print(f"[red]Session not found: {session_id}[/red]")
