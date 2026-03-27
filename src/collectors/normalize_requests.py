@@ -89,18 +89,40 @@ class ReconciliationReport:
             )
 
     def _categorize_error(self, error_message: str) -> str:
-        """Categorize an error message into a broad category."""
+        """Categorize an error message into a broad category.
+
+        Uses specific keyword matching to avoid misclassification.
+        Order matters - more specific patterns are checked first.
+        """
         error_lower = error_message.lower()
-        if "timestamp" in error_lower or "time" in error_lower:
+
+        # Timestamp-related errors (check first as it's specific)
+        if "timestamp" in error_lower:
             return "timestamp_parse_error"
-        elif "request_id" in error_lower or "id" in error_lower:
-            return "id_error"
-        elif "http" in error_lower or "status" in error_lower:
+        if "time" in error_lower and "parse" in error_lower:
+            return "timestamp_parse_error"
+
+        # HTTP/API errors
+        if "http" in error_lower or "status" in error_lower:
             return "http_error"
-        elif "json" in error_lower or "parse" in error_lower:
+
+        # JSON/parsing errors
+        if "json" in error_lower or "invalid" in error_lower or "parse" in error_lower:
             return "parse_error"
-        else:
-            return "other_error"
+
+        # Database/connection errors
+        if "database" in error_lower or "connection" in error_lower or "timeout" in error_lower:
+            return "database_error"
+
+        # Repository/bulk insert failures
+        if "repository" in error_lower or "bulk insert" in error_lower:
+            return "repository_error"
+
+        # ID-related errors (less specific, check later)
+        if "request_id" in error_lower:
+            return "id_error"
+
+        return "other_error"
 
     @property
     def success_rate(self) -> float:

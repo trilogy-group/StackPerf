@@ -7,11 +7,17 @@ import httpx
 import typer
 from rich.console import Console
 from rich.table import Table
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session as SQLAlchemySession
 
+from benchmark_core.db.models import Request as RequestORM
 from benchmark_core.db.session import get_db_session
 from benchmark_core.repositories.request_repository import SQLRequestRepository
-from collectors.normalize_requests import ReconciliationReport, RequestNormalizerJob
+from collectors.normalize_requests import (
+    ReconciliationReport,
+    RequestNormalizer,
+    RequestNormalizerJob,
+)
 
 app = typer.Typer(
     name="normalize",
@@ -102,13 +108,10 @@ def run_normalization(
 
         if dry_run:
             # In dry-run mode, just normalize and show report without writing
-            normalizer_job = RequestNormalizerJob(
-                repository=None,  # type: ignore
-                session_id=session_uuid,
-            )
+            normalizer = RequestNormalizer(session_id=session_uuid)
             report = ReconciliationReport()
             for i, raw in enumerate(raw_requests):
-                normalized, diag = normalizer_job._normalizer.normalize(raw, row_index=i)
+                normalized, diag = normalizer.normalize(raw, row_index=i)
                 if normalized:
                     report.add_mapped()
                 else:
@@ -223,13 +226,24 @@ def show_reconciliation_report(
     # Get request count for the session
     db_session: SQLAlchemySession = get_db_session()
     try:
-        # Note: Would need async count method or sync wrapper
-        # For now, create a simple report
-        count = 0
+        # Query the actual count of normalized requests for this session
+        stmt = select(func.count()).where(RequestORM.session_id == UUID(session_id))
+        count = db_session.execute(stmt).scalar() or 0
+
+        # Query for any requests with errors
+        error_stmt = select(func.count()).where(
+            RequestORM.session_id == UUID(session_id),
+            RequestORM.error == True  # noqa: E712
+        )
+        error_count = db_session.execute(error_stmt).scalar() or 0
 
         report = ReconciliationReport()
         report.total_rows = count
-        report.mapped_count = count
+        report.mapped_count = count  # All stored requests are successfully mapped
+
+        # If there are errors, add to error counts
+        if error_count > 0:
+            report.error_counts["error_flag_set"] = error_count
 
         # Generate output
         if report_format == "json":
@@ -243,6 +257,12 @@ def show_reconciliation_report(
             console.print(f"[green]Report written to {output}[/green]")
         else:
             console.print(output_text)
+
+        # Summary
+        console.print(f"\n[bold]Session {session_id}[/bold]")
+        console.print(f"Total normalized requests: {count}")
+        if error_count > 0:
+            console.print(f"Requests with errors: {error_count}")
 
     finally:
         db_session.close()
