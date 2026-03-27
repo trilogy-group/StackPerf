@@ -4,8 +4,6 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import SecretStr
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
@@ -331,11 +329,11 @@ class ProxyCredentialRepository(AbstractProxyCredentialRepository):
     Secrets are managed by LiteLLM and only exist in memory during issuance.
     """
 
-    def __init__(self, db_session: AsyncSession) -> None:
+    def __init__(self, db_session: SQLAlchemySession) -> None:
         """Initialize with database session.
 
         Args:
-            db_session: SQLAlchemy async session
+            db_session: SQLAlchemy sync session
         """
         self._session = db_session
 
@@ -367,7 +365,7 @@ class ProxyCredentialRepository(AbstractProxyCredentialRepository):
         )
 
         self._session.add(orm_credential)
-        await self._session.flush()
+        self._session.flush()
 
         # Return domain model with metadata (secret is cleared for safety)
         return credential.model_copy(
@@ -385,10 +383,7 @@ class ProxyCredentialRepository(AbstractProxyCredentialRepository):
         Returns:
             Credential metadata (without secret) or None
         """
-        stmt = select(ProxyCredentialORM).where(ProxyCredentialORM.session_id == session_id)
-        result = await self._session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
+        orm = self._session.query(ProxyCredentialORM).filter_by(session_id=session_id).first()
         if orm is None:
             return None
 
@@ -403,10 +398,7 @@ class ProxyCredentialRepository(AbstractProxyCredentialRepository):
         Returns:
             Credential metadata (without secret) or None
         """
-        stmt = select(ProxyCredentialORM).where(ProxyCredentialORM.key_alias == key_alias)
-        result = await self._session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
+        orm = self._session.query(ProxyCredentialORM).filter_by(key_alias=key_alias).first()
         if orm is None:
             return None
 
@@ -421,15 +413,19 @@ class ProxyCredentialRepository(AbstractProxyCredentialRepository):
         Returns:
             Updated credential
         """
-        stmt = select(ProxyCredentialORM).where(ProxyCredentialORM.id == credential.credential_id)
-        result = await self._session.execute(stmt)
-        orm = result.scalar_one()
+        orm = (
+            self._session.query(ProxyCredentialORM)
+            .filter_by(id=credential.credential_id)
+            .first()
+        )
+        if orm is None:
+            raise ValueError(f"Credential {credential.credential_id} not found")
 
         orm.is_active = credential.is_active
         orm.revoked_at = credential.revoked_at
         orm.litellm_key_id = credential.litellm_key_id
 
-        await self._session.flush()
+        self._session.flush()
 
         return credential
 
@@ -442,17 +438,18 @@ class ProxyCredentialRepository(AbstractProxyCredentialRepository):
         Returns:
             Updated credential metadata or None if not found
         """
-        stmt = select(ProxyCredentialORM).where(ProxyCredentialORM.session_id == session_id)
-        result = await self._session.execute(stmt)
-        orm = result.scalar_one_or_none()
-
+        orm = (
+            self._session.query(ProxyCredentialORM)
+            .filter_by(session_id=session_id)
+            .first()
+        )
         if orm is None:
             return None
 
         orm.is_active = False
         orm.revoked_at = datetime.now(UTC)
 
-        await self._session.flush()
+        self._session.flush()
 
         return self._to_domain(orm)
 

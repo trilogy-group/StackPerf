@@ -19,6 +19,9 @@ import sys
 from pathlib import Path
 from uuid import UUID, uuid4
 
+import httpx
+import respx
+
 # Add src to path for imports
 src_path = Path(__file__).parent.parent / "src"
 if str(src_path) not in sys.path:
@@ -34,8 +37,11 @@ async def demo_credential_issuance():
     print("COE-310: Session-Scoped Proxy Credential Issuance Demo")
     print("=" * 70)
 
-    # Initialize service
-    service = CredentialService()
+    # Initialize service with master_key (required for LiteLLM API calls)
+    service = CredentialService(
+        litellm_base_url="http://localhost:4000",
+        master_key="sk-demo-master-key",
+    )
 
     # Simulate session context
     session_id = uuid4()
@@ -49,19 +55,33 @@ async def demo_credential_issuance():
     print(f"   Variant: {variant_id}")
     print(f"   Harness Profile: {harness_profile}")
 
-    # Issue credential
-    print(f"\n2. Issuing Proxy Credential...")
-    credential = await service.issue_credential(
-        session_id=session_id,
-        experiment_id=experiment_id,
-        variant_id=variant_id,
-        harness_profile=harness_profile,
-        ttl_hours=24,
-    )
+    # Mock LiteLLM API for demo
+    with respx.mock:
+        # Mock the /key/generate endpoint
+        respx.post("http://localhost:4000/key/generate").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "key": "sk-litellm-demo-key-abc123xyz",
+                    "key_id": "litellm-key-demo-123",
+                },
+            )
+        )
+
+        # Issue credential
+        print(f"\n2. Issuing Proxy Credential via LiteLLM API...")
+        credential = await service.issue_credential(
+            session_id=session_id,
+            experiment_id=experiment_id,
+            variant_id=variant_id,
+            harness_profile=harness_profile,
+            ttl_hours=24,
+        )
 
     print(f"   ✓ Credential issued")
     print(f"   ✓ Credential ID: {credential.credential_id}")
     print(f"   ✓ Session ID: {credential.session_id}")
+    print(f"   ✓ LiteLLM Key ID: {credential.litellm_key_id}")
 
     # Show key alias (for correlation)
     print(f"\n3. Key Aliasing Convention:")
@@ -91,6 +111,7 @@ async def demo_credential_issuance():
     print(f"\n5. API Key (Secret Handling):")
     print(f"   Key Type: {type(credential.api_key).__name__}")
     print(f"   Redacted Preview: {credential.get_redacted_key()}")
+    print(f"   Actual Key: {credential.api_key.get_secret_value()}")
     print(f"   ✓ SecretStr prevents accidental plaintext exposure")
 
     # Show expiration
@@ -125,6 +146,7 @@ async def demo_credential_issuance():
     print(f"   ✓ Has key_alias: {credential.key_alias is not None}")
     print(f"   ✓ Has metadata: {len(credential.metadata_tags) > 0}")
     print(f"   ✓ Has secret: {credential.api_key is not None}")
+    print(f"   ✓ Has litellm_key_id: {credential.litellm_key_id is not None}")
 
     # Demonstrate revocation
     print(f"\n9. Credential Revocation:")
@@ -137,6 +159,8 @@ async def demo_credential_issuance():
     print(f"\n" + "=" * 70)
     print("Demo Complete: All credential operations successful")
     print("=" * 70)
+    print("\nNote: This demo uses mocked LiteLLM API responses.")
+    print("In production, configure CredentialService with real LiteLLM endpoint and master_key.")
 
     return credential
 

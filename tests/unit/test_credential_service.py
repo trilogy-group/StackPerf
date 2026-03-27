@@ -3,7 +3,9 @@
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
+import httpx
 import pytest
+import respx
 from pydantic import SecretStr
 
 from benchmark_core.models import ProxyCredential
@@ -15,7 +17,7 @@ class TestKeyAliasGeneration:
 
     @pytest.fixture
     def service(self) -> CredentialService:
-        return CredentialService()
+        return CredentialService(master_key="test-master-key")
 
     def test_alias_format(self, service: CredentialService) -> None:
         """Key alias follows format: session-{session[:8]}-{exp[:8]}-{var[:8]}."""
@@ -64,7 +66,7 @@ class TestMetadataTags:
 
     @pytest.fixture
     def service(self) -> CredentialService:
-        return CredentialService()
+        return CredentialService(master_key="test-master-key")
 
     def test_metadata_includes_session_dimensions(self, service: CredentialService) -> None:
         """Metadata tags include all session correlation dimensions."""
@@ -99,7 +101,7 @@ class TestApiKeyGeneration:
 
     @pytest.fixture
     def service(self) -> CredentialService:
-        return CredentialService()
+        return CredentialService(master_key="test-master-key")
 
     def test_key_prefix(self, service: CredentialService) -> None:
         """API key includes alias prefix for identification."""
@@ -135,15 +137,30 @@ class TestCredentialIssuance:
 
     @pytest.fixture
     def service(self) -> CredentialService:
-        return CredentialService()
+        return CredentialService(
+            litellm_base_url="http://localhost:4000",
+            master_key="test-master-key",
+        )
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_credential_has_all_fields(self, service: CredentialService) -> None:
         """Issued credential contains all required metadata."""
         session_id = uuid4()
         experiment_id = "test-experiment"
         variant_id = "test-variant"
         harness_profile = "claude-code"
+
+        # Mock LiteLLM API response
+        respx.post("http://localhost:4000/key/generate").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "key": "sk-litellm-test-key-12345",
+                    "key_id": "litellm-key-id-123",
+                },
+            )
+        )
 
         credential = await service.issue_credential(
             session_id=session_id,
@@ -160,10 +177,23 @@ class TestCredentialIssuance:
         assert credential.key_alias.startswith("session-")
         assert credential.is_active is True
         assert credential.expires_at is not None
+        assert credential.litellm_key_id == "litellm-key-id-123"
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_credential_has_secret(self, service: CredentialService) -> None:
         """Issued credential contains a secret API key."""
+        # Mock LiteLLM API response
+        respx.post("http://localhost:4000/key/generate").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "key": "sk-litellm-test-key-from-api",
+                    "key_id": "key-123",
+                },
+            )
+        )
+
         credential = await service.issue_credential(
             session_id=uuid4(),
             experiment_id="exp",
@@ -173,13 +203,24 @@ class TestCredentialIssuance:
 
         assert isinstance(credential.api_key, SecretStr)
         key_value = credential.api_key.get_secret_value()
-        assert key_value.startswith("sk-bm-")
-        assert len(key_value) > 40
+        assert key_value == "sk-litellm-test-key-from-api"
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_credential_expiration(self, service: CredentialService) -> None:
         """Credential has configurable TTL."""
         now = datetime.now(UTC)
+
+        # Mock LiteLLM API response
+        respx.post("http://localhost:4000/key/generate").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "key": "sk-test-key",
+                    "key_id": "key-123",
+                },
+            )
+        )
 
         credential = await service.issue_credential(
             session_id=uuid4(),
@@ -194,28 +235,95 @@ class TestCredentialIssuance:
         time_diff = credential.expires_at - now  # type: ignore[operator]
         assert timedelta(hours=47) < time_diff < timedelta(hours=49)
 
+    @pytest.mark.asyncio
+    async def test_credential_requires_master_key(self) -> None:
+        """Credential issuance requires master_key."""
+        service = CredentialService(master_key=None)
+
+        with pytest.raises(RuntimeError, match="master_key not configured"):
+            await service.issue_credential(
+                session_id=uuid4(),
+                experiment_id="exp",
+                variant_id="var",
+                harness_profile="harness",
+            )
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_credential_handles_api_error(self, service: CredentialService) -> None:
+        """Credential issuance handles LiteLLM API errors."""
+        # Mock LiteLLM API error response
+        respx.post("http://localhost:4000/key/generate").mock(
+            return_value=httpx.Response(500, text="Internal Server Error")
+        )
+
+        with pytest.raises(RuntimeError, match="LiteLLM API error"):
+            await service.issue_credential(
+                session_id=uuid4(),
+                experiment_id="exp",
+                variant_id="var",
+                harness_profile="harness",
+            )
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_credential_handles_missing_key(self, service: CredentialService) -> None:
+        """Credential issuance handles missing key in response."""
+        # Mock LiteLLM API response without key
+        respx.post("http://localhost:4000/key/generate").mock(
+            return_value=httpx.Response(200, json={"key_id": "123"})
+        )
+
+        with pytest.raises(RuntimeError, match="missing 'key' field"):
+            await service.issue_credential(
+                session_id=uuid4(),
+                experiment_id="exp",
+                variant_id="var",
+                harness_profile="harness",
+            )
+
 
 class TestCredentialRevocation:
     """Test credential revocation."""
 
     @pytest.fixture
     def service(self) -> CredentialService:
-        return CredentialService()
+        return CredentialService(
+            litellm_base_url="http://localhost:4000",
+            master_key="test-master-key",
+        )
 
     @pytest.fixture
     async def active_credential(self, service: CredentialService) -> ProxyCredential:
-        return await service.issue_credential(
-            session_id=uuid4(),
-            experiment_id="exp",
-            variant_id="var",
-            harness_profile="harness",
-        )
+        # Mock LiteLLM API response
+        with respx.mock:
+            respx.post("http://localhost:4000/key/generate").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "key": "sk-test-key",
+                        "key_id": "litellm-key-id-123",
+                    },
+                )
+            )
+            return await service.issue_credential(
+                session_id=uuid4(),
+                experiment_id="exp",
+                variant_id="var",
+                harness_profile="harness",
+            )
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_revoke_marks_inactive(
         self, service: CredentialService, active_credential: ProxyCredential
     ) -> None:
         """Revocation marks credential as inactive."""
+        # Mock LiteLLM delete API
+        respx.post("http://localhost:4000/key/delete").mock(
+            return_value=httpx.Response(200, json={"deleted_keys": ["litellm-key-id-123"]})
+        )
+
         revoked = await service.revoke_credential(active_credential)
 
         assert revoked.is_active is False
@@ -236,18 +344,29 @@ class TestEnvRendering:
 
     @pytest.fixture
     def service(self) -> CredentialService:
-        return CredentialService()
+        return CredentialService(master_key="test-master-key")
 
     @pytest.fixture
     async def credential(self, service: CredentialService) -> ProxyCredential:
-        return await service.issue_credential(
-            session_id=uuid4(),
-            experiment_id="exp",
-            variant_id="var",
-            harness_profile="harness",
-        )
+        with respx.mock:
+            respx.post("http://localhost:4000/key/generate").mock(
+                return_value=httpx.Response(
+                    200,
+                    json={
+                        "key": "sk-test-key-for-env",
+                        "key_id": "key-123",
+                    },
+                )
+            )
+            return await service.issue_credential(
+                session_id=uuid4(),
+                experiment_id="exp",
+                variant_id="var",
+                harness_profile="harness",
+            )
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_render_env_dict(
         self, service: CredentialService, credential: ProxyCredential
     ) -> None:
@@ -310,7 +429,7 @@ class TestCredentialCorrelation:
 
     @pytest.fixture
     def service(self) -> CredentialService:
-        return CredentialService()
+        return CredentialService(master_key="test-master-key")
 
     @pytest.mark.asyncio
     async def test_alias_contains_session_reference(self, service: CredentialService) -> None:
@@ -338,12 +457,24 @@ class TestCredentialCorrelation:
         assert metadata["benchmark_variant_id"] == variant_id
 
     @pytest.mark.asyncio
+    @respx.mock
     async def test_full_correlation_chain(self, service: CredentialService) -> None:
         """Complete chain from credential back to session works."""
         session_id = uuid4()
         experiment_id = "test-exp"
         variant_id = "test-var"
         harness_profile = "test-harness"
+
+        # Mock LiteLLM API response
+        respx.post("http://localhost:4000/key/generate").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "key": "sk-test-key-correlation",
+                    "key_id": "key-correlation-123",
+                },
+            )
+        )
 
         # Issue credential
         credential = await service.issue_credential(
@@ -366,3 +497,48 @@ class TestCredentialCorrelation:
             session_id, experiment_id, variant_id, harness_profile
         )
         assert metadata["benchmark_session_id"] == str(session_id)
+
+
+class TestHTTPSValidation:
+    """Test HTTPS validation for LiteLLM URL."""
+
+    def test_accepts_localhost(self) -> None:
+        """Accepts localhost URLs."""
+        service = CredentialService(
+            litellm_base_url="http://localhost:4000",
+            master_key="test-key",
+        )
+        assert service.litellm_base_url == "http://localhost:4000"
+
+    def test_accepts_127_0_0_1(self) -> None:
+        """Accepts 127.0.0.1 URLs."""
+        service = CredentialService(
+            litellm_base_url="http://127.0.0.1:4000",
+            master_key="test-key",
+        )
+        assert service.litellm_base_url == "http://127.0.0.1:4000"
+
+    def test_accepts_https(self) -> None:
+        """Accepts HTTPS URLs."""
+        service = CredentialService(
+            litellm_base_url="https://litellm.example.com",
+            master_key="test-key",
+        )
+        assert service.litellm_base_url == "https://litellm.example.com"
+
+    def test_rejects_http_in_production(self) -> None:
+        """Rejects HTTP in production environments."""
+        with pytest.raises(ValueError, match="must use HTTPS"):
+            CredentialService(
+                litellm_base_url="http://litellm.example.com",
+                master_key="test-key",
+            )
+
+    def test_can_disable_https_check(self) -> None:
+        """Can disable HTTPS check for testing."""
+        service = CredentialService(
+            litellm_base_url="http://litellm.example.com",
+            master_key="test-key",
+            enforce_https=False,
+        )
+        assert service.litellm_base_url == "http://litellm.example.com"

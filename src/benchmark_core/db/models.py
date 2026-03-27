@@ -284,7 +284,7 @@ class Session(Base):
         back_populates="session",
         uselist=False,
         foreign_keys="ProxyCredential.session_id",
-        lazy="joined",  # Always load with session for convenience
+        lazy="selectin",  # Works better with async sessions
     )
 
 

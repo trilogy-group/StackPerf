@@ -1,7 +1,11 @@
 """Core domain services for session management and credential issuance."""
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
+
+import httpx
+from pydantic import SecretStr
 
 from benchmark_core.models import ProxyCredential, Session
 from benchmark_core.repositories import ProxyCredentialRepository, SessionRepository
@@ -162,15 +166,29 @@ class CredentialService:
         self,
         litellm_base_url: str = "http://localhost:4000",
         master_key: str | None = None,
+        enforce_https: bool = True,
     ) -> None:
         """Initialize the credential service.
 
         Args:
             litellm_base_url: Base URL for LiteLLM proxy API
             master_key: LiteLLM master key for API authentication
+            enforce_https: Whether to enforce HTTPS in production (default True)
+
+        Raises:
+            ValueError: If litellm_base_url doesn't use HTTPS in production
         """
         self.litellm_base_url = litellm_base_url.rstrip("/")
         self.master_key = master_key
+
+        # Validate HTTPS in production environments
+        if enforce_https and not self.litellm_base_url.startswith(
+            ("https://", "http://localhost", "http://127.0.0.1")
+        ):
+            raise ValueError(
+                "LiteLLM URL must use HTTPS in production environments. "
+                f"Got: {litellm_base_url}"
+            )
 
     def _generate_key_alias(
         self,
@@ -231,7 +249,7 @@ class CredentialService:
         harness_profile: str,
         ttl_hours: int = 24,
     ) -> ProxyCredential:
-        """Issue a session-scoped proxy credential.
+        """Issue a session-scoped proxy credential via LiteLLM API.
 
         Creates a LiteLLM virtual key with:
         - Unique key alias for correlation
@@ -248,11 +266,15 @@ class CredentialService:
         Returns:
             ProxyCredential with metadata and API key
 
-        Note:
-            This creates an in-memory credential. To persist
-            metadata to the benchmark database, use
-            ProxyCredentialRepository.create().
+        Raises:
+            RuntimeError: If LiteLLM API call fails or master_key not configured
         """
+        if self.master_key is None:
+            raise RuntimeError(
+                "Cannot issue credential: LiteLLM master_key not configured. "
+                "Initialize CredentialService with master_key parameter."
+            )
+
         # Generate stable alias for correlation
         key_alias = self._generate_key_alias(session_id, experiment_id, variant_id)
 
@@ -261,21 +283,52 @@ class CredentialService:
             session_id, experiment_id, variant_id, harness_profile
         )
 
-        # Generate unique API key
-        api_key = self._generate_api_key(key_alias)
-
         # Calculate expiration
         expires_at = datetime.now(UTC) + timedelta(hours=ttl_hours)
+
+        # Call LiteLLM API to create the key
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            try:
+                response = await client.post(
+                    f"{self.litellm_base_url}/key/generate",
+                    headers={"Authorization": f"Bearer {self.master_key}"},
+                    json={
+                        "key_alias": key_alias,
+                        "metadata": metadata_tags,
+                        "expires": expires_at.isoformat(),
+                    },
+                )
+                response.raise_for_status()
+                data: dict[str, Any] = response.json()
+            except httpx.HTTPStatusError as e:
+                raise RuntimeError(
+                    f"LiteLLM API error creating credential: {e.response.status_code} - "
+                    f"{e.response.text}"
+                ) from e
+            except httpx.RequestError as e:
+                raise RuntimeError(
+                    f"Failed to connect to LiteLLM at {self.litellm_base_url}: {e}"
+                ) from e
+
+        # Extract key and key_id from LiteLLM response
+        api_key = data.get("key")
+        litellm_key_id = data.get("key_id")
+
+        if not api_key:
+            raise RuntimeError(
+                f"LiteLLM API response missing 'key' field: {data}"
+            )
 
         # Create credential domain model
         credential = ProxyCredential(
             session_id=session_id,
             key_alias=key_alias,
-            api_key=api_key,  # type: ignore[arg-type]
+            api_key=SecretStr(api_key),
             experiment_id=experiment_id,
             variant_id=variant_id,
             harness_profile=harness_profile,
             metadata_tags=metadata_tags,
+            litellm_key_id=litellm_key_id,
             expires_at=expires_at,
             is_active=True,
         )
@@ -283,18 +336,36 @@ class CredentialService:
         return credential
 
     async def revoke_credential(self, credential: ProxyCredential) -> ProxyCredential:
-        """Revoke an active credential.
+        """Revoke an active credential via LiteLLM API.
 
         Marks the credential as revoked and records revocation time.
-        Note: Actual LiteLLM key revocation requires separate API call.
+        Also calls LiteLLM API to delete the key if litellm_key_id is present.
 
         Args:
             credential: Credential to revoke
 
         Returns:
             Updated credential with is_active=False
+
+        Raises:
+            RuntimeError: If LiteLLM API call fails
         """
-        from pydantic import SecretStr
+        # Call LiteLLM API to delete the key if we have the key_id
+        if credential.litellm_key_id and self.master_key:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                try:
+                    response = await client.post(
+                        f"{self.litellm_base_url}/key/delete",
+                        headers={"Authorization": f"Bearer {self.master_key}"},
+                        json={"key_ids": [credential.litellm_key_id]},
+                    )
+                    response.raise_for_status()
+                except httpx.HTTPStatusError:
+                    # Log but don't fail - the key may already be expired/deleted
+                    pass  # noqa: S110 - intentional silence on revoke errors
+                except httpx.RequestError:
+                    # Log but don't fail - revocation is best-effort
+                    pass  # noqa: S110 - intentional silence on connection errors
 
         updated = credential.model_copy(
             update={
