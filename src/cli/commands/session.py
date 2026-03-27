@@ -1,7 +1,6 @@
 """Session lifecycle commands."""
 
 import asyncio
-from datetime import UTC, datetime
 from uuid import UUID
 
 import typer
@@ -22,10 +21,9 @@ from benchmark_core.db.models import (
 )
 from benchmark_core.db.session import get_db_session
 from benchmark_core.git import get_git_metadata
+from benchmark_core.models import SessionOutcomeState
 from benchmark_core.repositories.session_repository import SQLSessionRepository
 from benchmark_core.services.session_service import SessionService
-
-from benchmark_core.models import SessionOutcomeState
 
 app = typer.Typer(help="Manage benchmark sessions")
 console = Console()
@@ -255,28 +253,51 @@ def show(session_id: str) -> None:
 @app.command()
 def finalize(
     session_id: str = typer.Argument(..., help="Session ID to finalize"),
-    outcome: str = typer.Option(
-        "valid",
+    status: str = typer.Option(
+        "completed",
+        "--status",
+        "-s",
+        help="Final status (completed, failed, cancelled)",
+    ),
+    outcome: str | None = typer.Option(
+        None,
         "--outcome",
         "-o",
-        help="Outcome state (valid, invalid, aborted)",
+        help="Outcome state (valid, invalid, aborted). If not specified, defaults to 'valid' for completed status.",
         case_sensitive=False,
     ),
 ) -> None:
-    """Finalize a benchmark session with outcome state.
+    """Finalize a benchmark session with status and optional outcome state.
 
-    Outcome states:
-    - valid: Session completed successfully (default)
+    Status values:
+    - completed: Session finished normally (default)
+    - failed: Session encountered errors
+    - cancelled: Session was manually cancelled
+
+    Outcome states (optional):
+    - valid: Session data is valid for comparisons (default for completed status)
     - invalid: Session completed but data should be excluded from comparisons
     - aborted: Session was terminated before completion
     """
-    # Validate outcome state
-    if outcome not in OUTCOME_CHOICES:
+    # Validate status
+    valid_statuses = ["completed", "failed", "cancelled"]
+    if status not in valid_statuses:
+        console.print(f"[red]Invalid status: {status}[/red]")
+        console.print(f"Valid options: {', '.join(valid_statuses)}")
+        raise typer.Exit(1)
+
+    # Validate outcome if provided
+    if outcome is not None and outcome not in OUTCOME_CHOICES:
         console.print(f"[red]Invalid outcome state: {outcome}[/red]")
         console.print(f"Valid options: {', '.join(OUTCOME_CHOICES)}")
         raise typer.Exit(1)
 
+    # Default outcome to 'valid' if not specified for completed status
+    if outcome is None:
+        outcome = "valid"
+
     console.print(f"[bold blue]Finalizing session {session_id}...[/bold blue]")
+    console.print(f"  Status: {status}")
     console.print(f"  Outcome: {outcome}")
 
     with get_db_session() as db:
@@ -297,12 +318,13 @@ def finalize(
                 console.print(f"[red]Session not found: {session_id}[/red]")
                 raise typer.Exit(1)
 
-            # Finalize with outcome state and end time
+            # Finalize with status, outcome state, and end time
             from benchmark_core.models import SessionOutcomeState
             outcome_enum = SessionOutcomeState(outcome)
             updated = asyncio.run(
                 service.finalize_session(
                     sess_uuid,
+                    status=status,
                     outcome_state=outcome_enum,
                 )
             )
@@ -311,13 +333,14 @@ def finalize(
                 raise typer.Exit(1)
 
             console.print("[green]Session finalized successfully[/green]")
+            console.print(f"  Status: {updated.status}")
             console.print(f"  Outcome: {updated.outcome_state}")
             console.print(f"  Ended at: {updated.ended_at}")
 
         except typer.BadParameter:
             raise
         except ValueError as e:
-            console.print(f"[red]Invalid outcome: {e}[/red]")
+            console.print(f"[red]Invalid value: {e}[/red]")
             raise typer.Exit(1) from e
         except Exception as e:
             console.print(f"[red]Error finalizing session: {e}[/red]")
@@ -387,10 +410,7 @@ def add_notes(
                 raise typer.Exit(1)
 
             # Build new notes
-            if append and session.notes:
-                new_notes = f"{session.notes}\n{notes}"
-            else:
-                new_notes = notes
+            new_notes = f"{session.notes}\n{notes}" if append and session.notes else notes
 
             # Update notes
             updated = asyncio.run(

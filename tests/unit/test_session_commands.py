@@ -446,6 +446,48 @@ class TestSessionFinalizeCommand:
         assert result.exit_code != 0
         assert "Session not found" in result.output or "Exit" in result.output
 
+    def test_finalize_session_with_status_parameter(self, db_session, mock_env_db_url, runner):
+        """Test finalizing a session with --status parameter (backward compatibility)."""
+        # Create prerequisite records
+        experiment = DBExperiment(name="finalize-status-param-exp", description="Test")
+        variant = DBVariant(
+            name="finalize-status-param-var",
+            provider="test",
+            model_alias="gpt-4",
+            harness_profile="default",
+        )
+        task = DBTaskCard(
+            name="finalize-status-param-task",
+            goal="Test",
+            starting_prompt="Test",
+            stop_condition="Test",
+        )
+        db_session.add_all([experiment, variant, task])
+        db_session.flush()
+
+        session = DBSession(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task.id,
+            harness_profile="test-harness",
+            repo_path="/test/repo",
+            git_branch="main",
+            git_commit="abc123",
+            status="active",
+        )
+        db_session.add(session)
+        db_session.commit()
+
+        # Test with --status failed (backward compatible)
+        result = runner.invoke(app, ["session", "finalize", str(session.id), "--status", "failed"])
+
+        assert result.exit_code == 0, f"Exit code: {result.exit_code}, Output: {result.output}"
+
+        # Verify session was updated with status
+        db_session.refresh(session)
+        assert session.status == "failed"
+        assert session.outcome_state == "valid"  # Default outcome
+
 
 class TestSessionEnvCommand:
     """Tests for session env CLI command."""

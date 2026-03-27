@@ -1,8 +1,5 @@
 """Tests for artifact CLI commands."""
 
-import tempfile
-from pathlib import Path
-from uuid import uuid4
 
 import pytest
 from sqlalchemy import create_engine
@@ -11,10 +8,20 @@ from typer.testing import CliRunner
 
 from benchmark_core.db.models import (
     Artifact as DBArtifact,
+)
+from benchmark_core.db.models import (
     Base,
+)
+from benchmark_core.db.models import (
     Experiment as DBExperiment,
+)
+from benchmark_core.db.models import (
     Session as DBSession,
+)
+from benchmark_core.db.models import (
     TaskCard as DBTaskCard,
+)
+from benchmark_core.db.models import (
     Variant as DBVariant,
 )
 from cli.main import app
@@ -50,9 +57,7 @@ def mock_env_db_url(test_engine, monkeypatch):
     """Mock the database URL to use the test engine."""
     # Patch the session factory used by CLI commands
     from benchmark_core.db import session as db_session_module
-    from cli import commands
 
-    original_get_engine = db_session_module.create_database_engine
 
     def mock_create_engine(url, **kwargs):
         return test_engine

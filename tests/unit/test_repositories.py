@@ -18,6 +18,7 @@ from benchmark_core.db.models import (
 from benchmark_core.db.models import (
     Session as SessionORM,
 )
+from benchmark_core.repositories.artifact_repository import SQLArtifactRepository
 from benchmark_core.repositories.base import (
     DuplicateIdentifierError,
     ReferentialIntegrityError,
@@ -27,7 +28,6 @@ from benchmark_core.repositories.harness_profile_repository import SQLHarnessPro
 from benchmark_core.repositories.provider_repository import SQLProviderRepository
 from benchmark_core.repositories.request_repository import SQLRequestRepository
 from benchmark_core.repositories.session_repository import SQLSessionRepository
-from benchmark_core.repositories.artifact_repository import SQLArtifactRepository
 from benchmark_core.repositories.task_card_repository import SQLTaskCardRepository
 from benchmark_core.repositories.variant_repository import SQLVariantRepository
 
