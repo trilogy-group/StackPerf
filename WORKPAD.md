@@ -1,7 +1,7 @@
 ## Codex Workpad - COE-306
 
 ```text
-macos:/Users/magos/.opensymphony/workspaces/COE-306@9486904
+macos:/Users/magos/.opensymphony/workspaces/COE-306@c083393
 ```
 
 **Issue:** COE-306 - Build LiteLLM collection job for raw request records and correlation keys
