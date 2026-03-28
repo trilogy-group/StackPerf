@@ -61,6 +61,8 @@ class SessionService:
         git_dirty: bool = False,
         operator_label: str | None = None,
         proxy_credential_alias: str | None = None,
+        proxy_credential_id: str | None = None,
+        notes: str | None = None,
     ) -> Session:
         """Create a new benchmark session safely.
 
@@ -81,6 +83,8 @@ class SessionService:
             git_dirty: Whether the working tree is dirty.
             operator_label: Optional operator-provided label (acts as external session ID).
             proxy_credential_alias: Optional proxy credential key alias.
+            proxy_credential_id: Optional proxy credential identifier.
+            notes: Optional session notes from operator.
 
         Returns:
             The created session with all metadata populated.
@@ -123,6 +127,8 @@ class SessionService:
                 git_dirty=git_dirty,
                 operator_label=operator_label,
                 proxy_credential_alias=proxy_credential_alias,
+                proxy_credential_id=proxy_credential_id,
+                notes=notes,
             )
             # Convert DBSession to domain Session model
             return Session(
@@ -137,9 +143,12 @@ class SessionService:
                 git_dirty=db_session.git_dirty,
                 operator_label=db_session.operator_label,
                 proxy_credential_alias=db_session.proxy_credential_alias,
+                proxy_credential_id=db_session.proxy_credential_id,
+                notes=db_session.notes,
                 started_at=db_session.started_at,
                 ended_at=db_session.ended_at,
                 status=db_session.status,
+                outcome_state=db_session.outcome_state,
             )
         except DuplicateIdentifierError as e:
             raise SessionValidationError(f"Duplicate session identifier: {e}") from e
@@ -173,9 +182,12 @@ class SessionService:
             git_dirty=db_session.git_dirty,
             operator_label=db_session.operator_label,
             proxy_credential_alias=db_session.proxy_credential_alias,
+            proxy_credential_id=db_session.proxy_credential_id,
+            notes=db_session.notes,
             started_at=db_session.started_at,
             ended_at=db_session.ended_at,
             status=db_session.status,
+            outcome_state=db_session.outcome_state,
         )
 
     async def finalize_session(
@@ -183,20 +195,22 @@ class SessionService:
         session_id: UUID,
         status: str = "completed",
         ended_at: datetime | None = None,
+        outcome_state: Any = None,
     ) -> Session | None:
-        """Finalize a session safely with end time and status.
+        """Finalize a session safely with end time, status, and outcome state.
 
         This method atomically:
         1. Retrieves the session
         2. Validates it exists and is active
         3. Sets ended_at to provided time or current UTC time
-        4. Updates status
+        4. Updates status and outcome_state
         5. Commits changes
 
         Args:
             session_id: The session UUID to finalize.
             status: The final status (default: 'completed', alternatives: 'failed', 'cancelled').
             ended_at: Optional end timestamp. Defaults to current UTC time.
+            outcome_state: Optional SessionOutcomeState enum value (valid, invalid, aborted).
 
         Returns:
             The finalized session, or None if not found.
@@ -206,6 +220,13 @@ class SessionService:
         """
         # Validate status
         valid_statuses = ["completed", "failed", "cancelled"]
+        # Validate outcome_state if provided
+        if outcome_state is not None:
+            from benchmark_core.models import SessionOutcomeState
+            if not isinstance(outcome_state, SessionOutcomeState):
+                raise SessionValidationError(
+                    f"outcome_state must be a SessionOutcomeState, got {type(outcome_state).__name__}"
+                )
         if status not in valid_statuses:
             raise SessionValidationError(
                 f"Invalid status '{status}'. Must be one of: {valid_statuses}"
@@ -226,7 +247,11 @@ class SessionService:
             )
 
         try:
-            db_finalized = await self._session_repo.finalize_session(session_id, status, ended_at)
+            # Pass outcome_state value if provided
+            outcome_str = outcome_state.value if outcome_state else None
+            db_finalized = await self._session_repo.finalize_session(
+                session_id, status, ended_at, outcome_str
+            )
             if db_finalized is None:
                 return None
             # Convert DBSession to domain Session model
@@ -242,12 +267,58 @@ class SessionService:
                 git_dirty=db_finalized.git_dirty,
                 operator_label=db_finalized.operator_label,
                 proxy_credential_alias=db_finalized.proxy_credential_alias,
+                proxy_credential_id=db_finalized.proxy_credential_id,
+                notes=db_finalized.notes,
                 started_at=db_finalized.started_at,
                 ended_at=db_finalized.ended_at,
                 status=db_finalized.status,
+                outcome_state=db_finalized.outcome_state,
             )
         except ReferentialIntegrityError as e:
             raise SessionValidationError(f"Failed to finalize session: {e}") from e
+
+    async def update_session_notes(self, session_id: UUID, notes: str | None) -> Session | None:
+        """Update session notes.
+
+        Args:
+            session_id: The session UUID.
+            notes: New notes content (or None to clear notes).
+
+        Returns:
+            The updated session, or None if not found.
+        """
+        # Get the current session
+        session = await self._session_repo.get_by_id(session_id)
+        if session is None:
+            return None
+
+        # Update notes
+        session.notes = notes
+
+        try:
+            # Save changes
+            updated_orm = await self._session_repo.update(session)
+            # Convert to domain model
+            return Session(
+                session_id=updated_orm.id,
+                experiment_id=str(updated_orm.experiment_id),
+                variant_id=str(updated_orm.variant_id),
+                task_card_id=str(updated_orm.task_card_id),
+                harness_profile=updated_orm.harness_profile,
+                repo_path=updated_orm.repo_path,
+                git_branch=updated_orm.git_branch,
+                git_commit=updated_orm.git_commit,
+                git_dirty=updated_orm.git_dirty,
+                operator_label=updated_orm.operator_label,
+                proxy_credential_id=updated_orm.proxy_credential_id,
+                notes=updated_orm.notes,
+                started_at=updated_orm.started_at,
+                ended_at=updated_orm.ended_at,
+                status=updated_orm.status,
+                outcome_state=updated_orm.outcome_state,
+            )
+        except ReferentialIntegrityError as e:
+            raise SessionValidationError(f"Failed to update session notes: {e}") from e
 
     async def fail_session(
         self, session_id: UUID, error_message: str | None = None

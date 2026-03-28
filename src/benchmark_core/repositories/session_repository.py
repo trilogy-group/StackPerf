@@ -129,19 +129,21 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
         session_id: UUID,
         status: str = "completed",
         ended_at: datetime | None = None,
+        outcome_state: str | None = None,
     ) -> SessionORM | None:
-        """Safely finalize a session with end time and status.
+        """Safely finalize a session with end time, status, and outcome state.
 
         This is the recommended way to end a session - it atomically:
         1. Retrieves the session
         2. Sets ended_at to provided or current UTC time
-        3. Updates status
+        3. Updates status and outcome_state
         4. Saves changes
 
         Args:
             session_id: The session UUID to finalize.
             status: The final status (default: 'completed').
             ended_at: Optional end timestamp. Defaults to current UTC time.
+            outcome_state: Optional outcome state (valid, invalid, aborted).
 
         Returns:
             The finalized session, or None if not found.
@@ -161,6 +163,8 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
         try:
             session.ended_at = ended_at
             session.status = status
+            if outcome_state is not None:
+                session.outcome_state = outcome_state
             self._session.flush()
             return session
         except IntegrityError as e:
@@ -284,6 +288,8 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
         git_dirty: bool = False,
         operator_label: str | None = None,
         proxy_credential_alias: str | None = None,
+        proxy_credential_id: str | None = None,
+        notes: str | None = None,
     ) -> SessionORM:
         """Safely create a session with validation and duplicate rejection.
 
@@ -303,6 +309,8 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
             git_dirty: Whether the working tree is dirty.
             operator_label: Optional operator-provided label (used as external session ID).
             proxy_credential_alias: Optional proxy credential key alias.
+            proxy_credential_id: Optional proxy credential identifier.
+            notes: Optional session notes from operator.
 
         Returns:
             The created session.
@@ -360,6 +368,8 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
             git_dirty=git_dirty,
             operator_label=operator_label,
             proxy_credential_alias=proxy_credential_alias,
+            proxy_credential_id=proxy_credential_id,
+            notes=notes,
             status="active",
         )
 

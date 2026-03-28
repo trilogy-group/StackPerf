@@ -18,6 +18,7 @@ from benchmark_core.db.models import (
 from benchmark_core.db.models import (
     Session as SessionORM,
 )
+from benchmark_core.repositories.artifact_repository import SQLArtifactRepository
 from benchmark_core.repositories.base import (
     DuplicateIdentifierError,
     ReferentialIntegrityError,
@@ -724,3 +725,200 @@ class TestProxyCredentialRepository:
 
         result = await credential_repo.get_by_alias("nonexistent-alias")
         assert result is None
+
+
+class TestSQLArtifactRepository:
+    """Tests for SQLArtifactRepository."""
+
+    @pytest.fixture
+    def artifact_repo(self, db_session):
+        """Create an artifact repository."""
+        return SQLArtifactRepository(db_session)
+
+    @pytest.fixture
+    def setup_experiment_and_session(self, db_session):
+        """Create experiment, variant, task, and session for artifact tests."""
+        experiment = Experiment(name="artifact-test-exp", description="Test")
+        variant = Variant(
+            name="artifact-test-var",
+            provider="test",
+            model_alias="gpt-4",
+            harness_profile="default",
+        )
+        task = TaskCard(
+            name="artifact-test-task",
+            goal="Test",
+            starting_prompt="Test",
+            stop_condition="Test",
+        )
+        db_session.add_all([experiment, variant, task])
+        db_session.flush()
+
+        session = SessionORM(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task.id,
+            harness_profile="default",
+            repo_path="/test/repo",
+            git_branch="main",
+            git_commit="abc1234",
+            status="active",
+        )
+        db_session.add(session)
+        db_session.commit()
+
+        return experiment, session
+
+    @pytest.mark.asyncio
+    async def test_create_artifact_with_session(self, db_session, artifact_repo, setup_experiment_and_session):
+        """Test creating an artifact linked to a session."""
+        experiment, session = setup_experiment_and_session
+
+        from benchmark_core.db.models import Artifact as ArtifactORM
+
+        artifact = ArtifactORM(
+            name="test_export.json",
+            artifact_type="export",
+            content_type="application/json",
+            storage_path="/storage/test_export.json",
+            session_id=session.id,
+            size_bytes=1024,
+        )
+
+        created = await artifact_repo.create(artifact)
+        assert created.id is not None
+        assert created.name == "test_export.json"
+        assert created.session_id == session.id
+        assert created.experiment_id is None
+
+    @pytest.mark.asyncio
+    async def test_create_artifact_with_experiment(self, db_session, artifact_repo, setup_experiment_and_session):
+        """Test creating an artifact linked to an experiment."""
+        experiment, _ = setup_experiment_and_session
+
+        from benchmark_core.db.models import Artifact as ArtifactORM
+
+        artifact = ArtifactORM(
+            name="report.html",
+            artifact_type="report",
+            content_type="text/html",
+            storage_path="/storage/report.html",
+            experiment_id=experiment.id,
+            size_bytes=5120,
+        )
+
+        created = await artifact_repo.create(artifact)
+        assert created.experiment_id == experiment.id
+        assert created.session_id is None
+
+    @pytest.mark.asyncio
+    async def test_get_artifact_by_id(self, db_session, artifact_repo, setup_experiment_and_session):
+        """Test retrieving an artifact by ID."""
+        experiment, session = setup_experiment_and_session
+
+        from benchmark_core.db.models import Artifact as ArtifactORM
+
+        artifact = ArtifactORM(
+            name="find_me.json",
+            artifact_type="export",
+            content_type="application/json",
+            storage_path="/storage/find_me.json",
+            session_id=session.id,
+        )
+        db_session.add(artifact)
+        db_session.commit()
+
+        found = await artifact_repo.get_by_id(artifact.id)
+        assert found is not None
+        assert found.name == "find_me.json"
+
+    @pytest.mark.asyncio
+    async def test_list_by_session(self, db_session, artifact_repo, setup_experiment_and_session):
+        """Test listing artifacts by session."""
+        experiment, session = setup_experiment_and_session
+
+        from benchmark_core.db.models import Artifact as ArtifactORM
+
+        # Create multiple artifacts for the session
+        for i in range(3):
+            artifact = ArtifactORM(
+                name=f"export_{i}.json",
+                artifact_type="export",
+                content_type="application/json",
+                storage_path=f"/storage/export_{i}.json",
+                session_id=session.id,
+            )
+            db_session.add(artifact)
+
+        # Create an artifact for the experiment (not the session)
+        exp_artifact = ArtifactORM(
+            name="exp_report.html",
+            artifact_type="report",
+            content_type="text/html",
+            storage_path="/storage/exp_report.html",
+            experiment_id=experiment.id,
+        )
+        db_session.add(exp_artifact)
+        db_session.commit()
+
+        results = await artifact_repo.list_by_session(session.id)
+        assert len(results) == 3
+        for result in results:
+            assert result.session_id == session.id
+
+    @pytest.mark.asyncio
+    async def test_list_by_experiment(self, db_session, artifact_repo, setup_experiment_and_session):
+        """Test listing artifacts by experiment."""
+        experiment, session = setup_experiment_and_session
+
+        from benchmark_core.db.models import Artifact as ArtifactORM
+
+        # Create artifacts for the experiment
+        for i in range(2):
+            artifact = ArtifactORM(
+                name=f"exp_report_{i}.html",
+                artifact_type="report",
+                content_type="text/html",
+                storage_path=f"/storage/exp_report_{i}.html",
+                experiment_id=experiment.id,
+            )
+            db_session.add(artifact)
+
+        db_session.commit()
+
+        results = await artifact_repo.list_by_experiment(experiment.id)
+        assert len(results) == 2
+        for result in results:
+            assert result.experiment_id == experiment.id
+
+    @pytest.mark.asyncio
+    async def test_delete_artifact(self, db_session, artifact_repo, setup_experiment_and_session):
+        """Test deleting an artifact."""
+        experiment, _ = setup_experiment_and_session
+
+        from benchmark_core.db.models import Artifact as ArtifactORM
+
+        artifact = ArtifactORM(
+            name="to_delete.json",
+            artifact_type="export",
+            content_type="application/json",
+            storage_path="/storage/to_delete.json",
+            experiment_id=experiment.id,
+        )
+        db_session.add(artifact)
+        db_session.commit()
+
+        deleted = await artifact_repo.delete(artifact.id)
+        assert deleted is True
+
+        # Verify it's gone
+        not_found = await artifact_repo.get_by_id(artifact.id)
+        assert not_found is None
+
+    @pytest.mark.asyncio
+    async def test_delete_nonexistent_artifact(self, db_session, artifact_repo):
+        """Test deleting a non-existent artifact."""
+        fake_id = uuid4()
+        deleted = await artifact_repo.delete(fake_id)
+        assert deleted is False
+>>>>>>> origin/main

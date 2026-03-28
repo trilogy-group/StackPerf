@@ -553,6 +553,80 @@ class TestSessionService:
         assert summary["operator_label"] == "summary-test"
         assert summary["git_branch"] == "main"
 
+    async def test_update_session_notes(self, session_service, db_session, setup_entities):
+        """Test updating session notes."""
+        experiment, variant, task_card = setup_entities
+
+        session = await session_service.create_session(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task_card.id,
+            harness_profile="default",
+            repo_path="/tmp/test",
+            git_branch="main",
+            git_commit="abc1234",
+        )
+        db_session.commit()
+
+        # Update notes
+        updated = await session_service.update_session_notes(
+            session.session_id, "New notes for session"
+        )
+        db_session.commit()
+
+        assert updated is not None
+        assert updated.notes == "New notes for session"
+
+    async def test_update_session_notes_append(self, session_service, db_session, setup_entities):
+        """Test appending to existing session notes."""
+        experiment, variant, task_card = setup_entities
+
+        session = await session_service.create_session(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task_card.id,
+            harness_profile="default",
+            repo_path="/tmp/test",
+            git_branch="main",
+            git_commit="abc1234",
+            notes="Initial notes",
+        )
+        db_session.commit()
+
+        # Update with new notes
+        updated = await session_service.update_session_notes(
+            session.session_id, "Initial notes\nAppended notes"
+        )
+        db_session.commit()
+
+        assert updated is not None
+        assert "Initial notes" in updated.notes
+        assert "Appended notes" in updated.notes
+
+    async def test_update_session_notes_not_found(self, session_service):
+        """Test updating notes for non-existent session."""
+        fake_id = uuid4()
+        result = await session_service.update_session_notes(fake_id, "Test notes")
+        assert result is None
+
+    async def test_create_session_with_notes(self, session_service, db_session, setup_entities):
+        """Test creating session with initial notes."""
+        experiment, variant, task_card = setup_entities
+
+        session = await session_service.create_session(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task_card.id,
+            harness_profile="default",
+            repo_path="/tmp/test",
+            git_branch="main",
+            git_commit="abc1234",
+            notes="Initial session notes",
+        )
+        db_session.commit()
+
+        assert session.notes == "Initial session notes"
+
 
 class TestCredentialService:
     """Tests for CredentialService."""

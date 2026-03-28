@@ -1,6 +1,7 @@
 """Domain models for sessions, requests, and metric rollups."""
 
 from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -10,6 +11,14 @@ from pydantic import BaseModel, Field, SecretStr
 def _utc_now() -> datetime:
     """Return current UTC time."""
     return datetime.now(UTC)
+
+
+class SessionOutcomeState(StrEnum):
+    """Valid outcome states for a benchmark session."""
+
+    VALID = "valid"
+    INVALID = "invalid"
+    ABORTED = "aborted"
 
 
 class Session(BaseModel):
@@ -25,13 +34,22 @@ class Session(BaseModel):
     git_commit: str = Field(..., description="Commit SHA")
     git_dirty: bool = Field(default=False, description="Dirty state flag")
     operator_label: str | None = Field(default=None, description="Operator-provided label")
+    notes: str | None = Field(default=None, description="Session notes from operator")
     proxy_credential_alias: str | None = Field(
         default=None,
         description="Session-scoped proxy credential key alias",
     )
+    proxy_credential_id: str | None = Field(
+        default=None,
+        description="Proxy credential identifier",
+    )
     started_at: datetime = Field(default_factory=_utc_now)
     ended_at: datetime | None = Field(default=None)
     status: str = Field(default="active", description="Session status")
+    outcome_state: str | None = Field(
+        default=None,
+        description="Outcome state: valid, invalid, or aborted",
+    )
 
 
 class ProxyCredential(BaseModel):
@@ -105,3 +123,27 @@ class MetricRollup(BaseModel):
     metric_value: float = Field(..., description="Metric value")
     sample_count: int = Field(default=1, description="Number of samples")
     computed_at: datetime = Field(default_factory=_utc_now)
+
+
+class Artifact(BaseModel):
+    """Arbitrary files/data produced during a benchmark session or experiment."""
+
+    artifact_id: UUID = Field(default_factory=uuid4)
+    session_id: UUID | None = Field(
+        default=None,
+        description="Associated session ID (if session-scoped)",
+    )
+    experiment_id: UUID | None = Field(
+        default=None,
+        description="Associated experiment ID (if experiment-scoped)",
+    )
+    artifact_type: str = Field(..., description="Type of artifact (e.g., export, report, bundle)")
+    name: str = Field(..., description="Artifact name")
+    content_type: str = Field(..., description="MIME content type")
+    storage_path: str = Field(..., description="Path to stored artifact")
+    size_bytes: int | None = Field(default=None, description="Size in bytes")
+    artifact_metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional artifact metadata",
+    )
+    created_at: datetime = Field(default_factory=_utc_now)

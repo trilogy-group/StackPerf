@@ -107,11 +107,16 @@ def test_import_domain_models() -> None:
 
 def test_import_repositories() -> None:
     """Smoke test: repositories import successfully."""
-    from benchmark_core.repositories import RequestRepository, SessionRepository
+    from benchmark_core.repositories import (
+        ArtifactRepository,
+        RequestRepository,
+        SessionRepository,
+    )
 
     # Verify abstract classes exist
     assert hasattr(SessionRepository, "create")
     assert hasattr(RequestRepository, "create")
+    assert hasattr(ArtifactRepository, "create")
 
 
 def test_import_services() -> None:
@@ -122,3 +127,53 @@ def test_import_services() -> None:
     # Note: SessionService requires a repository
     credential_service = CredentialService()
     assert credential_service is not None
+
+
+def test_session_outcome_state_enum() -> None:
+    """Test SessionOutcomeState enum values."""
+    from benchmark_core.models import SessionOutcomeState
+
+    assert SessionOutcomeState.VALID == "valid"
+    assert SessionOutcomeState.INVALID == "invalid"
+    assert SessionOutcomeState.ABORTED == "aborted"
+
+    # Test conversion from string
+    assert SessionOutcomeState("valid") == SessionOutcomeState.VALID
+    assert SessionOutcomeState("invalid") == SessionOutcomeState.INVALID
+    assert SessionOutcomeState("aborted") == SessionOutcomeState.ABORTED
+
+
+def test_artifact_model() -> None:
+    """Test Artifact model instantiation."""
+    from uuid import uuid4
+
+    from benchmark_core.models import Artifact
+
+    # Test session-scoped artifact
+    session_id = uuid4()
+    artifact = Artifact(
+        artifact_type="export",
+        name="session_export.json",
+        content_type="application/json",
+        storage_path="/storage/exports/session_export.json",
+        session_id=session_id,
+        size_bytes=1024,
+        artifact_metadata={"format": "json"},
+    )
+    assert artifact.artifact_type == "export"
+    assert artifact.name == "session_export.json"
+    assert artifact.session_id == session_id
+    assert artifact.experiment_id is None
+    assert artifact.size_bytes == 1024
+
+    # Test experiment-scoped artifact
+    experiment_id = uuid4()
+    artifact2 = Artifact(
+        artifact_type="report",
+        name="experiment_report.html",
+        content_type="text/html",
+        storage_path="/storage/reports/experiment_report.html",
+        experiment_id=experiment_id,
+    )
+    assert artifact2.experiment_id == experiment_id
+    assert artifact2.session_id is None

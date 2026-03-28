@@ -431,13 +431,13 @@ class TestSessionFinalizeCommand:
         db_session.add(session)
         db_session.commit()
 
-        result = runner.invoke(app, ["session", "finalize", str(session.id), "--status", "failed"])
+        result = runner.invoke(app, ["session", "finalize", str(session.id), "--outcome", "invalid"])
 
         assert result.exit_code == 0, f"Exit code: {result.exit_code}, Output: {result.output}"
 
-        # Verify session was updated with failed status
+        # Verify session was updated with outcome_state
         db_session.refresh(session)
-        assert session.status == "failed"
+        assert session.outcome_state == "invalid"
 
     def test_finalize_session_not_found(self, mock_env_db_url, runner):
         """Test finalizing non-existent session."""
@@ -445,6 +445,48 @@ class TestSessionFinalizeCommand:
 
         assert result.exit_code != 0
         assert "Session not found" in result.output or "Exit" in result.output
+
+    def test_finalize_session_with_status_parameter(self, db_session, mock_env_db_url, runner):
+        """Test finalizing a session with --status parameter (backward compatibility)."""
+        # Create prerequisite records
+        experiment = DBExperiment(name="finalize-status-param-exp", description="Test")
+        variant = DBVariant(
+            name="finalize-status-param-var",
+            provider="test",
+            model_alias="gpt-4",
+            harness_profile="default",
+        )
+        task = DBTaskCard(
+            name="finalize-status-param-task",
+            goal="Test",
+            starting_prompt="Test",
+            stop_condition="Test",
+        )
+        db_session.add_all([experiment, variant, task])
+        db_session.flush()
+
+        session = DBSession(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task.id,
+            harness_profile="test-harness",
+            repo_path="/test/repo",
+            git_branch="main",
+            git_commit="abc123",
+            status="active",
+        )
+        db_session.add(session)
+        db_session.commit()
+
+        # Test with --status failed (backward compatible)
+        result = runner.invoke(app, ["session", "finalize", str(session.id), "--status", "failed"])
+
+        assert result.exit_code == 0, f"Exit code: {result.exit_code}, Output: {result.output}"
+
+        # Verify session was updated with status
+        db_session.refresh(session)
+        assert session.status == "failed"
+        assert session.outcome_state == "valid"  # Default outcome
 
 
 class TestSessionEnvCommand:
@@ -493,6 +535,125 @@ class TestSessionEnvCommand:
     def test_env_session_not_found(self, mock_env_db_url, runner):
         """Test env command for non-existent session."""
         result = runner.invoke(app, ["session", "env", "550e8400-e29b-41d4-a716-446655440000"])
+
+        assert result.exit_code != 0
+        assert "Session not found" in result.output or "Exit" in result.output
+
+
+
+class TestSessionAddNotesCommand:
+    """Tests for session add-notes CLI command."""
+
+    def test_add_notes(self, db_session, mock_env_db_url, runner):
+        """Test adding notes to a session."""
+        # Create prerequisite records
+        experiment = DBExperiment(name="notes-test-exp", description="Test")
+        variant = DBVariant(
+            name="notes-test-var",
+            provider="test",
+            model_alias="gpt-4",
+            harness_profile="default",
+        )
+        task = DBTaskCard(
+            name="notes-test-task",
+            goal="Test",
+            starting_prompt="Test",
+            stop_condition="Test",
+        )
+        db_session.add_all([experiment, variant, task])
+        db_session.flush()
+
+        session = DBSession(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task.id,
+            harness_profile="test-harness",
+            repo_path="/test/repo",
+            git_branch="main",
+            git_commit="abc123",
+            status="active",
+        )
+        db_session.add(session)
+        db_session.commit()
+
+        result = runner.invoke(
+            app,
+            ["session", "add-notes", str(session.id), "--notes", "Test notes for session"],
+        )
+
+        assert result.exit_code == 0, f"Exit code: {result.exit_code}, Output: {result.output}"
+        assert "Session notes updated successfully" in result.output
+
+        # Verify notes were updated in database
+        db_session.refresh(session)
+        assert session.notes == "Test notes for session"
+
+    def test_add_notes_with_append(self, db_session, mock_env_db_url, runner):
+        """Test appending notes to existing session notes."""
+        # Create prerequisite records
+        experiment = DBExperiment(name="notes-append-exp", description="Test")
+        variant = DBVariant(
+            name="notes-append-var",
+            provider="test",
+            model_alias="gpt-4",
+            harness_profile="default",
+        )
+        task = DBTaskCard(
+            name="notes-append-task",
+            goal="Test",
+            starting_prompt="Test",
+            stop_condition="Test",
+        )
+        db_session.add_all([experiment, variant, task])
+        db_session.flush()
+
+        session = DBSession(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task.id,
+            harness_profile="test-harness",
+            repo_path="/test/repo",
+            git_branch="main",
+            git_commit="abc123",
+            status="active",
+            notes="Initial notes",
+        )
+        db_session.add(session)
+        db_session.commit()
+
+        result = runner.invoke(
+            app,
+            [
+                "session",
+                "add-notes",
+                str(session.id),
+                "--notes",
+                "Appended notes",
+                "--append",
+            ],
+        )
+
+        assert result.exit_code == 0, f"Exit code: {result.exit_code}, Output: {result.output}"
+        assert "Session notes updated successfully" in result.output
+        assert "(appended to existing notes)" in result.output
+
+        # Verify notes were appended
+        db_session.refresh(session)
+        assert "Initial notes" in session.notes
+        assert "Appended notes" in session.notes
+
+    def test_add_notes_session_not_found(self, mock_env_db_url, runner):
+        """Test add-notes with non-existent session."""
+        result = runner.invoke(
+            app,
+            [
+                "session",
+                "add-notes",
+                "550e8400-e29b-41d4-a716-446655440000",
+                "--notes",
+                "Test notes",
+            ],
+        )
 
         assert result.exit_code != 0
         assert "Session not found" in result.output or "Exit" in result.output

@@ -1,4 +1,8 @@
-"""Core domain services for session management and credential issuance."""
+"""Abstract service definitions for the benchmark core.
+
+Note: The concrete implementations have been moved to the services/ package.
+This file is kept for backward compatibility and will be deprecated.
+"""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any

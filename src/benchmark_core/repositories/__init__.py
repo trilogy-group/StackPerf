@@ -6,6 +6,7 @@ the benchmark schema.
 """
 
 # Abstract interfaces (from original repositories module at package level)
+from benchmark_core.repositories.artifact_repository import SQLArtifactRepository
 from benchmark_core.repositories.base import (
     AbstractRepository,
     DuplicateIdentifierError,
@@ -22,6 +23,7 @@ from benchmark_core.repositories.session_repository import SQLSessionRepository
 from benchmark_core.repositories.task_card_repository import SQLTaskCardRepository
 from benchmark_core.repositories.variant_repository import SQLVariantRepository
 from benchmark_core.repositories_abc import (
+    ArtifactRepository,
     ProxyCredentialRepository,
     RequestRepository,
     SessionRepository,
@@ -32,6 +34,7 @@ __all__ = [
     "SessionRepository",
     "RequestRepository",
     "ProxyCredentialRepository",
+    "ArtifactRepository",
     # Base classes and exceptions
     "AbstractRepository",
     "SQLAlchemyRepository",
@@ -47,4 +50,5 @@ __all__ = [
     "SQLExperimentRepository",
     "SQLTaskCardRepository",
     "SQLHarnessProfileRepository",
+    "SQLArtifactRepository",
 ]

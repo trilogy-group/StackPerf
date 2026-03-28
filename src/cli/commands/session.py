@@ -1,7 +1,6 @@
 """Session lifecycle commands."""
 
 import asyncio
-from datetime import UTC, datetime
 from uuid import UUID
 
 import typer
@@ -22,11 +21,15 @@ from benchmark_core.db.models import (
 )
 from benchmark_core.db.session import get_db_session
 from benchmark_core.git import get_git_metadata
+from benchmark_core.models import SessionOutcomeState
 from benchmark_core.repositories.session_repository import SQLSessionRepository
 from benchmark_core.services.session_service import SessionService
 
 app = typer.Typer(help="Manage benchmark sessions")
 console = Console()
+
+# CLI choice values for outcome states
+OUTCOME_CHOICES = [state.value for state in SessionOutcomeState]
 
 
 def _resolve_experiment_id(db: SQLAlchemySession, experiment: str) -> UUID:
@@ -86,11 +89,12 @@ def create(
         help="Harness profile name",
     ),
     label: str | None = typer.Option(None, "--label", "-l", help="Operator label"),
+    notes: str | None = typer.Option(None, "--notes", "-n", help="Initial session notes"),
     repo_path: str | None = typer.Option(
         None, "--repo", "-r", help="Repository path (default: current directory)"
     ),
 ) -> None:
-    """Create a new benchmark session with git metadata capture."""
+    """Create a new benchmark session with git metadata capture and optional notes."""
     console.print("[bold blue]Creating benchmark session...[/bold blue]")
 
     # Capture git metadata from active repository
@@ -116,7 +120,7 @@ def create(
             repository = SQLSessionRepository(db)
             service = SessionService(repository)
 
-            # Create session with git metadata
+            # Create session with git metadata and notes
             session = asyncio.run(
                 service.create_session(
                     experiment_id=str(exp_id),
@@ -128,6 +132,7 @@ def create(
                     git_commit=git_metadata.commit if git_metadata else "unknown",
                     git_dirty=git_metadata.dirty if git_metadata else False,
                     operator_label=label,
+                    notes=notes,
                 )
             )
 
@@ -137,6 +142,8 @@ def create(
             console.print(f"  Task Card: {task_card} ({task_id})")
             console.print(f"  Harness: {harness_profile}")
             console.print(f"  Status: {session.status}")
+            if notes:
+                console.print(f"  Notes: {notes[:50]}...")
 
         except typer.BadParameter:
             raise
@@ -247,11 +254,51 @@ def show(session_id: str) -> None:
 def finalize(
     session_id: str = typer.Argument(..., help="Session ID to finalize"),
     status: str = typer.Option(
-        "completed", "--status", "-s", help="Final status (completed, failed, cancelled)"
+        "completed",
+        "--status",
+        "-s",
+        help="Final status (completed, failed, cancelled)",
+    ),
+    outcome: str | None = typer.Option(
+        None,
+        "--outcome",
+        "-o",
+        help="Outcome state (valid, invalid, aborted). If not specified, defaults to 'valid' for completed status.",
+        case_sensitive=False,
     ),
 ) -> None:
-    """Finalize a benchmark session with status and end time."""
+    """Finalize a benchmark session with status and optional outcome state.
+
+    Status values:
+    - completed: Session finished normally (default)
+    - failed: Session encountered errors
+    - cancelled: Session was manually cancelled
+
+    Outcome states (optional):
+    - valid: Session data is valid for comparisons (default for completed status)
+    - invalid: Session completed but data should be excluded from comparisons
+    - aborted: Session was terminated before completion
+    """
+    # Validate status
+    valid_statuses = ["completed", "failed", "cancelled"]
+    if status not in valid_statuses:
+        console.print(f"[red]Invalid status: {status}[/red]")
+        console.print(f"Valid options: {', '.join(valid_statuses)}")
+        raise typer.Exit(1)
+
+    # Validate outcome if provided
+    if outcome is not None and outcome not in OUTCOME_CHOICES:
+        console.print(f"[red]Invalid outcome state: {outcome}[/red]")
+        console.print(f"Valid options: {', '.join(OUTCOME_CHOICES)}")
+        raise typer.Exit(1)
+
+    # Default outcome to 'valid' if not specified for completed status
+    if outcome is None:
+        outcome = "valid"
+
     console.print(f"[bold blue]Finalizing session {session_id}...[/bold blue]")
+    console.print(f"  Status: {status}")
+    console.print(f"  Outcome: {outcome}")
 
     with get_db_session() as db:
         try:
@@ -265,20 +312,20 @@ def finalize(
             repository = SQLSessionRepository(db)
             service = SessionService(repository)
 
-            # Finalize session
             # Get current session
             session = asyncio.run(service.get_session(sess_uuid))
             if session is None:
                 console.print(f"[red]Session not found: {session_id}[/red]")
                 raise typer.Exit(1)
 
-            # Finalize with status and end time
-            ended_at = datetime.now(UTC)
+            # Finalize with status, outcome state, and end time
+            from benchmark_core.models import SessionOutcomeState
+            outcome_enum = SessionOutcomeState(outcome)
             updated = asyncio.run(
                 service.finalize_session(
                     sess_uuid,
                     status=status,
-                    ended_at=ended_at,
+                    outcome_state=outcome_enum,
                 )
             )
             if updated is None:
@@ -287,10 +334,14 @@ def finalize(
 
             console.print("[green]Session finalized successfully[/green]")
             console.print(f"  Status: {updated.status}")
+            console.print(f"  Outcome: {updated.outcome_state}")
             console.print(f"  Ended at: {updated.ended_at}")
 
         except typer.BadParameter:
             raise
+        except ValueError as e:
+            console.print(f"[red]Invalid value: {e}[/red]")
+            raise typer.Exit(1) from e
         except Exception as e:
             console.print(f"[red]Error finalizing session: {e}[/red]")
             raise typer.Exit(1) from e
@@ -323,4 +374,58 @@ def env(session_id: str) -> None:
             raise
         except Exception as e:
             console.print(f"[red]Error rendering environment: {e}[/red]")
+            raise typer.Exit(1) from e
+
+
+@app.command()
+def add_notes(
+    session_id: str,
+    notes: str = typer.Option(..., "--notes", "-n", help="Notes to add to session"),
+    append: bool = typer.Option(
+        False,
+        "--append",
+        "-a",
+        help="Append to existing notes instead of replacing",
+    ),
+) -> None:
+    """Add or update notes for a benchmark session."""
+    console.print(f"[bold blue]Updating notes for session {session_id}...[/bold blue]")
+
+    with get_db_session() as db:
+        try:
+            # Resolve session ID
+            try:
+                sess_uuid = UUID(session_id)
+            except ValueError as err:
+                raise typer.BadParameter(f"Invalid session ID: {session_id}") from err
+
+            # Create repository and service
+            repository = SQLSessionRepository(db)
+            service = SessionService(repository)
+
+            # Get current session
+            session = asyncio.run(service.get_session(sess_uuid))
+            if session is None:
+                console.print(f"[red]Session not found: {session_id}[/red]")
+                raise typer.Exit(1)
+
+            # Build new notes
+            new_notes = f"{session.notes}\n{notes}" if append and session.notes else notes
+
+            # Update notes
+            updated = asyncio.run(
+                service.update_session_notes(sess_uuid, new_notes)
+            )
+            if updated is None:
+                console.print(f"[red]Failed to update notes for session: {session_id}[/red]")
+                raise typer.Exit(1)
+
+            console.print("[green]Session notes updated successfully[/green]")
+            if append:
+                console.print("[dim](appended to existing notes)[/dim]")
+
+        except typer.BadParameter:
+            raise
+        except Exception as e:
+            console.print(f"[red]Error updating notes: {e}[/red]")
             raise typer.Exit(1) from e

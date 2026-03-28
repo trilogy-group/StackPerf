@@ -1,9 +1,9 @@
-"""Repository interfaces for session and request storage."""
+"""Repository interfaces for session, request, and artifact storage."""
 
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from benchmark_core.models import ProxyCredential, Request, Session
+from benchmark_core.models import Artifact, ProxyCredential, Request, Session
 
 
 class ProxyCredentialRepository(ABC):
@@ -43,6 +43,25 @@ class ProxyCredentialRepository(ABC):
         ...
 
 
+class ArtifactRepository(ABC):
+    """Abstract repository for artifact persistence."""
+
+    @abstractmethod
+    async def create(self, artifact: Artifact) -> Artifact:
+        """Create a new artifact record."""
+        ...
+
+    @abstractmethod
+    async def get_by_id(self, artifact_id: UUID) -> Artifact | None:
+        """Retrieve an artifact by ID."""
+        ...
+
+    @abstractmethod
+    async def list_by_session(self, session_id: UUID) -> list[Artifact]:
+        """List all artifacts for a session."""
+        ...
+
+
 class SessionRepository(ABC):
     """Abstract repository for session persistence."""
 
@@ -76,16 +95,6 @@ class RequestRepository(ABC):
         ...
 
     @abstractmethod
-    async def create_many(self, requests: list[Request]) -> list[Request]:
-        """Create multiple request records (idempotent)."""
-        ...
-
-    @abstractmethod
-    async def get_by_session(self, session_id: UUID) -> list[Request]:
-        """Get all requests for a session."""
-        ...
-
-    @abstractmethod
-    async def get_by_request_id(self, request_id: str) -> Request | None:
-        """Get a request by its LiteLLM request ID."""
+    async def get_by_id(self, request_id: UUID) -> Request | None:
+        """Retrieve a request by ID."""
         ...

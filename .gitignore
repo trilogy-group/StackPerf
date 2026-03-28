@@ -37,3 +37,4 @@ WORKPAD.md
 *.db
 *.sqlite
 *.sqlite3
+.codex_workpad.md

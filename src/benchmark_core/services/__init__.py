@@ -18,18 +18,12 @@ from benchmark_core.services.session_service import (
 from benchmark_core.services.task_card_service import TaskCardService
 from benchmark_core.services.variant_service import VariantService
 
-# ABC services for interface contracts (backward compatible)
+# ABC service exports - Note: old services_abc SessionService removed, use services.session_service
 from benchmark_core.services_abc import (
     CredentialService,
 )
-from benchmark_core.services_abc import (
-    SessionService as SessionServiceABC,
-)
 
 __all__ = [
-    # ABC services (backward compatible)
-    "SessionServiceABC",
-    "CredentialService",
     # Core SQL-based services
     "SessionService",
     "SessionValidationError",
@@ -42,4 +36,6 @@ __all__ = [
     # Collection job services
     "CollectionJobService",
     "CollectionJobResult",
+    # ABC services
+    "CredentialService",
 ]
