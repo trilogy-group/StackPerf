@@ -25,7 +25,7 @@ def demo_redaction() -> None:
     print("SECRET REDACTION DEMO")
     print("=" * 60)
 
-    filter = get_redaction_filter()
+    redaction_filter = get_redaction_filter()
 
     # Test API key redaction
     api_key_data = {
@@ -35,7 +35,7 @@ def demo_redaction() -> None:
     }
     print("\n--- API Key Redaction ---")
     print(f"Original:  {api_key_data}")
-    print(f"Redacted:  {filter.redact_dict(api_key_data)}")
+    print(f"Redacted:  {redaction_filter.redact_dict(api_key_data)}")
 
     # Test database URL redaction
     db_url_data = {
@@ -44,7 +44,7 @@ def demo_redaction() -> None:
     }
     print("\n--- Database URL Redaction ---")
     print(f"Original:  {db_url_data}")
-    print(f"Redacted:  {filter.redact_dict(db_url_data)}")
+    print(f"Redacted:  {redaction_filter.redact_dict(db_url_data)}")
 
     # Test bearer token redaction
     token_data = {
@@ -52,7 +52,7 @@ def demo_redaction() -> None:
     }
     print("\n--- Bearer Token Redaction ---")
     print(f"Original:  {token_data}")
-    print(f"Redacted:  {filter.redact_dict(token_data)}")
+    print(f"Redacted:  {redaction_filter.redact_dict(token_data)}")
 
     # Test environment variable redaction
     env_data = {
@@ -62,7 +62,7 @@ def demo_redaction() -> None:
     }
     print("\n--- Environment Variable Redaction ---")
     print(f"Original:  {env_data}")
-    print(f"Redacted:  {filter.redact_dict(env_data)}")
+    print(f"Redacted:  {redaction_filter.redact_dict(env_data)}")
 
     # Test nested data structures
     nested_data = {
@@ -80,7 +80,7 @@ def demo_redaction() -> None:
     }
     print("\n--- Nested Structure Redaction ---")
     print(f"Original:  {nested_data}")
-    print(f"Redacted:  {filter.redact_dict(nested_data)}")
+    print(f"Redacted:  {redaction_filter.redact_dict(nested_data)}")
 
     # Test convenience function
     print("\n--- Convenience Function (redact_for_logging) ---")
