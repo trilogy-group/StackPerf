@@ -8,13 +8,6 @@ from pydantic import BaseModel, Field
 
 
 # Base response schemas
-class PaginationParams(BaseModel):
-    """Pagination parameters for list endpoints."""
-
-    limit: int = Field(default=100, ge=1, le=1000, description="Max items to return")
-    offset: int = Field(default=0, ge=0, description="Items to skip")
-
-
 class PaginatedResponse(BaseModel):
     """Base response for paginated lists."""
 

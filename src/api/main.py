@@ -31,7 +31,6 @@ from benchmark_core.db.models import (
     Experiment,
     ExperimentVariant,
     MetricRollup,
-    TaskCard,
     Variant,
 )
 from benchmark_core.db.models import (
