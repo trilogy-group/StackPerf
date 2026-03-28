@@ -640,7 +640,7 @@ class TestDotenvRendering:
         self,
         rendering_service: EnvRenderingService,
     ) -> None:
-        """Dotenv format escapes newlines in values."""
+        """Dotenv format escapes newlines in values with proper quoting."""
         profile = HarnessProfile(
             name="test-profile",
             protocol_surface="openai_responses",
@@ -660,14 +660,42 @@ class TestDotenvRendering:
             include_secrets=False,
         )
 
-        # Should escape newlines as \n (not literal newlines)
-        assert "line1\\nline2" in snippet.content
-        # Should not contain literal newline in the value
+        # Should quote values with newlines and escape newlines as \n
+        assert 'TEST_VAR="line1\\nline2"' in snippet.content
+        # Should not contain literal newline in the value (each var on single line)
         lines = snippet.content.split("\n")
-        # Each env var should be on a single line
         for line in lines:
             if line.startswith("TEST_VAR="):
-                assert "\n" not in line.split("=", 1)[1]
+                # The value should be quoted and contain escaped newline
+                assert line == 'TEST_VAR="line1\\nline2"'
+
+    def test_newlines_with_spaces(
+        self,
+        rendering_service: EnvRenderingService,
+    ) -> None:
+        """Dotenv format handles newlines combined with spaces correctly."""
+        profile = HarnessProfile(
+            name="test-profile",
+            protocol_surface="openai_responses",
+            base_url_env="TEST_BASE_URL",
+            api_key_env="TEST_API_KEY",
+            model_env="TEST_MODEL",
+            extra_env={
+                "TEST_VAR": "line1\nline2 with spaces",
+            },
+        )
+
+        snippet = rendering_service.render_env_snippet(
+            harness_profile=profile,
+            model_alias="test-model",
+            proxy_base_url="http://localhost:4000",
+            format_override="dotenv",
+            include_secrets=False,
+        )
+
+        # Should properly escape: backslashes first, then quotes, then newlines
+        # The newline becomes \n, and the spaces are preserved in the quoted value
+        assert 'TEST_VAR="line1\\nline2 with spaces"' in snippet.content
 
 
 class TestModuleConvenienceFunction:

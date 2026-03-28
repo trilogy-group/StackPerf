@@ -395,13 +395,20 @@ class EnvRenderingService:
         # Sort keys for deterministic output
         for key in sorted(env_vars.keys()):
             value = env_vars[key]
-            # Escape newlines first (dotenv doesn't support literal newlines)
-            if "\n" in value:
-                value = value.replace("\n", "\\n")
-            # Quote values that need escaping
-            if " " in value or "#" in value or "'" in value or '"' in value:
-                # Escape backslashes and double quotes
+            # Check if value needs quoting or newline escaping
+            needs_quoting = (
+                "\n" in value
+                or " " in value
+                or "#" in value
+                or "'" in value
+                or '"' in value
+            )
+            if needs_quoting:
+                # Escape backslashes FIRST, then double quotes
                 escaped = value.replace("\\", "\\\\").replace('"', '\\"')
+                # THEN escape newlines (so \n stays as \n, not \\n)
+                if "\n" in escaped:
+                    escaped = escaped.replace("\n", "\\n")
                 lines.append(f'{key}="{escaped}"')
             else:
                 lines.append(f"{key}={value}")
