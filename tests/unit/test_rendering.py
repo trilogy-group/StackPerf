@@ -636,6 +636,39 @@ class TestDotenvRendering:
         # Should not quote simple value
         assert "TEST_VAR=simple_value" in snippet.content
 
+    def test_escapes_newlines(
+        self,
+        rendering_service: EnvRenderingService,
+    ) -> None:
+        """Dotenv format escapes newlines in values."""
+        profile = HarnessProfile(
+            name="test-profile",
+            protocol_surface="openai_responses",
+            base_url_env="TEST_BASE_URL",
+            api_key_env="TEST_API_KEY",
+            model_env="TEST_MODEL",
+            extra_env={
+                "TEST_VAR": "line1\nline2",
+            },
+        )
+
+        snippet = rendering_service.render_env_snippet(
+            harness_profile=profile,
+            model_alias="test-model",
+            proxy_base_url="http://localhost:4000",
+            format_override="dotenv",
+            include_secrets=False,
+        )
+
+        # Should escape newlines as \n (not literal newlines)
+        assert "line1\\nline2" in snippet.content
+        # Should not contain literal newline in the value
+        lines = snippet.content.split("\n")
+        # Each env var should be on a single line
+        for line in lines:
+            if line.startswith("TEST_VAR="):
+                assert "\n" not in line.split("=", 1)[1]
+
 
 class TestModuleConvenienceFunction:
     """Tests for module-level convenience function."""

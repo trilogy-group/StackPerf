@@ -95,6 +95,11 @@ def render_env(
                 console.print(f"  - {error}")
             console.print()
 
+        # Validate format
+        if output_format not in ("shell", "dotenv"):
+            console.print(f"[red]Error: Invalid format '{output_format}'. Use 'shell' or 'dotenv'.[/red]")
+            raise typer.Exit(1)
+
         # Render environment snippet
         try:
             snippet = service.render_env_snippet(
@@ -129,6 +134,8 @@ def render_env(
             console.print(f"[red]Rendering error: {e}[/red]")
             raise typer.Exit(1) from None
 
+    except typer.Exit:
+        raise
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
         raise typer.Exit(1) from e
