@@ -408,7 +408,8 @@ class DiagnosticsService:
                 # Get database version
                 if "postgresql" in database_url:
                     result = conn.execute(text("SELECT version()"))
-                    version = result.fetchone()[0] if result.fetchone() else "unknown"
+                    row = result.fetchone()
+                    version = row[0] if row else "unknown"
                     db_type = "PostgreSQL"
                 else:
                     version = "SQLite"
