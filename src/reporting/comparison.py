@@ -6,7 +6,7 @@ from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
@@ -35,9 +35,6 @@ class VariantComparison(BaseModel):
     total_requests: int = Field(default=0, description="Total request count")
     avg_latency_ms: float | None = Field(default=None, description="Average latency in ms")
     avg_ttft_ms: float | None = Field(default=None, description="Average time to first token in ms")
-    p50_latency_ms: float | None = Field(default=None, description="P50 latency in ms")
-    p95_latency_ms: float | None = Field(default=None, description="P95 latency in ms")
-    p99_latency_ms: float | None = Field(default=None, description="P99 latency in ms")
     total_errors: int = Field(default=0, description="Total error count")
     error_rate: float = Field(default=0.0, description="Error rate (errors/requests)")
     cache_hit_rate: float | None = Field(default=None, description="Cache hit rate")
@@ -141,7 +138,7 @@ class ComparisonService:
                 func.count(RequestORM.id).label("total_requests"),
                 func.avg(RequestORM.latency_ms).label("avg_latency_ms"),
                 func.avg(RequestORM.ttft_ms).label("avg_ttft_ms"),
-                func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
+                func.sum(case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
             )
             .select_from(SessionORM)
             .join(Variant, SessionORM.variant_id == Variant.id)
@@ -243,7 +240,7 @@ class ComparisonService:
                 func.count(RequestORM.id).label("total_requests"),
                 func.avg(RequestORM.latency_ms).label("avg_latency_ms"),
                 func.avg(RequestORM.ttft_ms).label("avg_ttft_ms"),
-                func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
+                func.sum(case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
             )
             .select_from(ExperimentVariant)
             .join(Variant, Variant.id == ExperimentVariant.variant_id)
@@ -274,7 +271,7 @@ class ComparisonService:
             "model": Variant.model_alias,
             "session_count": func.count(func.distinct(SessionORM.id)),
             "avg_latency_ms": func.avg(RequestORM.latency_ms),
-            "error_rate": func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)),
+            "error_rate": func.sum(case((RequestORM.error.is_(True), 1), else_=0)),
         }.get(order_by, Variant.name)
 
         # Sort variant_name ascending, others descending for metrics
@@ -343,7 +340,7 @@ class ComparisonService:
                 func.count(RequestORM.id).label("total_requests"),
                 func.avg(RequestORM.latency_ms).label("avg_latency_ms"),
                 func.avg(RequestORM.ttft_ms).label("avg_ttft_ms"),
-                func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
+                func.sum(case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
             )
             .select_from(ExperimentVariant)
             .join(Variant, Variant.id == ExperimentVariant.variant_id)
@@ -365,7 +362,7 @@ class ComparisonService:
             "provider": Variant.provider,
             "session_count": func.count(func.distinct(SessionORM.id)),
             "avg_latency_ms": func.avg(RequestORM.latency_ms),
-            "error_rate": func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)),
+            "error_rate": func.sum(case((RequestORM.error.is_(True), 1), else_=0)),
         }.get(order_by, Variant.provider)
 
         if order_by in ["session_count", "avg_latency_ms", "error_rate"]:
@@ -430,7 +427,7 @@ class ComparisonService:
                 func.count(RequestORM.id).label("total_requests"),
                 func.avg(RequestORM.latency_ms).label("avg_latency_ms"),
                 func.avg(RequestORM.ttft_ms).label("avg_ttft_ms"),
-                func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
+                func.sum(case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
             )
             .select_from(ExperimentVariant)
             .join(Variant, Variant.id == ExperimentVariant.variant_id)
@@ -453,7 +450,7 @@ class ComparisonService:
             "provider": Variant.provider,
             "session_count": func.count(func.distinct(SessionORM.id)),
             "avg_latency_ms": func.avg(RequestORM.latency_ms),
-            "error_rate": func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)),
+            "error_rate": func.sum(case((RequestORM.error.is_(True), 1), else_=0)),
         }.get(order_by, Variant.model_alias)
 
         if order_by in ["session_count", "avg_latency_ms", "error_rate"]:
@@ -518,7 +515,7 @@ class ComparisonService:
                 func.count(RequestORM.id).label("total_requests"),
                 func.avg(RequestORM.latency_ms).label("avg_latency_ms"),
                 func.avg(RequestORM.ttft_ms).label("avg_ttft_ms"),
-                func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
+                func.sum(case((RequestORM.error.is_(True), 1), else_=0)).label("total_errors"),
             )
             .select_from(ExperimentVariant)
             .join(Variant, Variant.id == ExperimentVariant.variant_id)
@@ -540,7 +537,7 @@ class ComparisonService:
             "harness_profile": Variant.harness_profile,
             "session_count": func.count(func.distinct(SessionORM.id)),
             "avg_latency_ms": func.avg(RequestORM.latency_ms),
-            "error_rate": func.sum(func.case((RequestORM.error.is_(True), 1), else_=0)),
+            "error_rate": func.sum(case((RequestORM.error.is_(True), 1), else_=0)),
         }.get(order_by, Variant.harness_profile)
 
         if order_by in ["session_count", "avg_latency_ms", "error_rate"]:
