@@ -33,7 +33,8 @@ class SecretPattern(StrEnum):
 
     # AWS credentials
     AWS_ACCESS_KEY = "AKIA[A-Z0-9]{16}"
-    AWS_SECRET_KEY = "[A-Za-z0-9/+=]{40}"
+    # AWS secret keys with context - require specific prefixes to avoid false positives
+    AWS_SECRET_KEY_WITH_CONTEXT = "(?:aws_secret_access_key|SecretAccessKey|aws_secret_key)[\"']?\\s*[:=]\\s*[\"']?([A-Za-z0-9/+=]{40})"
 
 
 @dataclass
@@ -265,7 +266,7 @@ class RetentionPolicy:
 
         # Record must be at least min_age_days old
         min_age_cutoff = datetime.now(UTC) - timedelta(days=self.min_age_days)
-        return not created_at > min_age_cutoff
+        return created_at <= min_age_cutoff
 
 
 @dataclass

@@ -183,7 +183,6 @@ class CredentialCleanupJob:
 
     def __init__(self) -> None:
         """Initialize credential cleanup job."""
-        pass
 
     async def cleanup_expired_credentials(self) -> CredentialCleanupResult:
         """Find and revoke expired credentials.
