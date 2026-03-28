@@ -193,6 +193,31 @@ class ConfigLoader:
 
         return self.registry.harness_profiles
 
+    def load_harness_profile(self, name: str) -> dict | None:
+        """Load a single harness profile by name.
+
+        Args:
+            name: Harness profile name.
+
+        Returns:
+            Raw config dict if found, None otherwise.
+        """
+        profile_path = self._resolve_path("harnesses") / f"{name}.yaml"
+        if not profile_path.exists():
+            return None
+        return self._load_yaml_file(profile_path)
+
+    def list_harness_profiles(self) -> list[str]:
+        """List all available harness profile names.
+
+        Returns:
+            List of profile names (without .yaml extension).
+        """
+        harnesses_dir = self._resolve_path("harnesses")
+        if not harnesses_dir.exists():
+            return []
+        return [f.stem for f in sorted(harnesses_dir.glob("*.yaml"))]
+
     def load_variants(self) -> dict[str, Variant]:
         """Load all variant configs from configs/variants/*.yaml."""
         variants_dir = self._resolve_path("variants")
@@ -208,6 +233,31 @@ class ConfigLoader:
             self.registry.register_variant(config)
 
         return self.registry.variants
+
+    def load_variant(self, name: str) -> dict | None:
+        """Load a single variant by name.
+
+        Args:
+            name: Variant name.
+
+        Returns:
+            Raw config dict if found, None otherwise.
+        """
+        variant_path = self._resolve_path("variants") / f"{name}.yaml"
+        if not variant_path.exists():
+            return None
+        return self._load_yaml_file(variant_path)
+
+    def list_variants(self) -> list[str]:
+        """List all available variant names.
+
+        Returns:
+            List of variant names (without .yaml extension).
+        """
+        variants_dir = self._resolve_path("variants")
+        if not variants_dir.exists():
+            return []
+        return [f.stem for f in sorted(variants_dir.glob("*.yaml"))]
 
     def load_experiments(self) -> dict[str, Experiment]:
         """Load all experiment configs from configs/experiments/*.yaml."""
