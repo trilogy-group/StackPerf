@@ -468,7 +468,14 @@ Use this exact structure for the persistent workpad comment and keep it updated 
 
 ### Notes
 
-- <short progress note with timestamp>
+Timestamped audit log. Add an entry after every milestone (state change, reproduction captured, code change, validation run, PR event, review addressed). Use ISO format: `YYYY-MM-DD HH:MMZ: <action>`.
+
+- YYYY-MM-DD HH:MMZ: State transition: Todo → In Progress, created workpad
+- YYYY-MM-DD HH:MMZ: Pull skill: merged origin/main clean, HEAD now <short-sha>
+- YYYY-MM-DD HH:MMZ: Reproduction captured: <command or behavior observed>
+- YYYY-MM-DD HH:MMZ: Validation passed: <test command and result>
+- YYYY-MM-DD HH:MMZ: Committed <short-sha>: <commit message summary>
+- YYYY-MM-DD HH:MMZ: PR #N opened, awaiting checks
 
 ### Confusions
 
