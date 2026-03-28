@@ -1,8 +1,9 @@
-"""SQLAlchemy repository implementations for session and request storage."""
+"""SQLAlchemy repository implementations for session, request, and credential storage."""
 
-from datetime import datetime
-from uuid import UUID
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
+from pydantic import SecretStr
 from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import (
@@ -11,13 +12,22 @@ from benchmark_core.db.models import (
     Variant,
 )
 from benchmark_core.db.models import (
+    ProxyCredential as ProxyCredentialORM,
+)
+from benchmark_core.db.models import (
     Request as DBRequest,
 )
 from benchmark_core.db.models import (
     Session as DBSession,
 )
-from benchmark_core.models import Request, Session
-from benchmark_core.repositories import RequestRepository, SessionRepository
+from benchmark_core.models import ProxyCredential, Request, Session
+from benchmark_core.repositories import (
+    ProxyCredentialRepository as AbstractProxyCredentialRepository,
+)
+from benchmark_core.repositories import (
+    RequestRepository,
+    SessionRepository,
+)
 from benchmark_core.repositories.base import (
     DuplicateIdentifierError,
     ReferentialIntegrityError,
@@ -49,7 +59,7 @@ class SQLAlchemySessionRepository(SessionRepository):
             git_commit=session.git_commit,
             git_dirty=session.git_dirty,
             operator_label=session.operator_label,
-            proxy_credential_id=session.proxy_credential_id,
+            proxy_credential_alias=session.proxy_credential_alias,
             started_at=session.started_at,
             ended_at=session.ended_at,
             status=session.status,
@@ -59,11 +69,33 @@ class SQLAlchemySessionRepository(SessionRepository):
         return session
 
     async def get_by_id(self, session_id: UUID) -> Session | None:
-        """Retrieve a session by ID from the database."""
+        """Retrieve a session by ID."""
         db_session = self._session.query(DBSession).filter_by(id=session_id).first()
         if db_session is None:
             return None
+        return self._to_domain(db_session)
 
+    async def update(self, session: Session) -> Session:
+        """Update an existing session."""
+        db_session = self._session.query(DBSession).filter_by(id=session.session_id).first()
+        if db_session is None:
+            raise ValueError(f"Session {session.session_id} not found")
+
+        db_session.status = session.status
+        db_session.ended_at = session.ended_at
+        db_session.proxy_credential_alias = session.proxy_credential_alias
+        db_session.operator_label = session.operator_label
+        self._session.flush()
+        return session
+
+    async def list_by_experiment(self, experiment_id: str) -> list[Session]:
+        """List all sessions for an experiment."""
+        exp_uuid = UUID(experiment_id) if isinstance(experiment_id, str) else experiment_id
+        db_sessions = self._session.query(DBSession).filter_by(experiment_id=exp_uuid).all()
+        return [self._to_domain(s) for s in db_sessions]
+
+    def _to_domain(self, db_session: DBSession) -> Session:
+        """Convert DB model to domain model."""
         return Session(
             session_id=db_session.id,
             experiment_id=str(db_session.experiment_id),
@@ -75,69 +107,11 @@ class SQLAlchemySessionRepository(SessionRepository):
             git_commit=db_session.git_commit,
             git_dirty=db_session.git_dirty,
             operator_label=db_session.operator_label,
-            proxy_credential_id=db_session.proxy_credential_id,
+            proxy_credential_alias=db_session.proxy_credential_alias,
             started_at=db_session.started_at,
             ended_at=db_session.ended_at,
             status=db_session.status,
         )
-
-    async def update(self, session: Session) -> Session:
-        """Update an existing session in the database."""
-        db_session = self._session.query(DBSession).filter_by(id=session.session_id).first()
-        if db_session is None:
-            raise ValueError(f"Session {session.session_id} not found")
-
-        db_session.experiment_id = (
-            UUID(session.experiment_id)
-            if isinstance(session.experiment_id, str)
-            else session.experiment_id
-        )
-        db_session.variant_id = (
-            UUID(session.variant_id) if isinstance(session.variant_id, str) else session.variant_id
-        )
-        db_session.task_card_id = (
-            UUID(session.task_card_id)
-            if isinstance(session.task_card_id, str)
-            else session.task_card_id
-        )
-        db_session.harness_profile = session.harness_profile
-        db_session.repo_path = session.repo_path
-        db_session.git_branch = session.git_branch
-        db_session.git_commit = session.git_commit
-        db_session.git_dirty = session.git_dirty
-        db_session.operator_label = session.operator_label
-        db_session.proxy_credential_id = session.proxy_credential_id
-        db_session.started_at = session.started_at
-        db_session.ended_at = session.ended_at
-        db_session.status = session.status
-
-        self._session.flush()
-        return session
-
-    async def list_by_experiment(self, experiment_id: str) -> list[Session]:
-        """List all sessions for an experiment from the database."""
-        exp_uuid = UUID(experiment_id) if isinstance(experiment_id, str) else experiment_id
-        db_sessions = self._session.query(DBSession).filter_by(experiment_id=exp_uuid).all()
-
-        return [
-            Session(
-                session_id=s.id,
-                experiment_id=str(s.experiment_id),
-                variant_id=str(s.variant_id),
-                task_card_id=str(s.task_card_id),
-                harness_profile=s.harness_profile,
-                repo_path=s.repo_path,
-                git_branch=s.git_branch,
-                git_commit=s.git_commit,
-                git_dirty=s.git_dirty,
-                operator_label=s.operator_label,
-                proxy_credential_id=s.proxy_credential_id,
-                started_at=s.started_at,
-                ended_at=s.ended_at,
-                status=s.status,
-            )
-            for s in db_sessions
-        ]
 
     async def create_session_safe(
         self,
@@ -150,7 +124,7 @@ class SQLAlchemySessionRepository(SessionRepository):
         git_commit: str,
         git_dirty: bool = False,
         operator_label: str | None = None,
-        proxy_credential_id: str | None = None,
+        proxy_credential_alias: str | None = None,
     ) -> DBSession:
         """Safely create a session with validation and duplicate rejection.
 
@@ -164,7 +138,7 @@ class SQLAlchemySessionRepository(SessionRepository):
             git_commit: Commit SHA.
             git_dirty: Whether the working tree is dirty.
             operator_label: Optional operator-provided label.
-            proxy_credential_id: Optional proxy credential identifier.
+            proxy_credential_alias: Optional proxy credential key alias.
 
         Returns:
             The created session.
@@ -173,8 +147,6 @@ class SQLAlchemySessionRepository(SessionRepository):
             DuplicateIdentifierError: If a session with the same operator_label exists.
             ReferentialIntegrityError: If any referenced entity does not exist.
         """
-        from datetime import UTC, datetime
-
         # Check for duplicate operator_label if provided
         if operator_label:
             existing = (
@@ -204,8 +176,6 @@ class SQLAlchemySessionRepository(SessionRepository):
             raise ReferentialIntegrityError(f"TaskCard '{task_card_id}' does not exist")
 
         # Create the session with proper UUID types
-        from uuid import uuid4
-
         session = DBSession(
             id=uuid4(),
             experiment_id=exp_id,
@@ -217,7 +187,7 @@ class SQLAlchemySessionRepository(SessionRepository):
             git_commit=git_commit,
             git_dirty=git_dirty,
             operator_label=operator_label,
-            proxy_credential_id=proxy_credential_id,
+            proxy_credential_alias=proxy_credential_alias,
             started_at=datetime.now(UTC),
             status="active",
         )
@@ -241,8 +211,6 @@ class SQLAlchemySessionRepository(SessionRepository):
         Returns:
             The updated session, or None if not found.
         """
-        from datetime import UTC, datetime
-
         db_session = self._session.query(DBSession).filter_by(id=session_id).first()
         if db_session is None:
             return None
@@ -350,4 +318,164 @@ class SQLAlchemyRequestRepository(RequestRepository):
             error_message=db_request.error_message,
             cache_hit=db_request.cache_hit,
             metadata=db_request.request_metadata,
+        )
+
+
+class ProxyCredentialRepository(AbstractProxyCredentialRepository):
+    """SQLAlchemy implementation of proxy credential metadata repository.
+
+    IMPORTANT: This repository only stores metadata (alias, tags, references).
+    The actual API key secrets are NEVER stored in the benchmark database.
+    Secrets are managed by LiteLLM and only exist in memory during issuance.
+    """
+
+    def __init__(self, db_session: SQLAlchemySession) -> None:
+        """Initialize with database session.
+
+        Args:
+            db_session: SQLAlchemy sync session
+        """
+        self._session = db_session
+
+    async def create(self, credential: ProxyCredential) -> ProxyCredential:
+        """Persist credential metadata to the database.
+
+        Stores alias, metadata tags, and references for correlation.
+        The api_key field is explicitly NOT stored.
+
+        Args:
+            credential: Domain model with credential information
+
+        Returns:
+            Credential with persisted metadata
+        """
+        orm_credential = ProxyCredentialORM(
+            id=credential.credential_id,
+            session_id=credential.session_id,
+            key_alias=credential.key_alias,
+            # api_key is NOT stored - only in LiteLLM
+            experiment_id=credential.experiment_id,
+            variant_id=credential.variant_id,
+            harness_profile=credential.harness_profile,
+            litellm_key_id=credential.litellm_key_id,
+            expires_at=credential.expires_at,
+            is_active=credential.is_active,
+            created_at=credential.created_at,
+            revoked_at=credential.revoked_at,
+        )
+
+        self._session.add(orm_credential)
+        self._session.flush()
+
+        # Return domain model with metadata (secret is cleared for safety)
+        return credential.model_copy(
+            update={
+                "api_key": SecretStr("[NOT_STORED_IN_DB]"),
+            }
+        )
+
+    async def get_by_session(self, session_id: UUID) -> ProxyCredential | None:
+        """Retrieve credential metadata by session ID.
+
+        Args:
+            session_id: Session UUID to look up
+
+        Returns:
+            Credential metadata (without secret) or None
+        """
+        orm = self._session.query(ProxyCredentialORM).filter_by(session_id=session_id).first()
+        if orm is None:
+            return None
+
+        return self._to_domain(orm)
+
+    async def get_by_alias(self, key_alias: str) -> ProxyCredential | None:
+        """Retrieve credential metadata by key alias.
+
+        Args:
+            key_alias: Key alias to look up
+
+        Returns:
+            Credential metadata (without secret) or None
+        """
+        orm = self._session.query(ProxyCredentialORM).filter_by(key_alias=key_alias).first()
+        if orm is None:
+            return None
+
+        return self._to_domain(orm)
+
+    async def update(self, credential: ProxyCredential) -> ProxyCredential:
+        """Update credential metadata.
+
+        Args:
+            credential: Credential with updated fields
+
+        Returns:
+            Updated credential
+        """
+        orm = (
+            self._session.query(ProxyCredentialORM)
+            .filter_by(id=credential.credential_id)
+            .first()
+        )
+        if orm is None:
+            raise ValueError(f"Credential {credential.credential_id} not found")
+
+        orm.is_active = credential.is_active
+        orm.revoked_at = credential.revoked_at
+        orm.litellm_key_id = credential.litellm_key_id
+
+        self._session.flush()
+
+        return credential
+
+    async def revoke(self, session_id: UUID) -> ProxyCredential | None:
+        """Mark a credential as revoked.
+
+        Args:
+            session_id: Session ID whose credential should be revoked
+
+        Returns:
+            Updated credential metadata or None if not found
+        """
+        orm = (
+            self._session.query(ProxyCredentialORM)
+            .filter_by(session_id=session_id)
+            .first()
+        )
+        if orm is None:
+            return None
+
+        orm.is_active = False
+        orm.revoked_at = datetime.now(UTC)
+
+        self._session.flush()
+
+        return self._to_domain(orm)
+
+    def _to_domain(self, orm: ProxyCredentialORM) -> ProxyCredential:
+        """Convert ORM model to domain model.
+
+        The api_key is always set to a placeholder since secrets
+        are never stored in the benchmark database.
+
+        Args:
+            orm: SQLAlchemy ORM model
+
+        Returns:
+            Domain model with metadata (no secret)
+        """
+        return ProxyCredential(
+            credential_id=orm.id,
+            session_id=orm.session_id,
+            key_alias=orm.key_alias,
+            api_key=SecretStr("[STORED_IN_LITELLM_ONLY]"),  # Never stored in DB
+            experiment_id=orm.experiment_id,
+            variant_id=orm.variant_id,
+            harness_profile=orm.harness_profile,
+            litellm_key_id=orm.litellm_key_id,
+            expires_at=orm.expires_at,
+            is_active=orm.is_active,
+            created_at=orm.created_at or datetime.now(UTC),
+            revoked_at=orm.revoked_at,
         )

@@ -540,6 +540,192 @@ class TestSessionRepository:
         assert len(results) == 3
 
 
+class TestProxyCredentialRepository:
+    """Tests for ProxyCredentialRepository."""
+
+    @pytest.fixture
+    def credential_repo(self, db_session):
+        """Create a credential repository."""
+        from benchmark_core.db.repositories import ProxyCredentialRepository
+        return ProxyCredentialRepository(db_session)
+
+    @pytest.fixture
+    async def setup_session_with_credential(self, db_session):
+        """Create a session for credential tests."""
+        from benchmark_core.db.models import ProxyCredential as ProxyCredentialORM
+
+        # Create experiment
+        experiment = Experiment(name="cred-test-exp")
+        db_session.add(experiment)
+        db_session.flush()
+
+        # Create variant
+        variant = Variant(
+            name="cred-test-variant",
+            provider="test-provider",
+            model_alias="gpt-4o",
+            harness_profile="default",
+        )
+        db_session.add(variant)
+        db_session.flush()
+
+        # Create task card
+        task_card = TaskCard(
+            name="cred-test-task",
+            goal="Test credentials",
+            starting_prompt="Start",
+            stop_condition="Stop",
+        )
+        db_session.add(task_card)
+        db_session.flush()
+
+        # Create session
+        session = SessionORM(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task_card.id,
+            harness_profile="default",
+            repo_path="/tmp/cred-test",
+            git_branch="main",
+            git_commit="cred1234",
+            status="active",
+        )
+        db_session.add(session)
+        db_session.flush()
+
+        db_session.commit()
+
+        return session, experiment, variant
+
+    async def test_create_credential(self, credential_repo, db_session, setup_session_with_credential):
+        """Test creating a credential metadata record."""
+        from datetime import datetime, timedelta, UTC
+        from pydantic import SecretStr
+        from benchmark_core.models import ProxyCredential
+
+        session, experiment, variant = setup_session_with_credential
+
+        credential = ProxyCredential(
+            session_id=session.id,
+            key_alias=f"session-{str(session.id)[:8]}-{str(experiment.id)[:8]}-{str(variant.id)[:8]}",
+            api_key=SecretStr("sk-test-secret-key"),
+            experiment_id=str(experiment.id),
+            variant_id=str(variant.id),
+            harness_profile="default",
+            litellm_key_id="litellm-key-123",
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            is_active=True,
+        )
+
+        created = await credential_repo.create(credential)
+        db_session.commit()
+
+        assert created.credential_id is not None
+        assert created.key_alias.startswith("session-")
+        # Verify secret is cleared for safety
+        assert created.api_key.get_secret_value() == "[NOT_STORED_IN_DB]"
+
+    async def test_get_by_session(self, credential_repo, db_session, setup_session_with_credential):
+        """Test retrieving credential by session ID."""
+        from datetime import datetime, timedelta, UTC
+        from pydantic import SecretStr
+        from benchmark_core.models import ProxyCredential
+
+        session, experiment, variant = setup_session_with_credential
+
+        # Create credential first
+        credential = ProxyCredential(
+            session_id=session.id,
+            key_alias="test-alias-get-by-session",
+            api_key=SecretStr("sk-test"),
+            experiment_id=str(experiment.id),
+            variant_id=str(variant.id),
+            harness_profile="default",
+            litellm_key_id="litellm-456",
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            is_active=True,
+        )
+        await credential_repo.create(credential)
+        db_session.commit()
+
+        # Retrieve by session
+        found = await credential_repo.get_by_session(session.id)
+
+        assert found is not None
+        assert found.session_id == session.id
+        assert found.key_alias == "test-alias-get-by-session"
+
+    async def test_get_by_alias(self, credential_repo, db_session, setup_session_with_credential):
+        """Test retrieving credential by key alias."""
+        from datetime import datetime, timedelta, UTC
+        from pydantic import SecretStr
+        from benchmark_core.models import ProxyCredential
+
+        session, experiment, variant = setup_session_with_credential
+
+        # Create credential with unique alias
+        credential = ProxyCredential(
+            session_id=session.id,
+            key_alias="unique-test-alias-12345",
+            api_key=SecretStr("sk-test"),
+            experiment_id=str(experiment.id),
+            variant_id=str(variant.id),
+            harness_profile="default",
+            litellm_key_id="litellm-789",
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            is_active=True,
+        )
+        await credential_repo.create(credential)
+        db_session.commit()
+
+        # Retrieve by alias
+        found = await credential_repo.get_by_alias("unique-test-alias-12345")
+
+        assert found is not None
+        assert found.key_alias == "unique-test-alias-12345"
+        assert found.litellm_key_id == "litellm-789"
+
+    async def test_revoke_credential(self, credential_repo, db_session, setup_session_with_credential):
+        """Test revoking a credential."""
+        from datetime import datetime, timedelta, UTC
+        from pydantic import SecretStr
+        from benchmark_core.models import ProxyCredential
+
+        session, experiment, variant = setup_session_with_credential
+
+        # Create active credential
+        credential = ProxyCredential(
+            session_id=session.id,
+            key_alias="revoke-test-alias",
+            api_key=SecretStr("sk-test"),
+            experiment_id=str(experiment.id),
+            variant_id=str(variant.id),
+            harness_profile="default",
+            litellm_key_id="litellm-revoke",
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+            is_active=True,
+        )
+        await credential_repo.create(credential)
+        db_session.commit()
+
+        # Revoke it
+        revoked = await credential_repo.revoke(session.id)
+        db_session.commit()
+
+        assert revoked is not None
+        assert revoked.is_active is False
+        assert revoked.revoked_at is not None
+
+    async def test_get_nonexistent_credential(self, credential_repo):
+        """Test retrieving a credential that doesn't exist."""
+        from uuid import uuid4
+
+        result = await credential_repo.get_by_session(uuid4())
+        assert result is None
+
+        result = await credential_repo.get_by_alias("nonexistent-alias")
+        assert result is None
+
 
 class TestSQLArtifactRepository:
     """Tests for SQLArtifactRepository."""

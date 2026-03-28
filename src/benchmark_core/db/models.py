@@ -211,6 +211,35 @@ class TaskCard(Base):
     )
 
 
+class ProxyCredential(Base):
+    """Session-scoped proxy credential metadata (secrets managed by LiteLLM)."""
+
+    __tablename__ = "proxy_credentials"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False, index=True, unique=True
+    )
+    key_alias: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    # Note: api_key is NOT stored here - only in LiteLLM
+    experiment_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    variant_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    harness_profile: Mapped[str] = mapped_column(String(255), nullable=False)
+    litellm_key_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Relationships - specify foreign_keys to disambiguate
+    session: Mapped["Session"] = relationship(
+        back_populates="proxy_credential",
+        foreign_keys="ProxyCredential.session_id",
+    )
+
+
 class Session(Base):
     """One interactive benchmark session under one variant and one task card."""
 
@@ -233,6 +262,7 @@ class Session(Base):
     git_dirty: Mapped[bool] = mapped_column(Boolean, default=False)
     operator_label: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    proxy_credential_alias: Mapped[str | None] = mapped_column(String(255), nullable=True)
     proxy_credential_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     started_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
@@ -253,6 +283,13 @@ class Session(Base):
     experiment: Mapped["Experiment"] = relationship(back_populates="sessions")
     variant: Mapped["Variant"] = relationship(back_populates="sessions")
     task_card: Mapped["TaskCard"] = relationship(back_populates="sessions")
+    # One-to-one with ProxyCredential via session_id FK (parent side)
+    proxy_credential: Mapped["ProxyCredential"] = relationship(
+        back_populates="session",
+        uselist=False,
+        foreign_keys="ProxyCredential.session_id",
+        lazy="selectin",  # Works better with async sessions
+    )
 
 
 class Request(Base):

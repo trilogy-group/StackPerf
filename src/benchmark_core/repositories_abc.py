@@ -3,7 +3,63 @@
 from abc import ABC, abstractmethod
 from uuid import UUID
 
-from benchmark_core.models import Artifact, Request, Session
+from benchmark_core.models import Artifact, ProxyCredential, Request, Session
+
+
+class ProxyCredentialRepository(ABC):
+    """Abstract repository for proxy credential metadata persistence.
+
+    Note: This repository stores credential metadata (alias, tags, references)
+    but NOT the actual API key secrets. Secrets are managed by LiteLLM.
+    """
+
+    @abstractmethod
+    async def create(self, credential: ProxyCredential) -> ProxyCredential:
+        """Persist credential metadata (without the secret key).
+
+        Stores the key alias, metadata tags, and references for correlation.
+        The actual API key is NOT stored in the benchmark database.
+        """
+        ...
+
+    @abstractmethod
+    async def get_by_session(self, session_id: UUID) -> ProxyCredential | None:
+        """Retrieve credential metadata by session ID."""
+        ...
+
+    @abstractmethod
+    async def get_by_alias(self, key_alias: str) -> ProxyCredential | None:
+        """Retrieve credential metadata by key alias."""
+        ...
+
+    @abstractmethod
+    async def update(self, credential: ProxyCredential) -> ProxyCredential:
+        """Update credential metadata (e.g., revocation status)."""
+        ...
+
+    @abstractmethod
+    async def revoke(self, session_id: UUID) -> ProxyCredential | None:
+        """Mark a credential as revoked in the metadata store."""
+        ...
+
+
+class ArtifactRepository(ABC):
+    """Abstract repository for artifact persistence."""
+
+    @abstractmethod
+    async def create(self, artifact: Artifact) -> Artifact:
+        """Create a new artifact record."""
+        ...
+
+    @abstractmethod
+    async def get_by_id(self, artifact_id: UUID) -> Artifact | None:
+        """Retrieve an artifact by ID."""
+        ...
+
+    @abstractmethod
+    async def list_by_session(self, session_id: UUID) -> list[Artifact]:
+        """List all artifacts for a session."""
+        ...
 
 
 class SessionRepository(ABC):
@@ -39,45 +95,6 @@ class RequestRepository(ABC):
         ...
 
     @abstractmethod
-    async def create_many(self, requests: list[Request]) -> list[Request]:
-        """Create multiple request records (idempotent)."""
-        ...
-
-    @abstractmethod
-    async def get_by_session(self, session_id: UUID) -> list[Request]:
-        """Get all requests for a session."""
-        ...
-
-    @abstractmethod
     async def get_by_request_id(self, request_id: str) -> Request | None:
-        """Get a request by its LiteLLM request ID."""
-        ...
-
-
-class ArtifactRepository(ABC):
-    """Abstract repository for artifact persistence."""
-
-    @abstractmethod
-    async def create(self, artifact: Artifact) -> Artifact:
-        """Create a new artifact record."""
-        ...
-
-    @abstractmethod
-    async def get_by_id(self, artifact_id: UUID) -> Artifact | None:
-        """Retrieve an artifact by ID."""
-        ...
-
-    @abstractmethod
-    async def list_by_session(self, session_id: UUID) -> list[Artifact]:
-        """List all artifacts for a session."""
-        ...
-
-    @abstractmethod
-    async def list_by_experiment(self, experiment_id: UUID) -> list[Artifact]:
-        """List all artifacts for an experiment."""
-        ...
-
-    @abstractmethod
-    async def delete(self, artifact_id: UUID) -> bool:
-        """Delete an artifact record. Returns True if deleted."""
+        """Retrieve a request by its LiteLLM request ID."""
         ...

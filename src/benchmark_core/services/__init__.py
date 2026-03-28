@@ -6,7 +6,6 @@ and comprehensive benchmark metadata management.
 
 # Comprehensive SQL-based services (COE-305 implementation)
 from benchmark_core.services.benchmark_metadata_service import BenchmarkMetadataService
-from benchmark_core.services.credential_service import CredentialService
 from benchmark_core.services.experiment_service import ExperimentService
 from benchmark_core.services.harness_profile_service import HarnessProfileService
 from benchmark_core.services.provider_service import ProviderService
@@ -21,14 +20,13 @@ from benchmark_core.services.variant_service import VariantService
 
 # ABC service exports - Note: old services_abc SessionService removed, use services.session_service
 from benchmark_core.services_abc import (
-    CredentialService as CredentialServiceABC,
+    CredentialService,
 )
 
 __all__ = [
     # Core SQL-based services
     "SessionService",
     "SessionValidationError",
-    "CredentialService",
     "ProviderService",
     "VariantService",
     "ExperimentService",
@@ -39,5 +37,5 @@ __all__ = [
     "CollectionJobService",
     "CollectionJobResult",
     # ABC services
-    "CredentialServiceABC",
+    "CredentialService",
 ]

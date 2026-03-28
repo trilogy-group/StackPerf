@@ -24,6 +24,7 @@ from benchmark_core.repositories.task_card_repository import SQLTaskCardReposito
 from benchmark_core.repositories.variant_repository import SQLVariantRepository
 from benchmark_core.repositories_abc import (
     ArtifactRepository,
+    ProxyCredentialRepository,
     RequestRepository,
     SessionRepository,
 )
@@ -32,6 +33,7 @@ __all__ = [
     # Abstract interfaces
     "SessionRepository",
     "RequestRepository",
+    "ProxyCredentialRepository",
     "ArtifactRepository",
     # Base classes and exceptions
     "AbstractRepository",
