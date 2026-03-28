@@ -552,7 +552,6 @@ class TestProxyCredentialRepository:
     @pytest.fixture
     async def setup_session_with_credential(self, db_session):
         """Create a session for credential tests."""
-        from benchmark_core.db.models import ProxyCredential as ProxyCredentialORM
 
         # Create experiment
         experiment = Experiment(name="cred-test-exp")
@@ -599,8 +598,10 @@ class TestProxyCredentialRepository:
 
     async def test_create_credential(self, credential_repo, db_session, setup_session_with_credential):
         """Test creating a credential metadata record."""
-        from datetime import datetime, timedelta, UTC
+        from datetime import UTC, datetime, timedelta
+
         from pydantic import SecretStr
+
         from benchmark_core.models import ProxyCredential
 
         session, experiment, variant = setup_session_with_credential
@@ -627,8 +628,10 @@ class TestProxyCredentialRepository:
 
     async def test_get_by_session(self, credential_repo, db_session, setup_session_with_credential):
         """Test retrieving credential by session ID."""
-        from datetime import datetime, timedelta, UTC
+        from datetime import UTC, datetime, timedelta
+
         from pydantic import SecretStr
+
         from benchmark_core.models import ProxyCredential
 
         session, experiment, variant = setup_session_with_credential
@@ -657,8 +660,10 @@ class TestProxyCredentialRepository:
 
     async def test_get_by_alias(self, credential_repo, db_session, setup_session_with_credential):
         """Test retrieving credential by key alias."""
-        from datetime import datetime, timedelta, UTC
+        from datetime import UTC, datetime, timedelta
+
         from pydantic import SecretStr
+
         from benchmark_core.models import ProxyCredential
 
         session, experiment, variant = setup_session_with_credential
@@ -687,8 +692,10 @@ class TestProxyCredentialRepository:
 
     async def test_revoke_credential(self, credential_repo, db_session, setup_session_with_credential):
         """Test revoking a credential."""
-        from datetime import datetime, timedelta, UTC
+        from datetime import UTC, datetime, timedelta
+
         from pydantic import SecretStr
+
         from benchmark_core.models import ProxyCredential
 
         session, experiment, variant = setup_session_with_credential
