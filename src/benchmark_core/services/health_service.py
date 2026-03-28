@@ -102,7 +102,7 @@ class HealthService:
                 result.fetchone()
 
             # Determine database type
-            db_type = "PostgreSQL" if "postgresql" in database_url else "SQLite"
+            db_type = "PostgreSQL" if "postgresql" in database_url.lower() else "SQLite"
 
             return HealthCheckResult(
                 name="database",

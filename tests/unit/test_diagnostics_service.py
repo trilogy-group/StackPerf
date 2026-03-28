@@ -71,7 +71,7 @@ class TestDiagnosticsService:
         key_diag = next(d for d in diagnostics if d.name == "LITELLM_MASTER_KEY")
         assert key_diag.status == "ok"
         assert "configured" in key_diag.message.lower()
-        assert "sk-test-ke..." in key_diag.value  # Should be masked (first 10 chars + ...)
+        assert "sk-tes..." in key_diag.value  # Should be masked (first 6 chars + ...)
 
     def test_diagnose_environment_litellm_key_not_set(self, diagnostics_service):
         """Test environment diagnostics without LITELLM_MASTER_KEY."""

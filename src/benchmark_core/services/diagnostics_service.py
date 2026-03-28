@@ -113,7 +113,7 @@ class DiagnosticsService:
                     category="environment",
                     name="LITELLM_MASTER_KEY",
                     status="ok",
-                    value=f"{litellm_master_key[:10]}..." if len(litellm_master_key) > 10 else "****",
+                    value=f"{litellm_master_key[:6]}..." if len(litellm_master_key) > 6 else "****",
                     message="LiteLLM master key configured",
                 )
             )
@@ -406,7 +406,7 @@ class DiagnosticsService:
 
             with engine.connect() as conn:
                 # Get database version
-                if "postgresql" in database_url:
+                if "postgresql" in database_url.lower():
                     result = conn.execute(text("SELECT version()"))
                     row = result.fetchone()
                     version = row[0] if row else "unknown"
@@ -419,7 +419,7 @@ class DiagnosticsService:
                 result = conn.execute(
                     text(
                         "SELECT count(*) FROM sqlite_master WHERE type='table'"
-                        if "sqlite" in database_url
+                        if "sqlite" in database_url.lower()
                         else "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'"
                     )
                 )
