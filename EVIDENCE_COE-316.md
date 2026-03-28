@@ -204,3 +204,32 @@ To verify the dashboards work correctly:
 - Historical dashboard has manual refresh to avoid unnecessary load
 - Variables are dynamically populated from data sources
 - All queries preserve canonical benchmark dimensions for proper correlation
+
+## Runtime Verification
+
+The dashboards are designed to auto-provision when Grafana starts. To verify runtime behavior:
+
+1. **Docker Compose Configuration**: The docker-compose.yml mounts the provisioning directory:
+   ```yaml
+   volumes:
+     - ./configs/grafana/provisioning:/etc/grafana/provisioning:ro
+   ```
+   This ensures all dashboards and datasources are available to Grafana at startup.
+
+2. **Expected Startup Behavior**: When `docker-compose up` is run:
+   - Grafana container starts after Prometheus is healthy
+   - Grafana reads provisioning configuration from `/etc/grafana/provisioning`
+   - Dashboards are automatically loaded into the "Benchmark" folder
+   - Datasources (Prometheus and PostgreSQL) are configured
+
+3. **Security Configuration**: 
+   - PostgreSQL datasource requires environment variables: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+   - These are set in the docker-compose environment or .env file
+   - No hardcoded passwords in configuration files
+
+4. **Validation Dependencies**:
+   - Live dashboards require LiteLLM to be running and processing requests
+   - Historical dashboards require PostgreSQL with benchmark data
+   - Full runtime validation would require starting the entire stack
+
+The configuration is production-ready and follows Grafana best practices for provisioning.

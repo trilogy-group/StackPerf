@@ -20,8 +20,8 @@ datasources:
     type: postgres
     access: proxy
     url: postgres:5432
-    database: ${POSTGRES_DB:-litellm}
-    user: ${POSTGRES_USER:-litellm}
+    database: ${POSTGRES_DB}
+    user: ${POSTGRES_USER}
     editable: false
     uid: postgres-datasource
     jsonData:
@@ -32,4 +32,4 @@ datasources:
       connMaxLifetime: 14400
       timescaledb: false
     secureJsonData:
-      password: ${POSTGRES_PASSWORD:-litellm}
+      password: ${POSTGRES_PASSWORD}
