@@ -47,20 +47,151 @@ Disabled by default:
 - response text
 - tool payload bodies
 
+### Redaction Implementation
+
+The system enforces secret redaction through:
+
+1. **RedactionFilter**: Automatically redacts secrets from logs, exports, and string representations
+2. **Pattern Detection**: Recognizes common secret patterns (API keys, tokens, database URLs)
+3. **Safe Logging**: All log outputs pass through redaction filter
+
+Supported secret patterns:
+
+- OpenAI-style API keys (`sk-*`)
+- Anthropic-style API keys (`sk-ant-*`)
+- Generic API keys and bearer tokens
+- Database connection strings (PostgreSQL, MySQL, Redis, MongoDB)
+- AWS credentials
+- Environment variables with secret-like names (PASSWORD, SECRET, KEY, TOKEN, CREDENTIAL)
+
+### Content Capture Configuration
+
+Content capture is controlled by `ContentCaptureConfig`:
+
+```python
+from benchmark_core.security import ContentCaptureConfig
+
+# Default: all content capture disabled
+config = ContentCaptureConfig()
+
+# Enable prompt capture (requires explicit opt-in)
+config = ContentCaptureConfig(
+    enabled=True,
+    capture_prompts=True,
+    capture_responses=False,  # Still disabled
+)
+
+# Maximum content length
+config.max_content_length = 10000  # characters
+
+# Redact secrets within captured content
+config.redact_secrets_in_content = True  # Always True by default
+```
+
+### Secret Leak Prevention
+
+The system prevents secret leaks in:
+
+- **Logs**: All logged strings and data structures are filtered
+- **Exports**: Export artifacts pass through redaction layer
+- **Error messages**: Stack traces and error details are sanitized
+- **Database queries**: Query logs never include secret values
+
 ## Retention
 
-Retention policy should apply to:
+Retention policy applies to:
 
 - raw LiteLLM ingestion records
 - normalized request rows
 - exported artifacts
 - session credentials
 
-Recommended defaults:
+### Retention Settings
 
-- session credentials expire quickly
-- raw ingestion rows have a shorter retention window than normalized summaries
-- exported artifacts include creation timestamps and explicit ownership metadata
+Default retention periods:
+
+| Data Type | Retention Days | Notes |
+|-----------|---------------|-------|
+| Raw ingestion records | 7 | Short-lived raw data |
+| Normalized requests | 30 | Longer-lived processed data |
+| Sessions | 90 | Benchmark session records |
+| Session credentials | 1 | Very short TTL for security |
+| Artifacts | 30 | Export files (archived before deletion) |
+| Metric rollups | 90 | Aggregated metrics |
+
+### Retention Configuration
+
+Retention is configured through `RetentionSettings`:
+
+```python
+from benchmark_core.security import RetentionSettings, RetentionPolicy
+
+# Use defaults
+settings = RetentionSettings()
+
+# Customize a specific policy
+settings.session_credentials = RetentionPolicy(
+    data_type="session_credentials",
+    retention_days=1,
+    min_age_days=0,  # Can cleanup immediately after expiration
+)
+
+# Disable retention for a data type (keep forever)
+settings.sessions = RetentionPolicy(
+    data_type="sessions",
+    retention_days=None,  # No cleanup
+)
+```
+
+### Cleanup Jobs
+
+Retention is enforced through cleanup jobs:
+
+```python
+from collectors.retention_cleanup import RetentionCleanupJob
+
+# Run cleanup for all data types
+job = RetentionCleanupJob()
+diagnostics = await job.run_cleanup()
+
+# Run cleanup for specific types
+diagnostics = await job.run_cleanup(
+    data_types=["session_credentials", "raw_ingestion"]
+)
+
+# Check cleanup results
+for data_type, result in diagnostics.cleanup_stats.items():
+    print(f"{data_type}: deleted {result.deleted_count} records")
+```
+
+### Cleanup Safety Features
+
+- **Minimum age**: Records younger than `min_age_days` are never deleted
+- **Batch processing**: Cleanup processes records in configurable batches
+- **Archive before delete**: Artifacts can be archived before deletion
+- **Audit trail**: All cleanup operations are logged with statistics
+
+### Session Credential Lifecycle
+
+Session credentials have special handling:
+
+1. **Creation**: Credential issued with short TTL (typically 1 day)
+2. **Active**: Credential used for session duration
+3. **Expiration**: Credential automatically expires after TTL
+4. **Revocation**: Credential can be manually revoked via cleanup job
+5. **Cleanup**: Expired/revoked credentials are cleaned up daily
+
+```python
+from collectors.retention_cleanup import CredentialCleanupJob
+
+# Cleanup expired credentials
+job = CredentialCleanupJob()
+result = await job.cleanup_expired_credentials()
+
+print(f"Checked: {result.total_checked}")
+print(f"Revoked: {result.revoked_count}")
+print(f"Expired: {result.expired_count}")
+```
 
 ## Operator safeguards
 
