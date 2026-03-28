@@ -206,7 +206,6 @@ class TestSchemas:
 
     def test_experiment_comparison_response(self) -> None:
         """Test ExperimentComparisonResponse schema."""
-        from datetime import datetime
 
         variant_comp = VariantComparisonResponse(
             variant_id=uuid.uuid4(),
