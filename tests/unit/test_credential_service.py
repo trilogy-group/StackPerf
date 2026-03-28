@@ -96,42 +96,6 @@ class TestMetadataTags:
         assert reconstructed == session_id
 
 
-class TestApiKeyGeneration:
-    """Test API key generation for security."""
-
-    @pytest.fixture
-    def service(self) -> CredentialService:
-        return CredentialService(master_key="test-master-key")
-
-    def test_key_prefix(self, service: CredentialService) -> None:
-        """API key includes alias prefix for identification."""
-        alias = "session-abc123-def456-ghi789"
-
-        key = service._generate_api_key(alias)
-
-        assert key.startswith("sk-bm-")
-        assert alias in key
-
-    def test_key_uniqueness(self, service: CredentialService) -> None:
-        """Each generated key is unique even for same alias."""
-        alias = "session-abc123-def456-ghi789"
-
-        key1 = service._generate_api_key(alias)
-        key2 = service._generate_api_key(alias)
-
-        assert key1 != key2
-        assert len(key1) > len(alias) + 10  # Has random suffix
-
-    def test_key_length_sufficient(self, service: CredentialService) -> None:
-        """Generated keys are sufficiently long for security."""
-        alias = "session-abc123-def456-ghi789"
-
-        key = service._generate_api_key(alias)
-
-        # Should be at least 50 characters total (prefix + alias + random)
-        assert len(key) >= 50
-
-
 class TestCredentialIssuance:
     """Test full credential issuance flow."""
 

@@ -103,20 +103,26 @@ class SessionService:
                     "and credential_repository must be configured"
                 )
 
-            # Issue the credential
-            credential = await self._credential_service.issue_credential(
-                session_id=session.session_id,
-                experiment_id=experiment_id,
-                variant_id=variant_id,
-                harness_profile=harness_profile,
-            )
+            try:
+                # Issue the credential
+                credential = await self._credential_service.issue_credential(
+                    session_id=session.session_id,
+                    experiment_id=experiment_id,
+                    variant_id=variant_id,
+                    harness_profile=harness_profile,
+                )
 
-            # Persist credential metadata (without the secret)
-            await self._credential_repo.create(credential)
+                # Persist credential metadata (without the secret)
+                await self._credential_repo.create(credential)
 
-            # Update session with credential reference
-            session = session.model_copy(update={"proxy_credential_alias": credential.key_alias})
-            session = await self._session_repo.update(session)
+                # Update session with credential reference
+                session = session.model_copy(update={"proxy_credential_alias": credential.key_alias})
+                session = await self._session_repo.update(session)
+            except Exception:
+                # Re-raise the exception to propagate the error
+                # The transaction will be rolled back by the database session manager
+                # at a higher level, preventing orphaned sessions without credentials
+                raise
 
         return session, credential
 
@@ -233,17 +239,6 @@ class CredentialService:
             "benchmark_harness_profile": harness_profile,
             "benchmark_source": "opensymphony",
         }
-
-    def _generate_api_key(self, alias: str) -> str:
-        """Generate a unique API key for the credential.
-
-        Creates a cryptographically random key prefixed with
-        the alias for identification.
-        """
-        import secrets
-
-        random_suffix = secrets.token_urlsafe(32)
-        return f"sk-bm-{alias}-{random_suffix}"
 
     async def issue_credential(
         self,
