@@ -98,6 +98,15 @@ class ComparisonService:
 
     All queries exclude invalid sessions by default to ensure
     clean comparisons.
+
+    Note: This service uses synchronous SQLAlchemy operations with async method signatures
+    for API consistency. In async contexts (e.g., FastAPI endpoints), the synchronous DB
+    operations will block the event loop. For production use with async frameworks, consider
+    either:
+    1. Using SQLAlchemy's async session pattern with `await session.execute(...)`
+    2. Running sync DB calls in an executor: `await asyncio.get_event_loop().run_in_executor(...)`
+
+    The current implementation is suitable for CLI tools and synchronous web frameworks.
     """
 
     def __init__(self, db_session: SQLAlchemySession) -> None:
