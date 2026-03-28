@@ -446,11 +446,12 @@ class ExportSerializer:
                     writer.writeheader()
             return
 
-        # Get all unique keys from records
-        all_keys = sorted({k for record in records for k in record})
+        # Use canonical fieldnames if available, otherwise derive from records
+        if not fieldnames:
+            fieldnames = sorted({k for record in records for k in record})
 
         with open(output_path, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=all_keys)
+            writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(records)
 
