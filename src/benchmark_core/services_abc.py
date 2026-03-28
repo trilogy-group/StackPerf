@@ -351,8 +351,10 @@ class CredentialService:
         Returns:
             Updated credential with is_active=False
 
-        Raises:
-            RuntimeError: If LiteLLM API call fails
+        Note:
+            LiteLLM API errors are intentionally silenced since revocation is
+            best-effort - the key may already be expired or the proxy may be
+            temporarily unavailable.
         """
         # Call LiteLLM API to delete the key if we have the key_id
         if credential.litellm_key_id and self.master_key:

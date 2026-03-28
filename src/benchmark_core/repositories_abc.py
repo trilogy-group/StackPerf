@@ -95,6 +95,6 @@ class RequestRepository(ABC):
         ...
 
     @abstractmethod
-    async def get_by_id(self, request_id: UUID) -> Request | None:
-        """Retrieve a request by ID."""
+    async def get_by_request_id(self, request_id: str) -> Request | None:
+        """Retrieve a request by its LiteLLM request ID."""
         ...
