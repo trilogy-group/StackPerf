@@ -921,4 +921,3 @@ class TestSQLArtifactRepository:
         fake_id = uuid4()
         deleted = await artifact_repo.delete(fake_id)
         assert deleted is False
->>>>>>> origin/main
