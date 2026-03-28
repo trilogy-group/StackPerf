@@ -37,7 +37,6 @@ class VariantComparison(BaseModel):
     avg_ttft_ms: float | None = Field(default=None, description="Average time to first token in ms")
     total_errors: int = Field(default=0, description="Total error count")
     error_rate: float = Field(default=0.0, description="Error rate (errors/requests)")
-    cache_hit_rate: float | None = Field(default=None, description="Cache hit rate")
 
 
 class ProviderComparison(BaseModel):
