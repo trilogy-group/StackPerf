@@ -177,3 +177,152 @@ class DashboardQueries:
         ORDER BY s.started_at DESC
         """
         return query, {"experiment_id": None}
+
+    # =========================================================================
+    # Summary Views (COE-314)
+    # =========================================================================
+
+    @staticmethod
+    def variant_summary_valid_only() -> tuple[str, dict[str, Any]]:
+        """Generate parameterized SQL for variant-level summary (valid sessions only).
+
+        Returns:
+            Tuple of (SQL query string with :experiment_id placeholder,
+                     parameter template dict)
+
+        Example:
+            sql, params = DashboardQueries.variant_summary_valid_only()
+            # Execute with driver parameter binding:
+            # await db.fetch_all(sql, {"experiment_id": experiment_id})
+        """
+        query = """
+        SELECT
+            v.id as variant_id,
+            v.name as variant_name,
+            v.provider,
+            v.model_alias,
+            v.harness_profile,
+            COUNT(DISTINCT s.id) as session_count,
+            COUNT(r.id) as total_requests,
+            AVG(r.latency_ms) as avg_latency_ms,
+            AVG(r.ttft_ms) as avg_ttft_ms,
+            SUM(CASE WHEN r.error THEN 1 ELSE 0 END) as total_errors,
+            SUM(CASE WHEN r.cache_hit THEN 1 ELSE 0 END) as cache_hits
+        FROM variants v
+        LEFT JOIN sessions s ON s.variant_id = v.id
+            AND (s.outcome_state IS NULL OR s.outcome_state != 'invalid')
+        LEFT JOIN requests r ON r.session_id = s.id
+        WHERE v.id IN (
+            SELECT ev.variant_id FROM experiment_variants ev
+            WHERE ev.experiment_id = :experiment_id
+        )
+        GROUP BY v.id, v.name, v.provider, v.model_alias, v.harness_profile
+        ORDER BY v.name ASC
+        """
+        return query, {"experiment_id": None}
+
+    @staticmethod
+    def provider_summary_valid_only() -> tuple[str, dict[str, Any]]:
+        """Generate parameterized SQL for provider-level summary (valid sessions only).
+
+        Returns:
+            Tuple of (SQL query string with :experiment_id placeholder,
+                     parameter template dict)
+
+        Example:
+            sql, params = DashboardQueries.provider_summary_valid_only()
+            # Execute with driver parameter binding:
+            # await db.fetch_all(sql, {"experiment_id": experiment_id})
+        """
+        query = """
+        SELECT
+            v.provider,
+            COUNT(DISTINCT v.id) as variant_count,
+            COUNT(DISTINCT s.id) as session_count,
+            COUNT(r.id) as total_requests,
+            AVG(r.latency_ms) as avg_latency_ms,
+            AVG(r.ttft_ms) as avg_ttft_ms,
+            SUM(CASE WHEN r.error THEN 1 ELSE 0 END) as total_errors
+        FROM variants v
+        LEFT JOIN sessions s ON s.variant_id = v.id
+            AND (s.outcome_state IS NULL OR s.outcome_state != 'invalid')
+        LEFT JOIN requests r ON r.session_id = s.id
+        WHERE v.id IN (
+            SELECT ev.variant_id FROM experiment_variants ev
+            WHERE ev.experiment_id = :experiment_id
+        )
+        GROUP BY v.provider
+        ORDER BY v.provider ASC
+        """
+        return query, {"experiment_id": None}
+
+    @staticmethod
+    def model_summary_valid_only() -> tuple[str, dict[str, Any]]:
+        """Generate parameterized SQL for model-level summary (valid sessions only).
+
+        Returns:
+            Tuple of (SQL query string with :experiment_id placeholder,
+                     parameter template dict)
+
+        Example:
+            sql, params = DashboardQueries.model_summary_valid_only()
+            # Execute with driver parameter binding:
+            # await db.fetch_all(sql, {"experiment_id": experiment_id})
+        """
+        query = """
+        SELECT
+            v.provider,
+            v.model_alias as model,
+            COUNT(DISTINCT v.id) as variant_count,
+            COUNT(DISTINCT s.id) as session_count,
+            COUNT(r.id) as total_requests,
+            AVG(r.latency_ms) as avg_latency_ms,
+            AVG(r.ttft_ms) as avg_ttft_ms,
+            SUM(CASE WHEN r.error THEN 1 ELSE 0 END) as total_errors
+        FROM variants v
+        LEFT JOIN sessions s ON s.variant_id = v.id
+            AND (s.outcome_state IS NULL OR s.outcome_state != 'invalid')
+        LEFT JOIN requests r ON r.session_id = s.id
+        WHERE v.id IN (
+            SELECT ev.variant_id FROM experiment_variants ev
+            WHERE ev.experiment_id = :experiment_id
+        )
+        GROUP BY v.provider, v.model_alias
+        ORDER BY v.provider ASC, v.model_alias ASC
+        """
+        return query, {"experiment_id": None}
+
+    @staticmethod
+    def harness_profile_summary_valid_only() -> tuple[str, dict[str, Any]]:
+        """Generate parameterized SQL for harness profile summary (valid sessions only).
+
+        Returns:
+            Tuple of (SQL query string with :experiment_id placeholder,
+                     parameter template dict)
+
+        Example:
+            sql, params = DashboardQueries.harness_profile_summary_valid_only()
+            # Execute with driver parameter binding:
+            # await db.fetch_all(sql, {"experiment_id": experiment_id})
+        """
+        query = """
+        SELECT
+            v.harness_profile,
+            COUNT(DISTINCT v.id) as variant_count,
+            COUNT(DISTINCT s.id) as session_count,
+            COUNT(r.id) as total_requests,
+            AVG(r.latency_ms) as avg_latency_ms,
+            AVG(r.ttft_ms) as avg_ttft_ms,
+            SUM(CASE WHEN r.error THEN 1 ELSE 0 END) as total_errors
+        FROM variants v
+        LEFT JOIN sessions s ON s.variant_id = v.id
+            AND (s.outcome_state IS NULL OR s.outcome_state != 'invalid')
+        LEFT JOIN requests r ON r.session_id = s.id
+        WHERE v.id IN (
+            SELECT ev.variant_id FROM experiment_variants ev
+            WHERE ev.experiment_id = :experiment_id
+        )
+        GROUP BY v.harness_profile
+        ORDER BY v.harness_profile ASC
+        """
+        return query, {"experiment_id": None}
