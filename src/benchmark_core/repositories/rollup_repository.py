@@ -1,6 +1,5 @@
 """Repository for MetricRollup persistence."""
 
-from typing import Any
 from uuid import UUID
 
 from sqlalchemy import delete, select
