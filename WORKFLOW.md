@@ -7,6 +7,7 @@ tracker:
     - Todo
     - In Progress
     - Human Review
+    - Merging
     - Rework
   terminal_states:
     - Done
@@ -181,8 +182,9 @@ The agent should be able to talk to Linear, either via a configured Linear MCP s
    - `Rework` -> run rework flow.
    - `Done` -> do nothing and shut down.
 4. Check whether a PR already exists for the current branch and whether it is closed.
-   - If a branch PR exists and is `CLOSED` or `MERGED`, treat prior branch work as non-reusable for this run.
-   - Create a fresh branch from `origin/main` and restart execution flow as a new attempt.
+   - For `Todo`, `In Progress`, or `Rework`: if a branch PR exists and is `CLOSED` or `MERGED`, treat prior branch work as non-reusable for this run.
+   - For `Todo`, `In Progress`, or `Rework`: create a fresh branch from `origin/main` and restart execution flow as a new attempt.
+   - For `Human Review` or `Merging`: if the attached PR is already `MERGED`, do **not** reset the branch; update the workpad/dashboard as needed and move the issue to `Done`.
 5. For `Todo` tickets, do startup sequencing in this exact order:
    - `update_issue(..., state: "In Progress")`
    - find/create `## Agent Harness Workpad` bootstrap comment
@@ -306,13 +308,15 @@ Use this only when completion is blocked by missing required tools or missing au
 2. Poll for updates as needed, including GitHub PR review comments from humans and bots.
 3. If review feedback requires changes, move the issue to `Rework` and follow the rework flow.
 4. If approved, human moves the issue to `Merging`.
-5. When the issue is in `Merging`, re-run the PR feedback sweep protocol one final time. Do not proceed with merge if:
+5. When the issue is in `Merging`, first inspect the attached PR state.
+   - If the PR is already `MERGED`, update the workpad/dashboard and move the issue directly to `Done`.
+   - If the PR is still open, re-run the PR feedback sweep protocol one final time. Do not proceed if:
    - Any critical/major feedback remains unaddressed (no code change or pushback reply)
    - Required checks are failing
    - Required validation items from the ticket are incomplete
    Wait for the human to move the issue to `Merging` only when genuinely ready.
-6. When cleared to proceed, open and follow `.agents/skills/land/SKILL.md`, then run the `land` skill in a loop until the PR is merged. Do not call `gh pr merge` directly.
-7. After merge is complete, move the issue to `Done`.
+6. If the PR is still open, open and follow `.agents/skills/land/SKILL.md` to perform the repo-specific final merge-readiness checks and handoff. Do not call `gh pr merge` directly.
+7. Continue polling while the issue remains in `Merging`. As soon as the attached PR is observed in `MERGED` state, move the issue to `Done`.
 
 ## Step 4: Rework handling
 
@@ -395,6 +399,8 @@ For major rework:
 
 This workflow manages multiple concurrent issues with complex dependencies. To help human reviewers prioritize which PRs to review first, agents must maintain a **Dependency Blockers & PR Review Priority** table in the Linear project description.
 
+The Linear project overview is a live dashboard, not a one-off narrative summary. The project description must always begin with the `## Dependency Blockers & PR Review Priority` section, and that section must be regenerated in place whenever the underlying review queue changes.
+
 ### When to update the dashboard
 
 Update the priority table in the Linear project overview whenever:
@@ -407,6 +413,8 @@ Update the priority table in the Linear project overview whenever:
 
 1. Use the `linear_get_project` tool to fetch the current project description
 2. Locate the `## Dependency Blockers & PR Review Priority` section
+   - If it does not exist, create it at the very top of the project description.
+   - If the top of the description contains a stale narrative overview or milestone dump, replace that top section with the live dashboard and keep any still-useful static planning notes below it.
 3. Regenerate the table with current data:
    - Query all issues in `Human Review`, `Merging`, `Rework`, `In Progress`, and `Todo` states
    - Include `includeRelations: true` to get blockedBy/blocks data
@@ -417,6 +425,7 @@ Update the priority table in the Linear project overview whenever:
    - **P2 (🟢 Ready):** Issues unblocked but with lower downstream impact
    - **P3 (⚪ Waiting):** Issues currently blocked by dependencies
 5. Use `linear_save_project` to update the description with the new table
+6. Do not append ad hoc prose summaries above the dashboard. Keep the dashboard concise, current, and reviewer-focused.
 
 ### Priority calculation guidelines
 
