@@ -21,7 +21,10 @@ export OPENAI_API_KEY="your-openai-key"
 export ANTHROPIC_API_KEY="your-anthropic-key"
 
 docker compose up -d --force-recreate
+uv run benchmark config init-db
 ```
+
+If you already use `DATABASE_URL` for some other project, unset it first or set `BENCHMARK_DATABASE_URL` explicitly for this repo. The benchmark CLI falls back to `DATABASE_URL` when `BENCHMARK_DATABASE_URL` is not set.
 
 Useful local URLs:
 
@@ -135,28 +138,47 @@ curl http://localhost:4000/health/liveliness
 
 Expected output: all services show healthy status and LiteLLM returns `"I'm alive!"`.
 
-#### 2. Validate Configuration
+#### 2. Initialize the Benchmark Database
 
 ```bash
-# Validate all config files (providers, harnesses, variants, experiments, task cards)
-uv run benchmark config validate
+# Optional: avoid inheriting another project's DATABASE_URL
+unset DATABASE_URL
+
+# Create the local schema and import configs into the benchmark database
+uv run benchmark config init-db
 ```
 
-Current status: this command exists but is not fully implemented yet. It is safe to skip for now if it prints `Validation not fully implemented yet`.
+Expected output: schema initialized and config records synced into the database.
 
-#### 3. Create a Benchmark Session
+#### 3. Inspect Available Configs
 
-Choose an experiment, variant, and task card from the available configs:
+Choose an experiment, variant, task card, and harness from the available configs:
 
 ```bash
 # List available experiments
-uv run benchmark experiment list
+uv run benchmark config list-experiments
 
 # List available variants
-uv run benchmark variant list
+uv run benchmark config list-variants
 
 # List available task cards
-uv run benchmark task-card list
+uv run benchmark config list-task-cards
+
+# List available harness profiles
+uv run benchmark config list-harnesses
+```
+
+You can also validate cross-references between config files:
+
+```bash
+uv run benchmark config validate
+```
+
+#### 4. Create a Benchmark Session
+
+```bash
+# Optional: avoid inheriting another project's DATABASE_URL
+unset DATABASE_URL
 
 # Create a session
 uv run benchmark session create \
@@ -170,7 +192,7 @@ uv run benchmark session create \
 
 Expected output: Session created with a unique `session_id` (UUID). Git metadata (branch, commit, dirty state) is captured automatically.
 
-#### 4. Render and Apply Harness Environment
+#### 5. Render and Apply Harness Environment
 
 ```bash
 # Render the environment snippet for your session
@@ -214,7 +236,7 @@ curl -s -X POST http://localhost:4000/key/generate \
 
 Use the returned `key` value as the harness-facing `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`.
 
-#### 5. Launch the Harness
+#### 6. Launch the Harness
 
 With the environment set, launch your harness:
 
@@ -314,12 +336,13 @@ uv run benchmark export sessions --format csv --output sessions.csv
 For a complete walkthrough of running a benchmark session, see [configs/litellm/README.md](configs/litellm/README.md). The quick version:
 
 1. Start the infrastructure stack (LiteLLM, PostgreSQL, Prometheus, Grafana)
-2. Optionally run `uv run benchmark config validate` (currently a stub)
-3. Create a session: `uv run benchmark session create --experiment <name> --variant <name> --task-card <name> --harness <name>`
-4. Copy the rendered environment snippet and launch your harness interactively
-5. Work on the task; the proxy captures all traffic with session correlation
-6. Finalize the session: `uv run benchmark session finalize --session-id <id> --status completed`
-7. View metrics in Grafana and export comparison reports
+2. Run `uv run benchmark config init-db` to create the schema and import config records
+3. Use `uv run benchmark config list-experiments`, `list-variants`, and `list-task-cards` to pick a test case
+4. Create a session: `uv run benchmark session create --experiment <name> --variant <name> --task-card <name> --harness <name>`
+5. Copy the rendered environment snippet and launch your harness interactively
+6. Work on the task; the proxy captures all traffic with session correlation
+7. Finalize the session: `uv run benchmark session finalize --session-id <id> --status completed`
+8. View metrics in Grafana and export comparison reports
 
 ## Troubleshooting
 
@@ -351,12 +374,14 @@ docker compose logs prometheus
    # Kill the process or change port in docker-compose.yml
    ```
 
-2. **Missing environment variables**: LiteLLM master key or database URL not set.
+2. **Missing environment variables**: LiteLLM master key or provider keys not set.
    ```bash
-   # Verify environment variables
-   echo $LITELLM_MASTER_KEY
-   echo $LITELLM_DATABASE_URL
-   ```
+    # Verify environment variables
+    echo $LITELLM_MASTER_KEY
+    echo $FIREWORKS_API_KEY
+    echo $OPENAI_API_KEY
+    echo $ANTHROPIC_API_KEY
+    ```
 
 3. **Docker not running**: Ensure Docker daemon is active.
    ```bash
@@ -394,11 +419,13 @@ docker compose logs litellm --tail 100
 
 3. **Database connection failure**: PostgreSQL not ready or connection string incorrect.
    ```bash
-   # Check PostgreSQL status
-docker compose ps postgres
-   # Test connection
-   psql $LITELLM_DATABASE_URL -c "SELECT 1"
-   ```
+    # Check PostgreSQL status
+    docker compose ps postgres
+
+    # If using a custom benchmark database, inspect the benchmark DB URL
+    echo $BENCHMARK_DATABASE_URL
+    echo $DATABASE_URL
+    ```
 
 ### Session Creation Issues
 
@@ -421,19 +448,26 @@ ls configs/task-cards/
 
 1. **Invalid experiment/variant/task-card name**: Name doesn't match config file.
    ```bash
-   # List available configs
-    uv run benchmark experiment list
-    uv run benchmark variant list
-    uv run benchmark task-card list
-   ```
+    # List available configs
+    uv run benchmark config list-experiments
+    uv run benchmark config list-variants
+    uv run benchmark config list-task-cards
+    ```
 
 2. **Database not initialized**: Benchmark database tables don't exist.
    ```bash
-   # Run migrations
-   make db-migrate
+    # Create the schema and import config records
+    unset DATABASE_URL
+    uv run benchmark config init-db
+    ```
+
+3. **Wrong database selected**: Another project's `DATABASE_URL` overrides the local benchmark DB.
+   ```bash
+   unset DATABASE_URL
+   uv run benchmark config init-db
    ```
 
-3. **Not in a git repository**: Git metadata capture fails.
+4. **Not in a git repository**: Git metadata capture fails.
    ```bash
    # Check if in git repo
    git rev-parse --is-inside-work-tree
