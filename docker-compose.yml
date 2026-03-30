@@ -24,8 +24,16 @@ services:
     container_name: litellm
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-litellm}:${POSTGRES_PASSWORD:-litellm}@postgres:5432/${POSTGRES_DB:-litellm}
+      LITELLM_DATABASE_URL: postgresql://${POSTGRES_USER:-litellm}:${POSTGRES_PASSWORD:-litellm}@postgres:5432/${POSTGRES_DB:-litellm}
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-litellm-master-key}
       LITELLM_SALT_KEY: ${LITELLM_SALT_KEY:-litellm-salt-key-change-in-production}
+      FIREWORKS_API_KEY: ${FIREWORKS_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-not-configured}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      FIREWORKS_BASE_URL: ${FIREWORKS_BASE_URL:-https://api.fireworks.ai/inference/v1}
+      SESSION_AFFINITY_KEY: ${SESSION_AFFINITY_KEY:-default}
       STORE_MODEL_IN_DB: "True"
       UI_USERNAME: ${LITELLM_UI_USERNAME:-admin}
       UI_PASSWORD: ${LITELLM_UI_PASSWORD:-admin}
@@ -48,6 +56,24 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    networks:
+      - litellm-network
+
+  benchmark-db-init:
+    image: python:3.11-slim
+    container_name: benchmark-db-init
+    working_dir: /workspace
+    environment:
+      BENCHMARK_DATABASE_URL: postgresql://${POSTGRES_USER:-litellm}:${POSTGRES_PASSWORD:-litellm}@postgres:5432/${POSTGRES_DB:-litellm}
+      PIP_DISABLE_PIP_VERSION_CHECK: "1"
+    volumes:
+      - .:/workspace:ro
+    command: >
+      sh -c "pip install --no-cache-dir -e . && python scripts/init_benchmark_seed.py"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
     networks:
       - litellm-network
 
@@ -102,6 +128,8 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      benchmark-db-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/api/health || exit 1"]
       interval: 10s

@@ -1,10 +1,109 @@
-model_list: []
+model_list:
+  - model_name: kimi-k2-5
+    litellm_params:
+      model: fireworks_ai/accounts/fireworks/models/kimi-k2p5
+      api_key: os.environ/FIREWORKS_API_KEY
+      api_base: https://api.fireworks.ai/inference/v1
+      timeout: 180
+      extra_headers:
+        x-session-affinity: default
+    model_info:
+      route_name: fireworks-main
+      provider: fireworks
+      benchmark_alias: kimi-k2-5
+
+  - model_name: glm-5
+    litellm_params:
+      model: fireworks_ai/accounts/fireworks/models/glm-5
+      api_key: os.environ/FIREWORKS_API_KEY
+      api_base: https://api.fireworks.ai/inference/v1
+      timeout: 180
+      extra_headers:
+        x-session-affinity: default
+    model_info:
+      route_name: fireworks-main
+      provider: fireworks
+      benchmark_alias: glm-5
+
+  - model_name: glm-5-fast
+    litellm_params:
+      model: fireworks_ai/accounts/fireworks/routers/glm-5-fast
+      api_key: os.environ/FIREWORKS_API_KEY
+      api_base: https://api.fireworks.ai/inference/v1
+      timeout: 180
+      extra_headers:
+        x-session-affinity: default
+    model_info:
+      route_name: fireworks-main
+      provider: fireworks
+      benchmark_alias: glm-5-fast
+
+  - model_name: gpt-5.4
+    litellm_params:
+      model: openai/gpt-5.4
+      api_key: os.environ/OPENAI_API_KEY
+      api_base: os.environ/OPENAI_BASE_URL
+      timeout: 120
+    model_info:
+      route_name: openai-main
+      provider: openai
+      benchmark_alias: gpt-5.4
+
+  - model_name: gpt-5.4-mini
+    litellm_params:
+      model: openai/gpt-5.4-mini
+      api_key: os.environ/OPENAI_API_KEY
+      api_base: os.environ/OPENAI_BASE_URL
+      timeout: 120
+    model_info:
+      route_name: openai-main
+      provider: openai
+      benchmark_alias: gpt-5.4-mini
+
+  - model_name: claude-opus-4-6
+    litellm_params:
+      model: anthropic/claude-opus-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+      api_base: os.environ/ANTHROPIC_BASE_URL
+      timeout: 180
+    model_info:
+      route_name: anthropic-main
+      provider: anthropic
+      benchmark_alias: claude-opus-4-6
+
+  - model_name: claude-sonnet-4-6
+    litellm_params:
+      model: anthropic/claude-sonnet-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
+      api_base: os.environ/ANTHROPIC_BASE_URL
+      timeout: 180
+    model_info:
+      route_name: anthropic-main
+      provider: anthropic
+      benchmark_alias: claude-sonnet-4-6
+
+  - model_name: kimi-k2-5-turbo
+    litellm_params:
+      model: fireworks_ai/accounts/fireworks/routers/kimi-k2p5-turbo
+      api_key: os.environ/FIREWORKS_API_KEY
+      api_base: https://api.fireworks.ai/inference/v1
+      timeout: 180
+      extra_headers:
+        x-session-affinity: default
+    model_info:
+      route_name: fireworks-main
+      provider: fireworks
+      benchmark_alias: kimi-k2-5-turbo
 
 litellm_settings:
   drop_params: True
   num_retries: 3
   request_timeout: 600
-  callbacks: ["prometheus"]
+  success_callback: ["prometheus", "postgres"]
+  failure_callback: ["prometheus", "postgres"]
+  service_callback: ["prometheus"]
+  redact_messages_in_logs: true
+  redact_user_api_key_info: true
 
 router_settings:
   routing_strategy: simple-shuffle

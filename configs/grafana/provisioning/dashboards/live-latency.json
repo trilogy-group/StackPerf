@@ -110,8 +110,8 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(litellm_request_latency_milliseconds_bucket{model=~\"$model\"}[5m])) by (le, model))",
-          "legendFormat": "P50 - {{model}}",
+          "expr": "1000 * histogram_quantile(0.50, sum(rate(litellm_request_total_latency_metric_bucket{requested_model=~\"$model\"}[5m])) by (le, requested_model))",
+          "legendFormat": "P50 - {{requested_model}}",
           "range": true,
           "refId": "P50"
         },
@@ -121,8 +121,8 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(litellm_request_latency_milliseconds_bucket{model=~\"$model\"}[5m])) by (le, model))",
-          "legendFormat": "P95 - {{model}}",
+          "expr": "1000 * histogram_quantile(0.95, sum(rate(litellm_request_total_latency_metric_bucket{requested_model=~\"$model\"}[5m])) by (le, requested_model))",
+          "legendFormat": "P95 - {{requested_model}}",
           "range": true,
           "refId": "P95"
         },
@@ -132,8 +132,8 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(litellm_request_latency_milliseconds_bucket{model=~\"$model\"}[5m])) by (le, model))",
-          "legendFormat": "P99 - {{model}}",
+          "expr": "1000 * histogram_quantile(0.99, sum(rate(litellm_request_total_latency_metric_bucket{requested_model=~\"$model\"}[5m])) by (le, requested_model))",
+          "legendFormat": "P99 - {{requested_model}}",
           "range": true,
           "refId": "P99"
         }
@@ -197,7 +197,7 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(litellm_request_latency_milliseconds_bucket[5m])) by (le))",
+          "expr": "1000 * histogram_quantile(0.50, sum(rate(litellm_request_total_latency_metric_bucket[5m])) by (le))",
           "legendFormat": "P50 Latency",
           "range": true,
           "refId": "A"
@@ -262,7 +262,7 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(litellm_request_latency_milliseconds_bucket[5m])) by (le))",
+          "expr": "1000 * histogram_quantile(0.95, sum(rate(litellm_request_total_latency_metric_bucket[5m])) by (le))",
           "legendFormat": "P95 Latency",
           "range": true,
           "refId": "A"
@@ -351,8 +351,8 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(rate(litellm_requests_total{model=~\"$model\"}[1m])) by (model)",
-          "legendFormat": "{{model}}",
+          "expr": "sum(rate(litellm_proxy_total_requests_metric_total{requested_model=~\"$model\"}[1m])) by (requested_model)",
+          "legendFormat": "{{requested_model}}",
           "range": true,
           "refId": "A"
         }
@@ -440,8 +440,8 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum(rate(litellm_request_latency_milliseconds_bucket{status=~\"success\"}[5m])) by (le))",
-          "legendFormat": "P50 Success",
+          "expr": "1000 * histogram_quantile(0.50, sum(rate(litellm_llm_api_latency_metric_bucket{requested_model=~\"$model\"}[5m])) by (le, requested_model))",
+          "legendFormat": "P50 - {{requested_model}}",
           "range": true,
           "refId": "A"
         },
@@ -451,13 +451,13 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(litellm_request_latency_milliseconds_bucket{status=~\"success\"}[5m])) by (le))",
-          "legendFormat": "P95 Success",
+          "expr": "1000 * histogram_quantile(0.95, sum(rate(litellm_llm_api_latency_metric_bucket{requested_model=~\"$model\"}[5m])) by (le, requested_model))",
+          "legendFormat": "P95 - {{requested_model}}",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "Successful Request Latency",
+      "title": "LLM API Latency",
       "type": "timeseries"
     },
     {
@@ -513,7 +513,7 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(increase(litellm_request_latency_milliseconds_bucket[1h])) by (le)",
+          "expr": "sum(increase(litellm_request_total_latency_metric_bucket[1h])) by (le)",
           "legendFormat": "{{le}}",
           "range": true,
           "refId": "A"
@@ -539,14 +539,14 @@
           "type": "prometheus",
           "uid": "prometheus-datasource"
         },
-        "definition": "label_values(litellm_requests_total, model)",
+        "definition": "label_values(litellm_proxy_total_requests_metric_total, requested_model)",
         "hide": 0,
         "includeAll": true,
         "label": "Model",
         "multi": true,
         "name": "model",
         "options": [],
-        "query": "label_values(litellm_requests_total, model)",
+        "query": "label_values(litellm_proxy_total_requests_metric_total, requested_model)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,

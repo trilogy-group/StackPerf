@@ -137,6 +137,68 @@ Benchmark application capabilities:
   - local operator instructions for session credentials
   - harness environment setup
 
+## Observability Quick Start
+
+The local observability stack combines LiteLLM, Prometheus, Grafana, and PostgreSQL:
+
+- LiteLLM exposes raw metrics at `http://localhost:4000/metrics`
+- Prometheus scrapes and stores those metrics at `http://localhost:9090`
+- Grafana reads from Prometheus and PostgreSQL and renders dashboards at `http://localhost:3000`
+- PostgreSQL stores historical benchmark data used by the experiment summary dashboard
+
+The easiest way to think about them:
+
+- Prometheus is the metric collection, storage, and query engine
+- Grafana is the visualization UI
+- Grafana does not collect metrics itself
+- Prometheus does not provide the benchmark dashboards by itself
+
+In this repository:
+
+- live dashboards use Prometheus data
+- historical benchmark dashboards use PostgreSQL data
+
+### Local URLs
+
+- Grafana: `http://localhost:3000`
+- Prometheus: `http://localhost:9090`
+- LiteLLM metrics endpoint: `http://localhost:4000/metrics`
+
+Default Grafana credentials:
+
+- username: `admin`
+- password: `admin`
+
+### What To Open First
+
+After `docker compose up -d`, open Grafana and inspect the `Benchmark` folder:
+
+- `Live Request Latency`
+- `Live TTFT Metrics`
+- `Live Error Rate`
+- `Experiment Summary`
+
+For historical seeded local validation, choose the `demo-grafana-validation` experiment in `Experiment Summary`.
+
+### When To Use Which Tool
+
+- Use Grafana when you want to inspect dashboards and visualizations
+- Use Prometheus when you want to inspect raw metric names or test PromQL queries directly
+
+Example Prometheus queries:
+
+```promql
+litellm_proxy_total_requests_metric_total
+```
+
+```promql
+histogram_quantile(0.50, sum(rate(litellm_request_total_latency_metric_bucket[5m])) by (le))
+```
+
+```promql
+histogram_quantile(0.50, sum(rate(litellm_llm_api_time_to_first_token_metric_bucket[5m])) by (le))
+```
+
 ## Local operator workflow
 
 For a complete walkthrough of running a benchmark session, see [configs/litellm/README.md](configs/litellm/README.md). The quick version:

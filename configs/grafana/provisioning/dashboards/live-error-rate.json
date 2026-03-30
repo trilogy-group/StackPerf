@@ -112,8 +112,8 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "100 * sum(rate(litellm_requests_total{status=~\"error|failed\",model=~\"$model\"}[5m])) by (model) / sum(rate(litellm_requests_total{model=~\"$model\"}[5m])) by (model)",
-          "legendFormat": "{{model}}",
+          "expr": "100 * (sum(rate(litellm_proxy_total_requests_metric_total{requested_model=~\"$model\"}[5m])) by (requested_model) - sum(rate(litellm_proxy_total_requests_metric_total{requested_model=~\"$model\",status_code=~\"2..\"}[5m])) by (requested_model)) / sum(rate(litellm_proxy_total_requests_metric_total{requested_model=~\"$model\"}[5m])) by (requested_model)",
+          "legendFormat": "{{requested_model}}",
           "range": true,
           "refId": "A"
         }
@@ -179,7 +179,7 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "100 * sum(rate(litellm_requests_total{status=~\"error|failed\"}[5m])) / sum(rate(litellm_requests_total[5m]))",
+          "expr": "100 * (sum(rate(litellm_proxy_total_requests_metric_total[5m])) - sum(rate(litellm_proxy_total_requests_metric_total{status_code=~\"2..\"}[5m]))) / sum(rate(litellm_proxy_total_requests_metric_total[5m]))",
           "legendFormat": "Error Rate",
           "range": true,
           "refId": "A"
@@ -240,7 +240,7 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(increase(litellm_requests_total{status=~\"error|failed\"}[1h]))",
+          "expr": "sum(increase(litellm_proxy_total_requests_metric_total[1h])) - sum(increase(litellm_proxy_total_requests_metric_total{status_code=~\"2..\"}[1h]))",
           "legendFormat": "Error Count",
           "range": true,
           "refId": "A"
@@ -360,8 +360,8 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(rate(litellm_requests_total{status=\"success\",model=~\"$model\"}[1m])) by (model)",
-          "legendFormat": "success - {{model}}",
+          "expr": "sum(rate(litellm_proxy_total_requests_metric_total{requested_model=~\"$model\",status_code=~\"2..\"}[1m])) by (requested_model)",
+          "legendFormat": "success - {{requested_model}}",
           "range": true,
           "refId": "Success"
         },
@@ -371,8 +371,8 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(rate(litellm_requests_total{status=~\"error|failed\",model=~\"$model\"}[1m])) by (model)",
-          "legendFormat": "error - {{model}}",
+          "expr": "sum(rate(litellm_proxy_total_requests_metric_total{requested_model=~\"$model\"}[1m])) by (requested_model) - sum(rate(litellm_proxy_total_requests_metric_total{requested_model=~\"$model\",status_code=~\"2..\"}[1m])) by (requested_model)",
+          "legendFormat": "error - {{requested_model}}",
           "range": true,
           "refId": "Error"
         }
@@ -464,7 +464,7 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(increase(litellm_requests_total{status=\"success\"}[1h]))",
+          "expr": "sum(increase(litellm_proxy_total_requests_metric_total{status_code=~\"2..\"}[1h]))",
           "legendFormat": "success",
           "range": true,
           "refId": "A"
@@ -475,7 +475,7 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(increase(litellm_requests_total{status=~\"error|failed\"}[1h]))",
+          "expr": "sum(increase(litellm_proxy_total_requests_metric_total[1h])) - sum(increase(litellm_proxy_total_requests_metric_total{status_code=~\"2..\"}[1h]))",
           "legendFormat": "error",
           "range": true,
           "refId": "B"
@@ -564,7 +564,7 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(increase(litellm_requests_total{status=~\"error|failed\"}[1m])) by (status_code)",
+          "expr": "sum(increase(litellm_proxy_total_requests_metric_total{status_code!~\"2..\"}[1m])) by (status_code)",
           "legendFormat": "Status {{status_code}}",
           "range": true,
           "refId": "A"
@@ -661,13 +661,13 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(rate(litellm_retries_total[5m])) by (model)",
-          "legendFormat": "{{model}}",
+          "expr": "sum(rate(litellm_proxy_total_requests_metric_total{requested_model=~\"$model\"}[5m])) by (requested_model)",
+          "legendFormat": "{{requested_model}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Retry Rate by Model",
+      "title": "Proxy Request Rate by Model",
       "type": "timeseries"
     },
     {
@@ -726,13 +726,13 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(increase(litellm_retries_total[1h]))",
-          "legendFormat": "Retry Count",
+          "expr": "sum(increase(litellm_proxy_total_requests_metric_total[1h]))",
+          "legendFormat": "Request Count",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Retries (Last Hour)",
+      "title": "Requests (Last Hour)",
       "type": "stat"
     },
     {
@@ -791,13 +791,13 @@
             "uid": "prometheus-datasource"
           },
           "editorMode": "code",
-          "expr": "sum(increase(litellm_timeout_errors_total[1h]))",
-          "legendFormat": "Timeout Count",
+          "expr": "sum(increase(litellm_proxy_total_requests_metric_total[1h])) - sum(increase(litellm_proxy_total_requests_metric_total{status_code=~\"2..\"}[1h]))",
+          "legendFormat": "Failure Count",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Timeouts (Last Hour)",
+      "title": "Failures (Last Hour)",
       "type": "stat"
     }
   ],
@@ -817,14 +817,14 @@
           "type": "prometheus",
           "uid": "prometheus-datasource"
         },
-        "definition": "label_values(litellm_requests_total, model)",
+        "definition": "label_values(litellm_proxy_total_requests_metric_total, requested_model)",
         "hide": 0,
         "includeAll": true,
         "label": "Model",
         "multi": true,
         "name": "model",
         "options": [],
-        "query": "label_values(litellm_requests_total, model)",
+        "query": "label_values(litellm_proxy_total_requests_metric_total, requested_model)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,

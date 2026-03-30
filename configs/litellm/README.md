@@ -12,6 +12,7 @@ LiteLLM routes follow the benchmark provider config naming to ensure correlation
 |:-----------|:---------|:---------------|:------------|
 | `fireworks-main` | Fireworks AI | `anthropic_messages` | `configs/providers/fireworks.yaml` |
 | `openai-main` | OpenAI | `openai_responses` | `configs/providers/openai.yaml` |
+| `anthropic-main` | Anthropic | `anthropic_messages` | inline in `configs/litellm/config.yaml` |
 
 ### Model Aliases
 
@@ -21,8 +22,12 @@ Model aliases in LiteLLM match the benchmark provider configs exactly:
 |:------|:---------|:---------------|
 | `kimi-k2-5` | Fireworks | `accounts/fireworks/models/kimi-k2p5` |
 | `glm-5` | Fireworks | `accounts/fireworks/models/glm-5` |
-| `gpt-4o` | OpenAI | `gpt-4o` |
-| `gpt-4o-mini` | OpenAI | `gpt-4o-mini` |
+| `kimi-k2-5-turbo` | Fireworks | `accounts/fireworks/routers/kimi-k2p5-turbo` |
+| `glm-5-fast` | Fireworks | `accounts/fireworks/routers/glm-5-fast` |
+| `gpt-5.4` | OpenAI | `gpt-5.4` |
+| `gpt-5.4-mini` | OpenAI | `gpt-5.4-mini` |
+| `claude-opus-4-6` | Anthropic | `claude-opus-4-6` |
+| `claude-sonnet-4-6` | Anthropic | `claude-sonnet-4-6` |
 
 ## Configuration Files
 
@@ -38,12 +43,14 @@ The LiteLLM configuration uses the following environment variables:
 - `LITELLM_MASTER_KEY` - Master API key for the LiteLLM proxy
 - `LITELLM_DATABASE_URL` - PostgreSQL connection string for LiteLLM metadata
 - `FIREWORKS_API_KEY` - API key for Fireworks AI provider
-- `OPENAI_UPSTREAM_API_KEY` - API key for OpenAI provider
+- `OPENAI_API_KEY` - API key for OpenAI provider
+- `ANTHROPIC_API_KEY` - API key for Anthropic provider
 
 ### Optional
 
 - `FIREWORKS_BASE_URL` - Custom Fireworks endpoint (defaults to `https://api.fireworks.ai/inference/v1`)
-- `OPENAI_UPSTREAM_BASE_URL` - Custom OpenAI endpoint (defaults to `https://api.openai.com/v1`)
+- `OPENAI_BASE_URL` - Custom OpenAI endpoint (defaults to `https://api.openai.com/v1`)
+- `ANTHROPIC_BASE_URL` - Custom Anthropic endpoint (defaults to `https://api.anthropic.com`)
 - `SESSION_AFFINITY_KEY` - Session affinity header for routing consistency
 - `BENCHMARK_SESSION_ID` - Session identifier for virtual key metadata
 - `BENCHMARK_EXPERIMENT` - Experiment name for virtual key metadata
@@ -62,7 +69,8 @@ The LiteLLM configuration uses the following environment variables:
 export LITELLM_MASTER_KEY="sk-litellm-master-$(openssl rand -hex 16)"
 export LITELLM_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/litellm"
 export FIREWORKS_API_KEY="your-fireworks-key"
-export OPENAI_UPSTREAM_API_KEY="your-openai-key"
+export OPENAI_API_KEY="your-openai-key"
+export ANTHROPIC_API_KEY="your-anthropic-key"
 
 # Start the stack
 docker-compose up -d litellm
@@ -77,7 +85,8 @@ pip install 'litellm[proxy]'
 # Set environment variables and start
 export LITELLM_MASTER_KEY="sk-litellm-master-$(openssl rand -hex 16)"
 export FIREWORKS_API_KEY="your-fireworks-key"
-export OPENAI_UPSTREAM_API_KEY="your-openai-key"
+export OPENAI_API_KEY="your-openai-key"
+export ANTHROPIC_API_KEY="your-anthropic-key"
 
 litellm --config configs/litellm/litellm.yaml
 ```
