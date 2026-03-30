@@ -447,7 +447,7 @@ class TestConfigLoader:
 
         # Verify variants loaded
         assert "fireworks-kimi-k2-5-claude-code" in registry.variants
-        assert "openai-gpt-4o-cli" in registry.variants
+        assert "openai-gpt-5.4-cli" in registry.variants
 
         # Verify experiments loaded
         assert "fireworks-terminal-agents-comparison" in registry.experiments
@@ -492,8 +492,8 @@ class TestConfigLoader:
         assert variant1.provider == "fireworks"
         assert variant1.harness_profile == "claude-code"
 
-        # OpenAI-GPT-4o-CLI: openai_responses + openai_responses ✓
-        variant2 = registry.variants["openai-gpt-4o-cli"]
+        # OpenAI-GPT-5.4-CLI: openai_responses + openai_responses ✓
+        variant2 = registry.variants["openai-gpt-5.4-cli"]
         assert variant2.provider == "openai"
         assert variant2.harness_profile == "openai-cli"
 
