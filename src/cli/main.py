@@ -3,7 +3,7 @@
 import typer
 from rich.console import Console
 
-from cli.commands import artifact, config, export, health, normalize, render, session
+from cli.commands import artifact, collect, config, export, health, normalize, render, session
 
 app = typer.Typer(
     name="benchmark",
@@ -19,6 +19,7 @@ app.add_typer(normalize.app, name="normalize", help="Normalize LiteLLM request d
 app.add_typer(artifact.app, name="artifact", help="Artifact registry management")
 app.add_typer(render.app, name="render", help="Render and validate harness environment snippets")
 app.add_typer(health.app, name="health", help="Stack health checks and diagnostics")
+app.add_typer(collect.app, name="collect", help="Collect data from LiteLLM and Prometheus")
 
 console = Console()
 

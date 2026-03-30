@@ -7,6 +7,7 @@ tracker:
     - Todo
     - In Progress
     - Human Review
+    - Merging
     - Rework
   terminal_states:
     - Done
@@ -181,8 +182,9 @@ The agent should be able to talk to Linear, either via a configured Linear MCP s
    - `Rework` -> run rework flow.
    - `Done` -> do nothing and shut down.
 4. Check whether a PR already exists for the current branch and whether it is closed.
-   - If a branch PR exists and is `CLOSED` or `MERGED`, treat prior branch work as non-reusable for this run.
-   - Create a fresh branch from `origin/main` and restart execution flow as a new attempt.
+   - For `Todo`, `In Progress`, or `Rework`: if a branch PR exists and is `CLOSED` or `MERGED`, treat prior branch work as non-reusable for this run.
+   - For `Todo`, `In Progress`, or `Rework`: create a fresh branch from `origin/main` and restart execution flow as a new attempt.
+   - For `Human Review` or `Merging`: if the attached PR is already `MERGED`, do **not** reset the branch; update the workpad/dashboard as needed and move the issue to `Done`.
 5. For `Todo` tickets, do startup sequencing in this exact order:
    - `update_issue(..., state: "In Progress")`
    - find/create `## Agent Harness Workpad` bootstrap comment
@@ -303,16 +305,28 @@ Use this only when completion is blocked by missing required tools or missing au
 ## Step 3: Human Review and merge handling
 
 1. When the issue is in `Human Review`, do not code or change ticket content.
-2. Poll for updates as needed, including GitHub PR review comments from humans and bots.
-3. If review feedback requires changes, move the issue to `Rework` and follow the rework flow.
+2. On every `Human Review` poll cycle, fetch feedback in this order before doing anything else:
+   - latest Linear issue comments
+   - top-level PR comments (`gh pr view --comments`)
+   - inline PR review comments (`gh api repos/<owner>/<repo>/pulls/<pr>/comments`)
+   - PR review summaries/states (`gh pr view --json reviews,reviewDecision`)
+   - PR check state (`gh pr view --json statusCheckRollup`)
+3. Treat all human feedback channels as authoritative, not just inline review comments:
+   - a new Linear issue comment from the operator is actionable feedback
+   - a new top-level PR comment is actionable feedback
+   - a failing required PR check is actionable feedback even if no human comment was left
+4. If any actionable feedback or failing required check is present, move the issue to `Rework` and follow the rework flow.
+   - Do not wait for an inline review comment when a Linear comment, top-level PR comment, or failing check already requires action.
 4. If approved, human moves the issue to `Merging`.
-5. When the issue is in `Merging`, re-run the PR feedback sweep protocol one final time. Do not proceed with merge if:
+5. When the issue is in `Merging`, first inspect the attached PR state.
+   - If the PR is already `MERGED`, update the workpad/dashboard and move the issue directly to `Done`.
+   - If the PR is still open, re-run the PR feedback sweep protocol one final time. Do not proceed if:
    - Any critical/major feedback remains unaddressed (no code change or pushback reply)
    - Required checks are failing
    - Required validation items from the ticket are incomplete
    Wait for the human to move the issue to `Merging` only when genuinely ready.
-6. When cleared to proceed, open and follow `.agents/skills/land/SKILL.md`, then run the `land` skill in a loop until the PR is merged. Do not call `gh pr merge` directly.
-7. After merge is complete, move the issue to `Done`.
+6. If the PR is still open, open and follow `.agents/skills/land/SKILL.md` to perform the repo-specific final merge-readiness checks and handoff. Do not call `gh pr merge` directly.
+7. Continue polling while the issue remains in `Merging`. As soon as the attached PR is observed in `MERGED` state, move the issue to `Done`.
 
 ## Step 4: Rework handling
 
@@ -325,14 +339,18 @@ For most code review feedback (addressing comments, small fixes, requested tweak
 1. **Keep the existing PR and branch open** - do not close them.
 2. Continue using the existing `## Agent Harness Workpad` comment - do not remove it.
 3. Address each piece of feedback directly in the current branch:
-   - Make the requested code changes
-   - Respond to inline comments (resolve or reply with justification)
-   - Push new commits to the same branch
+    - Make the requested code changes
+    - Read and address the latest Linear issue comments before GitHub review threads so operator guidance is not missed
+    - Read and address top-level PR comments in addition to inline review comments
+    - Respond to inline comments (resolve or reply with justification)
+    - Push new commits to the same branch
 4. Update the workpad with:
    - List of feedback items addressed
    - Any items pushed back with justification
    - Validation steps re-run
 5. Re-run validation/tests to ensure changes are correct.
+   - Always inspect current PR checks (`gh pr view --json statusCheckRollup`) before declaring feedback addressed.
+   - If any required check is failing, treat that as unfinished rework even if the latest review text is positive.
 6. Add the `review-this` label to the PR to re-trigger automated AI PR review.
 7. Move the issue back to `Human Review` once all feedback is addressed.
 
@@ -395,6 +413,8 @@ For major rework:
 
 This workflow manages multiple concurrent issues with complex dependencies. To help human reviewers prioritize which PRs to review first, agents must maintain a **Dependency Blockers & PR Review Priority** table in the Linear project description.
 
+The Linear project overview is a live dashboard, not a one-off narrative summary. The project description must always begin with the `## Dependency Blockers & PR Review Priority` section, and that section must be regenerated in place whenever the underlying review queue changes.
+
 ### When to update the dashboard
 
 Update the priority table in the Linear project overview whenever:
@@ -407,6 +427,8 @@ Update the priority table in the Linear project overview whenever:
 
 1. Use the `linear_get_project` tool to fetch the current project description
 2. Locate the `## Dependency Blockers & PR Review Priority` section
+   - If it does not exist, create it at the very top of the project description.
+   - If the top of the description contains a stale narrative overview or milestone dump, replace that top section with the live dashboard and keep any still-useful static planning notes below it.
 3. Regenerate the table with current data:
    - Query all issues in `Human Review`, `Merging`, `Rework`, `In Progress`, and `Todo` states
    - Include `includeRelations: true` to get blockedBy/blocks data
@@ -417,6 +439,7 @@ Update the priority table in the Linear project overview whenever:
    - **P2 (🟢 Ready):** Issues unblocked but with lower downstream impact
    - **P3 (⚪ Waiting):** Issues currently blocked by dependencies
 5. Use `linear_save_project` to update the description with the new table
+6. Do not append ad hoc prose summaries above the dashboard. Keep the dashboard concise, current, and reviewer-focused.
 
 ### Priority calculation guidelines
 
