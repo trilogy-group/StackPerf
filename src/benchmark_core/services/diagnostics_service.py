@@ -423,7 +423,8 @@ class DiagnosticsService:
                         else "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'"
                     )
                 )
-                table_count = result.fetchone()[0]
+                row = result.fetchone()
+                table_count = row[0] if row else 0
 
             return DiagnosticResult(
                 category="services",
@@ -450,7 +451,7 @@ class DiagnosticsService:
             DiagnosticResult with LiteLLM status.
         """
         try:
-            import requests
+            import requests  # type: ignore[import-untyped]
 
             base_url = os.getenv("LITELLM_BASE_URL", "http://localhost:4000")
             api_key = os.getenv("LITELLM_MASTER_KEY")

@@ -197,4 +197,4 @@ class SQLRollupRepository(SQLAlchemyRepository[MetricRollupORM]):
             MetricRollupORM.dimension_id == dimension_id,
         )
         result = self._session.execute(stmt)
-        return result.rowcount
+        return result.rowcount  # type: ignore[attr-defined, no-any-return]

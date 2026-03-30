@@ -126,7 +126,7 @@ class HealthService:
             HealthCheckResult with LiteLLM proxy status.
         """
         try:
-            import requests
+            import requests  # type: ignore[import-untyped]
 
             health_url = f"{self._litellm_base_url}/health/liveliness"
 

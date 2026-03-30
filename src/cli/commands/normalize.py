@@ -127,7 +127,7 @@ def run_normalization(
             return 0, report
 
         # Normal mode: write to database
-        db_session: SQLAlchemySession = get_db_session()
+        db_session: SQLAlchemySession = get_db_session()  # type: ignore[assignment]
         try:
             repository = SQLRequestRepository(db_session)
             normalizer_job = RequestNormalizerJob(
@@ -226,7 +226,7 @@ def show_reconciliation_report(
         raise typer.Exit(1) from err
 
     # Get request count for the session
-    db_session: SQLAlchemySession = get_db_session()
+    db_session: SQLAlchemySession = get_db_session()  # type: ignore[assignment]
     try:
         # Query the actual count of normalized requests for this session
         stmt = select(func.count()).where(RequestORM.session_id == UUID(session_id))
