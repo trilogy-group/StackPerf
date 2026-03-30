@@ -305,8 +305,18 @@ Use this only when completion is blocked by missing required tools or missing au
 ## Step 3: Human Review and merge handling
 
 1. When the issue is in `Human Review`, do not code or change ticket content.
-2. Poll for updates as needed, including GitHub PR review comments from humans and bots.
-3. If review feedback requires changes, move the issue to `Rework` and follow the rework flow.
+2. On every `Human Review` poll cycle, fetch feedback in this order before doing anything else:
+   - latest Linear issue comments
+   - top-level PR comments (`gh pr view --comments`)
+   - inline PR review comments (`gh api repos/<owner>/<repo>/pulls/<pr>/comments`)
+   - PR review summaries/states (`gh pr view --json reviews,reviewDecision`)
+   - PR check state (`gh pr view --json statusCheckRollup`)
+3. Treat all human feedback channels as authoritative, not just inline review comments:
+   - a new Linear issue comment from the operator is actionable feedback
+   - a new top-level PR comment is actionable feedback
+   - a failing required PR check is actionable feedback even if no human comment was left
+4. If any actionable feedback or failing required check is present, move the issue to `Rework` and follow the rework flow.
+   - Do not wait for an inline review comment when a Linear comment, top-level PR comment, or failing check already requires action.
 4. If approved, human moves the issue to `Merging`.
 5. When the issue is in `Merging`, first inspect the attached PR state.
    - If the PR is already `MERGED`, update the workpad/dashboard and move the issue directly to `Done`.
@@ -329,14 +339,18 @@ For most code review feedback (addressing comments, small fixes, requested tweak
 1. **Keep the existing PR and branch open** - do not close them.
 2. Continue using the existing `## Agent Harness Workpad` comment - do not remove it.
 3. Address each piece of feedback directly in the current branch:
-   - Make the requested code changes
-   - Respond to inline comments (resolve or reply with justification)
-   - Push new commits to the same branch
+    - Make the requested code changes
+    - Read and address the latest Linear issue comments before GitHub review threads so operator guidance is not missed
+    - Read and address top-level PR comments in addition to inline review comments
+    - Respond to inline comments (resolve or reply with justification)
+    - Push new commits to the same branch
 4. Update the workpad with:
    - List of feedback items addressed
    - Any items pushed back with justification
    - Validation steps re-run
 5. Re-run validation/tests to ensure changes are correct.
+   - Always inspect current PR checks (`gh pr view --json statusCheckRollup`) before declaring feedback addressed.
+   - If any required check is failing, treat that as unfinished rework even if the latest review text is positive.
 6. Add the `review-this` label to the PR to re-trigger automated AI PR review.
 7. Move the issue back to `Human Review` once all feedback is addressed.
 
