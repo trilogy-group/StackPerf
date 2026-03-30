@@ -93,19 +93,17 @@ def collect_litellm(
             "[yellow]Warning: No LiteLLM API key provided. Set LITELLM_API_KEY env var.[/yellow]"
         )
 
-    def _run() -> tuple[int, CollectionDiagnostics]:
+    async def _run_async() -> tuple[int, CollectionDiagnostics]:
         db_session: SQLAlchemySession = get_db_session()
         try:
             repository = SQLRequestRepository(db_session)
 
-            # Fetch raw requests synchronously
-            raw_requests = asyncio.run(
-                _fetch_litellm_requests(
-                    litellm_url=litellm_url,
-                    litellm_key=litellm_key,
-                    start_time=start_time,
-                    end_time=end_time,
-                )
+            # Fetch raw requests
+            raw_requests = await _fetch_litellm_requests(
+                litellm_url=litellm_url,
+                litellm_key=litellm_key,
+                start_time=start_time,
+                end_time=end_time,
             )
 
             if not raw_requests:
@@ -123,7 +121,7 @@ def collect_litellm(
                 repository=repository,
                 session_id=session_uuid,
             )
-            written, report = asyncio.run(job.run(raw_requests))
+            written, report = await job.run(raw_requests)
 
             # Convert report to diagnostics
             diagnostics = CollectionDiagnostics()
@@ -136,14 +134,19 @@ def collect_litellm(
             db_session.commit()
             return len(written), diagnostics
 
-        except Exception:
+        except (ValueError, IOError, httpx.HTTPError) as err:
             db_session.rollback()
-            raise
+            console.print(f"[red]Error during collection: {err}[/red]")
+            raise typer.Exit(1) from err
+        except Exception as err:
+            db_session.rollback()
+            console.print(f"[red]Unexpected error during collection: {err}[/red]")
+            raise typer.Exit(1) from err
         finally:
             db_session.close()
 
     try:
-        count, diagnostics = _run()
+        count, diagnostics = asyncio.run(_run_async())
 
         # Display results
         console.print("\n[bold green]Collection Complete[/bold green]")
@@ -238,7 +241,7 @@ def collect_prometheus(
     if not end_time:
         end_time = datetime.now(timezone.utc).isoformat()
 
-    def _run() -> int:
+    async def _run_async() -> int:
         db_session: SQLAlchemySession = get_db_session()
         try:
             repository = SQLRollupRepository(db_session)
@@ -247,7 +250,7 @@ def collect_prometheus(
                 session_id=session_uuid,
             )
 
-            rollups = asyncio.run(collector.collect_session_metrics(start_time, end_time))
+            rollups = await collector.collect_session_metrics(start_time, end_time)
 
             if not rollups:
                 return 0
@@ -259,14 +262,19 @@ def collect_prometheus(
             db_session.commit()
             return len(written)
 
-        except Exception:
+        except (ValueError, IOError, httpx.HTTPError) as err:
             db_session.rollback()
-            raise
+            console.print(f"[red]Error during Prometheus collection: {err}[/red]")
+            raise typer.Exit(1) from err
+        except Exception as err:
+            db_session.rollback()
+            console.print(f"[red]Unexpected error during Prometheus collection: {err}[/red]")
+            raise typer.Exit(1) from err
         finally:
             db_session.close()
 
     try:
-        count = _run()
+        count = asyncio.run(_run_async())
 
         console.print("\n[bold green]Prometheus Collection Complete[/bold green]")
         console.print(f"Time range: {start_time} to {end_time}")
@@ -329,7 +337,7 @@ def compute_rollups(
         console.print("[red]Error: Invalid session ID[/red]")
         raise typer.Exit(1) from err
 
-    def _run() -> tuple[int, int]:
+    async def _run_async() -> tuple[int, int]:
         db_session: SQLAlchemySession = get_db_session()
         try:
             # Fetch all requests for the session
@@ -366,16 +374,14 @@ def compute_rollups(
             request_rollup_count = 0
             if compute_request:
                 for request in requests:
-                    request_rollups = asyncio.run(rollup_job.compute_request_metrics(request))
+                    request_rollups = await rollup_job.compute_request_metrics(request)
                     rollups.extend(request_rollups)
                     request_rollup_count += len(request_rollups)
 
             # Compute session-level metrics
             session_rollup_count = 0
             if compute_session:
-                session_rollups = asyncio.run(
-                    rollup_job.compute_session_metrics(session_uuid, requests)
-                )
+                session_rollups = await rollup_job.compute_session_metrics(session_uuid, requests)
                 rollups.extend(session_rollups)
                 session_rollup_count = len(session_rollups)
 
@@ -389,14 +395,19 @@ def compute_rollups(
 
             return request_rollup_count, session_rollup_count
 
-        except Exception:
+        except (ValueError, IOError) as err:
             db_session.rollback()
-            raise
+            console.print(f"[red]Error during rollup computation: {err}[/red]")
+            raise typer.Exit(1) from err
+        except Exception as err:
+            db_session.rollback()
+            console.print(f"[red]Unexpected error during rollup computation: {err}[/red]")
+            raise typer.Exit(1) from err
         finally:
             db_session.close()
 
     try:
-        request_count, session_count = _run()
+        request_count, session_count = asyncio.run(_run_async())
 
         console.print("\n[bold green]Rollup Computation Complete[/bold green]")
         console.print(f"Session ID: {session_id}")
@@ -438,7 +449,7 @@ def compute_variant_rollups(
     from sqlalchemy import select
     from benchmark_core.db.models import Session as SessionORM
 
-    def _run() -> int:
+    async def _run_async() -> int:
         db_session: SQLAlchemySession = get_db_session()
         try:
             # Fetch all sessions for the variant
@@ -468,7 +479,7 @@ def compute_variant_rollups(
             ]
 
             rollup_job = RollupJob()
-            rollups = asyncio.run(rollup_job.compute_variant_metrics(variant_id, sessions))
+            rollups = await rollup_job.compute_variant_metrics(variant_id, sessions)
 
             if dry_run or not rollups:
                 return len(rollups)
@@ -480,14 +491,19 @@ def compute_variant_rollups(
 
             return len(rollups)
 
-        except Exception:
+        except (ValueError, IOError) as err:
             db_session.rollback()
-            raise
+            console.print(f"[red]Error during variant rollup computation: {err}[/red]")
+            raise typer.Exit(1) from err
+        except Exception as err:
+            db_session.rollback()
+            console.print(f"[red]Unexpected error during variant rollup computation: {err}[/red]")
+            raise typer.Exit(1) from err
         finally:
             db_session.close()
 
     try:
-        count = _run()
+        count = asyncio.run(_run_async())
 
         console.print("\n[bold green]Variant Rollup Computation Complete[/bold green]")
         console.print(f"Variant ID: {variant_id}")
@@ -528,7 +544,7 @@ def compute_experiment_rollups(
     from sqlalchemy import select
     from benchmark_core.db.models import Session as SessionORM, Variant as VariantORM
 
-    def _run() -> int:
+    async def _run_async() -> int:
         db_session: SQLAlchemySession = get_db_session()
         try:
             # Fetch all variants for the experiment
@@ -558,9 +574,7 @@ def compute_experiment_rollups(
                     )
 
             rollup_job = RollupJob()
-            rollups = asyncio.run(
-                rollup_job.compute_experiment_metrics(experiment_id, variants_data)
-            )
+            rollups = await rollup_job.compute_experiment_metrics(experiment_id, variants_data)
 
             if dry_run or not rollups:
                 return len(rollups)
@@ -572,14 +586,21 @@ def compute_experiment_rollups(
 
             return len(rollups)
 
-        except Exception:
+        except (ValueError, IOError) as err:
             db_session.rollback()
-            raise
+            console.print(f"[red]Error during experiment rollup computation: {err}[/red]")
+            raise typer.Exit(1) from err
+        except Exception as err:
+            db_session.rollback()
+            console.print(
+                f"[red]Unexpected error during experiment rollup computation: {err}[/red]"
+            )
+            raise typer.Exit(1) from err
         finally:
             db_session.close()
 
     try:
-        count = _run()
+        count = asyncio.run(_run_async())
 
         console.print("\n[bold green]Experiment Rollup Computation Complete[/bold green]")
         console.print(f"Experiment ID: {experiment_id}")

@@ -81,7 +81,9 @@ class SQLRollupRepository(SQLAlchemyRepository[MetricRollupORM]):
     def create_many(self, rollups: list[MetricRollup]) -> list[MetricRollup]:
         """Bulk create metric rollups.
 
-        Idempotent: handles duplicates gracefully by updating existing records.
+        Note: This operation is NOT idempotent - it will fail if rollups with
+        the same IDs already exist. For true idempotency, use upsert operations
+        or handle conflicts explicitly.
 
         Args:
             rollups: List of MetricRollup domain models to persist.
