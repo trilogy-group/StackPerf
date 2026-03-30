@@ -116,7 +116,9 @@ class SessionService:
                 await self._credential_repo.create(credential)
 
                 # Update session with credential reference
-                session = session.model_copy(update={"proxy_credential_alias": credential.key_alias})
+                session = session.model_copy(
+                    update={"proxy_credential_alias": credential.key_alias}
+                )
                 session = await self._session_repo.update(session)
             except Exception:
                 # Re-raise the exception to propagate the error
@@ -196,8 +198,7 @@ class CredentialService:
             ("https://", "http://localhost", "http://127.0.0.1")
         ):
             raise ValueError(
-                "LiteLLM URL must use HTTPS in production environments. "
-                f"Got: {litellm_base_url}"
+                f"LiteLLM URL must use HTTPS in production environments. Got: {litellm_base_url}"
             )
 
     def _generate_key_alias(
@@ -314,9 +315,7 @@ class CredentialService:
         litellm_key_id = data.get("key_id")
 
         if not api_key:
-            raise RuntimeError(
-                f"LiteLLM API response missing 'key' field: {data}"
-            )
+            raise RuntimeError(f"LiteLLM API response missing 'key' field: {data}")
 
         # Create credential domain model
         credential = ProxyCredential(

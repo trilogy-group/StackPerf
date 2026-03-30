@@ -145,9 +145,7 @@ class SQLRequestRepository(SQLAlchemyRepository[RequestORM]):
             error_msg = str(e).lower()
 
             if "requests_request_id_key" in str(e) or "unique constraint" in error_msg:
-                raise DuplicateIdentifierError(
-                    "One or more requests already exist in batch"
-                ) from e
+                raise DuplicateIdentifierError("One or more requests already exist in batch") from e
 
             if "foreign key constraint failed" in error_msg:
                 raise ReferentialIntegrityError(

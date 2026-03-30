@@ -349,6 +349,7 @@ class EnvRenderingService:
         Raises:
             RenderingError: If a template variable is not found in context.
         """
+
         def replace_match(match: re.Match) -> str:
             var_name = match.group(1)
             if var_name not in context:

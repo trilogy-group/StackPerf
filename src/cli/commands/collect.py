@@ -89,7 +89,9 @@ def collect_litellm(
         raise typer.Exit(1) from err
 
     if not litellm_key:
-        console.print("[yellow]Warning: No LiteLLM API key provided. Set LITELLM_API_KEY env var.[/yellow]")
+        console.print(
+            "[yellow]Warning: No LiteLLM API key provided. Set LITELLM_API_KEY env var.[/yellow]"
+        )
 
     def _run() -> tuple[int, CollectionDiagnostics]:
         db_session: SQLAlchemySession = get_db_session()
@@ -97,12 +99,14 @@ def collect_litellm(
             repository = SQLRequestRepository(db_session)
 
             # Fetch raw requests synchronously
-            raw_requests = asyncio.run(_fetch_litellm_requests(
-                litellm_url=litellm_url,
-                litellm_key=litellm_key,
-                start_time=start_time,
-                end_time=end_time,
-            ))
+            raw_requests = asyncio.run(
+                _fetch_litellm_requests(
+                    litellm_url=litellm_url,
+                    litellm_key=litellm_key,
+                    start_time=start_time,
+                    end_time=end_time,
+                )
+            )
 
             if not raw_requests:
                 return 0, CollectionDiagnostics()
@@ -110,7 +114,9 @@ def collect_litellm(
             if dry_run:
                 diagnostics = CollectionDiagnostics()
                 diagnostics.total_raw_records = len(raw_requests)
-                diagnostics.normalized_count = sum(1 for r in raw_requests if r.get("request_id") and r.get("startTime"))
+                diagnostics.normalized_count = sum(
+                    1 for r in raw_requests if r.get("request_id") and r.get("startTime")
+                )
                 return 0, diagnostics
 
             job = RequestNormalizerJob(
@@ -333,6 +339,7 @@ def compute_rollups(
 
             # Convert to domain models
             from benchmark_core.models import Request
+
             requests = [
                 Request(
                     request_id=r.request_id,
@@ -366,7 +373,9 @@ def compute_rollups(
             # Compute session-level metrics
             session_rollup_count = 0
             if compute_session:
-                session_rollups = asyncio.run(rollup_job.compute_session_metrics(session_uuid, requests))
+                session_rollups = asyncio.run(
+                    rollup_job.compute_session_metrics(session_uuid, requests)
+                )
                 rollups.extend(session_rollups)
                 session_rollup_count = len(session_rollups)
 
@@ -401,6 +410,188 @@ def compute_rollups(
 
     except Exception as err:
         console.print(f"[red]Error during rollup computation: {err}[/red]")
+        raise typer.Exit(1) from err
+
+
+@app.command(name="variant-rollup")
+def compute_variant_rollups(
+    variant_id: Annotated[
+        str,
+        typer.Argument(help="Variant ID to compute rollups for"),
+    ],
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run",
+            "-d",
+            help="Show what would be computed without writing to database",
+        ),
+    ] = False,
+) -> None:
+    """Compute aggregate metrics for a variant across all sessions.
+
+    Aggregates session-level metrics across all sessions for a variant,
+    enabling cross-session comparison of performance characteristics.
+    """
+    import asyncio
+
+    from sqlalchemy import select
+    from benchmark_core.db.models import Session as SessionORM
+
+    def _run() -> int:
+        db_session: SQLAlchemySession = get_db_session()
+        try:
+            # Fetch all sessions for the variant
+            stmt = select(SessionORM).where(SessionORM.variant_id == variant_id)
+            result = db_session.execute(stmt)
+            sessions_orm = result.scalars().all()
+
+            # Convert to domain models
+            from benchmark_core.models import Session
+
+            sessions = [
+                Session(
+                    session_id=s.session_id,
+                    experiment_id=s.experiment_id,
+                    variant_id=s.variant_id,
+                    task_card_id=s.task_card_id,
+                    status=s.status,
+                    started_at=s.started_at,
+                    ended_at=s.ended_at,
+                    operator_label=s.operator_label or "",
+                    repo_root=s.repo_root or "",
+                    git_branch=s.git_branch or "",
+                    git_commit_sha=s.git_commit_sha or "",
+                    git_dirty=s.git_dirty or False,
+                )
+                for s in sessions_orm
+            ]
+
+            rollup_job = RollupJob()
+            rollups = asyncio.run(rollup_job.compute_variant_metrics(variant_id, sessions))
+
+            if dry_run or not rollups:
+                return len(rollups)
+
+            # Write rollups to database
+            repository = SQLRollupRepository(db_session)
+            repository.create_many(rollups)
+            db_session.commit()
+
+            return len(rollups)
+
+        except Exception:
+            db_session.rollback()
+            raise
+        finally:
+            db_session.close()
+
+    try:
+        count = _run()
+
+        console.print("\n[bold green]Variant Rollup Computation Complete[/bold green]")
+        console.print(f"Variant ID: {variant_id}")
+        console.print(f"Rollups computed: {count}")
+
+        if dry_run:
+            console.print("\n[yellow]Dry run mode - no records written[/yellow]")
+        else:
+            console.print(f"Total rollups written: {count}")
+
+    except Exception as err:
+        console.print(f"[red]Error during variant rollup computation: {err}[/red]")
+        raise typer.Exit(1) from err
+
+
+@app.command(name="experiment-rollup")
+def compute_experiment_rollups(
+    experiment_id: Annotated[
+        str,
+        typer.Argument(help="Experiment ID to compute rollups for"),
+    ],
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run",
+            "-d",
+            help="Show what would be computed without writing to database",
+        ),
+    ] = False,
+) -> None:
+    """Compute comparison metrics for an experiment.
+
+    Derives comparison metrics across all variants in an experiment,
+    enabling analysis of relative performance between configurations.
+    """
+    import asyncio
+
+    from sqlalchemy import select
+    from benchmark_core.db.models import Session as SessionORM, Variant as VariantORM
+
+    def _run() -> int:
+        db_session: SQLAlchemySession = get_db_session()
+        try:
+            # Fetch all variants for the experiment
+            # First get all sessions for the experiment
+            stmt = select(SessionORM).where(SessionORM.experiment_id == experiment_id)
+            result = db_session.execute(stmt)
+            sessions = result.scalars().all()
+
+            # Get unique variant IDs
+            variant_ids = list(set(s.variant_id for s in sessions if s.variant_id))
+
+            # Build variant data
+            variants_data = []
+            for vid in variant_ids:
+                # Get variant details
+                vstmt = select(VariantORM).where(VariantORM.variant_id == vid)
+                vresult = db_session.execute(vstmt)
+                variant = vresult.scalar_one_or_none()
+
+                if variant:
+                    variants_data.append(
+                        {
+                            "variant_id": vid,
+                            "name": variant.name,
+                            "session_count": sum(1 for s in sessions if s.variant_id == vid),
+                        }
+                    )
+
+            rollup_job = RollupJob()
+            rollups = asyncio.run(
+                rollup_job.compute_experiment_metrics(experiment_id, variants_data)
+            )
+
+            if dry_run or not rollups:
+                return len(rollups)
+
+            # Write rollups to database
+            repository = SQLRollupRepository(db_session)
+            repository.create_many(rollups)
+            db_session.commit()
+
+            return len(rollups)
+
+        except Exception:
+            db_session.rollback()
+            raise
+        finally:
+            db_session.close()
+
+    try:
+        count = _run()
+
+        console.print("\n[bold green]Experiment Rollup Computation Complete[/bold green]")
+        console.print(f"Experiment ID: {experiment_id}")
+        console.print(f"Rollups computed: {count}")
+
+        if dry_run:
+            console.print("\n[yellow]Dry run mode - no records written[/yellow]")
+        else:
+            console.print(f"Total rollups written: {count}")
+
+    except Exception as err:
+        console.print(f"[red]Error during experiment rollup computation: {err}[/red]")
         raise typer.Exit(1) from err
 
 

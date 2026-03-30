@@ -80,6 +80,7 @@ class TestHealthService:
     def test_check_litellm_proxy_connection_error(self, health_service):
         """Test LiteLLM proxy check with connection error."""
         import requests
+
         with patch("requests.get", side_effect=requests.exceptions.ConnectionError()):
             result = health_service.check_litellm_proxy()
 
@@ -90,6 +91,7 @@ class TestHealthService:
     def test_check_litellm_proxy_timeout(self, health_service):
         """Test LiteLLM proxy check with timeout."""
         import requests
+
         with patch("requests.get", side_effect=requests.exceptions.Timeout()):
             result = health_service.check_litellm_proxy()
 
@@ -121,6 +123,7 @@ class TestHealthService:
     def test_check_prometheus_connection_error(self, health_service):
         """Test Prometheus check with connection error."""
         import requests
+
         with patch("requests.get", side_effect=requests.exceptions.ConnectionError()):
             result = health_service.check_prometheus()
 

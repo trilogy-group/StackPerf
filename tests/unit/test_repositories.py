@@ -547,6 +547,7 @@ class TestProxyCredentialRepository:
     def credential_repo(self, db_session):
         """Create a credential repository."""
         from benchmark_core.db.repositories import ProxyCredentialRepository
+
         return ProxyCredentialRepository(db_session)
 
     @pytest.fixture
@@ -596,7 +597,9 @@ class TestProxyCredentialRepository:
 
         return session, experiment, variant
 
-    async def test_create_credential(self, credential_repo, db_session, setup_session_with_credential):
+    async def test_create_credential(
+        self, credential_repo, db_session, setup_session_with_credential
+    ):
         """Test creating a credential metadata record."""
         from datetime import UTC, datetime, timedelta
 
@@ -690,7 +693,9 @@ class TestProxyCredentialRepository:
         assert found.key_alias == "unique-test-alias-12345"
         assert found.litellm_key_id == "litellm-789"
 
-    async def test_revoke_credential(self, credential_repo, db_session, setup_session_with_credential):
+    async def test_revoke_credential(
+        self, credential_repo, db_session, setup_session_with_credential
+    ):
         """Test revoking a credential."""
         from datetime import UTC, datetime, timedelta
 
@@ -777,7 +782,9 @@ class TestSQLArtifactRepository:
         return experiment, session
 
     @pytest.mark.asyncio
-    async def test_create_artifact_with_session(self, db_session, artifact_repo, setup_experiment_and_session):
+    async def test_create_artifact_with_session(
+        self, db_session, artifact_repo, setup_experiment_and_session
+    ):
         """Test creating an artifact linked to a session."""
         experiment, session = setup_experiment_and_session
 
@@ -799,7 +806,9 @@ class TestSQLArtifactRepository:
         assert created.experiment_id is None
 
     @pytest.mark.asyncio
-    async def test_create_artifact_with_experiment(self, db_session, artifact_repo, setup_experiment_and_session):
+    async def test_create_artifact_with_experiment(
+        self, db_session, artifact_repo, setup_experiment_and_session
+    ):
         """Test creating an artifact linked to an experiment."""
         experiment, _ = setup_experiment_and_session
 
@@ -819,7 +828,9 @@ class TestSQLArtifactRepository:
         assert created.session_id is None
 
     @pytest.mark.asyncio
-    async def test_get_artifact_by_id(self, db_session, artifact_repo, setup_experiment_and_session):
+    async def test_get_artifact_by_id(
+        self, db_session, artifact_repo, setup_experiment_and_session
+    ):
         """Test retrieving an artifact by ID."""
         experiment, session = setup_experiment_and_session
 
@@ -874,7 +885,9 @@ class TestSQLArtifactRepository:
             assert result.session_id == session.id
 
     @pytest.mark.asyncio
-    async def test_list_by_experiment(self, db_session, artifact_repo, setup_experiment_and_session):
+    async def test_list_by_experiment(
+        self, db_session, artifact_repo, setup_experiment_and_session
+    ):
         """Test listing artifacts by experiment."""
         experiment, session = setup_experiment_and_session
 

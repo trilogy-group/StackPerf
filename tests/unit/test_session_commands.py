@@ -431,7 +431,9 @@ class TestSessionFinalizeCommand:
         db_session.add(session)
         db_session.commit()
 
-        result = runner.invoke(app, ["session", "finalize", str(session.id), "--outcome", "invalid"])
+        result = runner.invoke(
+            app, ["session", "finalize", str(session.id), "--outcome", "invalid"]
+        )
 
         assert result.exit_code == 0, f"Exit code: {result.exit_code}, Output: {result.output}"
 
@@ -538,7 +540,6 @@ class TestSessionEnvCommand:
 
         assert result.exit_code != 0
         assert "Session not found" in result.output or "Exit" in result.output
-
 
 
 class TestSessionAddNotesCommand:

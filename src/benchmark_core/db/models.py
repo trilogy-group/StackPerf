@@ -347,8 +347,7 @@ class Artifact(Base):
     __table_args__ = (
         # Ensure at least one of session_id or experiment_id is provided
         CheckConstraint(
-            'session_id IS NOT NULL OR experiment_id IS NOT NULL',
-            name='ck_artifact_scope'
+            "session_id IS NOT NULL OR experiment_id IS NOT NULL", name="ck_artifact_scope"
         ),
     )
 

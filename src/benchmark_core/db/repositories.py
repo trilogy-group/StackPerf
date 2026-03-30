@@ -413,11 +413,7 @@ class ProxyCredentialRepository(AbstractProxyCredentialRepository):
         Returns:
             Updated credential
         """
-        orm = (
-            self._session.query(ProxyCredentialORM)
-            .filter_by(id=credential.credential_id)
-            .first()
-        )
+        orm = self._session.query(ProxyCredentialORM).filter_by(id=credential.credential_id).first()
         if orm is None:
             raise ValueError(f"Credential {credential.credential_id} not found")
 
@@ -438,11 +434,7 @@ class ProxyCredentialRepository(AbstractProxyCredentialRepository):
         Returns:
             Updated credential metadata or None if not found
         """
-        orm = (
-            self._session.query(ProxyCredentialORM)
-            .filter_by(session_id=session_id)
-            .first()
-        )
+        orm = self._session.query(ProxyCredentialORM).filter_by(session_id=session_id).first()
         if orm is None:
             return None
 

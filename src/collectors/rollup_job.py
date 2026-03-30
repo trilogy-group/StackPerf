@@ -299,9 +299,11 @@ class RollupJob:
         if ttfts:
             sorted_ttft = sorted(ttfts)
             n_ttft = len(sorted_ttft)
-            median_ttft = sorted_ttft[n_ttft // 2] if n_ttft % 2 == 1 else (
-                sorted_ttft[n_ttft // 2 - 1] + sorted_ttft[n_ttft // 2]
-            ) / 2
+            median_ttft = (
+                sorted_ttft[n_ttft // 2]
+                if n_ttft % 2 == 1
+                else (sorted_ttft[n_ttft // 2 - 1] + sorted_ttft[n_ttft // 2]) / 2
+            )
 
             rollups.append(
                 MetricRollup(

@@ -4,6 +4,8 @@ protocol_surface: openai_responses
 upstream_base_url_env: OPENAI_BASE_URL
 api_key_env: OPENAI_API_KEY
 models:
+  - alias: gpt-4o
+    upstream_model: gpt-4o
   - alias: gpt-5.4
     upstream_model: gpt-5.4
   - alias: gpt-5.4-mini
