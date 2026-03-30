@@ -132,7 +132,7 @@ jobs:
         run: uv pip install --system -e ".[dev]"
 
       - name: Run config validation tests
-        run: pytest tests/validation/test_config_validation.py -v
+        run: make validate-config
 
   migration-check:
     name: Migration Check
@@ -156,7 +156,7 @@ jobs:
         run: uv pip install --system -e ".[dev]"
 
       - name: Run migration tests
-        run: pytest tests/validation/test_migrations.py -v
+        run: make validate-migrations
 
   collector-check:
     name: Collector Check
@@ -180,7 +180,7 @@ jobs:
         run: uv pip install --system -e ".[dev]"
 
       - name: Run collector tests
-        run: pytest tests/validation/test_collectors.py -v
+        run: make validate-collectors
 
   quality:
     name: Quality Gate
