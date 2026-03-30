@@ -505,7 +505,7 @@ class CollectionJobService:
 
         try:
             # Fetch and normalize requests from LiteLLM
-            requests, new_watermark = await self._collector.collect(  # type: ignore[attr-defined]
+            requests, diagnostics, new_watermark = await self._collector.collect_requests(
                 session_id=session_id,
                 start_time=start_time,
                 end_time=end_time,
@@ -521,13 +521,10 @@ class CollectionJobService:
                     watermark=new_watermark,
                 )
 
-            # Persist normalized requests
-            created = await self._repository.create_many(requests)
-
             return CollectionJobResult(
                 success=True,
                 requests_collected=len(requests),
-                requests_normalized=len(created),
+                requests_normalized=len(requests),
                 diagnostics=diagnostics,
                 watermark=new_watermark,
             )
@@ -539,7 +536,7 @@ class CollectionJobService:
                 requests_collected=0,
                 requests_normalized=0,
                 diagnostics=diagnostics,
-                watermark=IngestWatermark(last_request_id=""),
+                watermark=IngestWatermark(),
                 error_message=str(e),
             )
 

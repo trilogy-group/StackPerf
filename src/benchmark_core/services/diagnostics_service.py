@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import httpx
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -451,14 +452,12 @@ class DiagnosticsService:
             DiagnosticResult with LiteLLM status.
         """
         try:
-            import requests  # type: ignore[import-untyped]
-
             base_url = os.getenv("LITELLM_BASE_URL", "http://localhost:4000")
             api_key = os.getenv("LITELLM_MASTER_KEY")
 
             # Check health endpoint
             health_url = f"{base_url}/health/liveliness"
-            response = requests.get(health_url, timeout=5)
+            response = httpx.get(health_url, timeout=5)
 
             if response.status_code != 200:
                 return DiagnosticResult(
@@ -476,7 +475,7 @@ class DiagnosticsService:
                 try:
                     models_url = f"{base_url}/v1/models"
                     headers = {"Authorization": f"Bearer {api_key}"}
-                    models_response = requests.get(models_url, headers=headers, timeout=5)
+                    models_response = httpx.get(models_url, headers=headers, timeout=5)
                     if models_response.status_code == 200:
                         models_data = models_response.json()
                         models = [m.get("id", m.get("model")) for m in models_data.get("data", [])]
@@ -491,16 +490,7 @@ class DiagnosticsService:
                 message=f"LiteLLM proxy healthy, {len(models)} model(s) configured",
             )
 
-        except ImportError:
-            return DiagnosticResult(
-                category="services",
-                name="litellm_proxy",
-                status="error",
-                value=None,
-                message="requests library not available",
-                suggestion="Install requests: pip install requests",
-            )
-        except requests.exceptions.ConnectionError:
+        except httpx.ConnectError:
             return DiagnosticResult(
                 category="services",
                 name="litellm_proxy",
@@ -526,13 +516,11 @@ class DiagnosticsService:
             DiagnosticResult with Prometheus status.
         """
         try:
-            import requests
-
             base_url = os.getenv("PROMETHEUS_URL", "http://localhost:9090")
 
             # Check health endpoint
             health_url = f"{base_url}/-/healthy"
-            response = requests.get(health_url, timeout=5)
+            response = httpx.get(health_url, timeout=5)
 
             if response.status_code != 200:
                 return DiagnosticResult(
@@ -548,7 +536,7 @@ class DiagnosticsService:
             targets = []
             try:
                 targets_url = f"{base_url}/api/v1/targets"
-                targets_response = requests.get(targets_url, timeout=5)
+                targets_response = httpx.get(targets_url, timeout=5)
                 if targets_response.status_code == 200:
                     targets_data = targets_response.json()
                     targets = [
@@ -566,16 +554,7 @@ class DiagnosticsService:
                 message=f"Prometheus healthy, {len(targets)} target(s) configured",
             )
 
-        except ImportError:
-            return DiagnosticResult(
-                category="services",
-                name="prometheus",
-                status="error",
-                value=None,
-                message="requests library not available",
-                suggestion="Install requests: pip install requests",
-            )
-        except requests.exceptions.ConnectionError:
+        except httpx.ConnectError:
             return DiagnosticResult(
                 category="services",
                 name="prometheus",

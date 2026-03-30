@@ -8,7 +8,6 @@ import httpx
 import typer
 from rich.console import Console
 from rich.table import Table
-from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.session import get_db_session
 from benchmark_core.repositories.request_repository import SQLRequestRepository
@@ -95,8 +94,7 @@ def collect_litellm(
         )
 
     async def _run_async() -> tuple[int, CollectionDiagnostics]:
-        db_session: SQLAlchemySession = get_db_session()  # type: ignore[assignment]
-        try:
+        with get_db_session() as db_session:
             repository = SQLRequestRepository(db_session)
 
             # Fetch raw requests
@@ -134,17 +132,6 @@ def collect_litellm(
 
             db_session.commit()
             return len(written), diagnostics
-
-        except (OSError, ValueError, httpx.HTTPError) as err:
-            db_session.rollback()
-            console.print(f"[red]Error during collection: {err}[/red]")
-            raise typer.Exit(1) from err
-        except Exception as err:
-            db_session.rollback()
-            console.print(f"[red]Unexpected error during collection: {err}[/red]")
-            raise typer.Exit(1) from err
-        finally:
-            db_session.close()
 
     count, diagnostics = asyncio.run(_run_async())
 
@@ -237,8 +224,7 @@ def collect_prometheus(
         end_time = datetime.now(UTC).isoformat()
 
     async def _run_async() -> int:
-        db_session: SQLAlchemySession = get_db_session()  # type: ignore[assignment]
-        try:
+        with get_db_session() as db_session:
             repository = SQLRollupRepository(db_session)
             collector = PrometheusCollector(
                 base_url=prometheus_url,
@@ -256,17 +242,6 @@ def collect_prometheus(
             written = repository.create_many(rollups)
             db_session.commit()
             return len(written)
-
-        except (OSError, ValueError, httpx.HTTPError) as err:
-            db_session.rollback()
-            console.print(f"[red]Error during Prometheus collection: {err}[/red]")
-            raise typer.Exit(1) from err
-        except Exception as err:
-            db_session.rollback()
-            console.print(f"[red]Unexpected error during Prometheus collection: {err}[/red]")
-            raise typer.Exit(1) from err
-        finally:
-            db_session.close()
 
     count = asyncio.run(_run_async())
 
@@ -329,8 +304,7 @@ def compute_rollups(
         raise typer.Exit(1) from err
 
     async def _run_async() -> tuple[int, int]:
-        db_session: SQLAlchemySession = get_db_session()  # type: ignore[assignment]
-        try:
+        with get_db_session() as db_session:
             # Fetch all requests for the session
             stmt = select(RequestORM).where(RequestORM.session_id == session_uuid)
             result = db_session.execute(stmt)
@@ -386,17 +360,6 @@ def compute_rollups(
 
             return request_rollup_count, session_rollup_count
 
-        except (OSError, ValueError) as err:
-            db_session.rollback()
-            console.print(f"[red]Error during rollup computation: {err}[/red]")
-            raise typer.Exit(1) from err
-        except Exception as err:
-            db_session.rollback()
-            console.print(f"[red]Unexpected error during rollup computation: {err}[/red]")
-            raise typer.Exit(1) from err
-        finally:
-            db_session.close()
-
     request_count, session_count = asyncio.run(_run_async())
 
     console.print("\n[bold green]Rollup Computation Complete[/bold green]")
@@ -437,8 +400,7 @@ def compute_variant_rollups(
     from benchmark_core.db.models import Session as SessionORM
 
     async def _run_async() -> int:
-        db_session: SQLAlchemySession = get_db_session()  # type: ignore[assignment]
-        try:
+        with get_db_session() as db_session:
             # Fetch all sessions for the variant
             stmt = select(SessionORM).where(SessionORM.variant_id == variant_id)
             result = db_session.execute(stmt)
@@ -448,18 +410,19 @@ def compute_variant_rollups(
             from benchmark_core.models import Session
 
             sessions = [
-                Session(  # type: ignore[call-arg]
-                    session_id=s.session_id,  # type: ignore[attr-defined]
-                    experiment_id=s.experiment_id,  # type: ignore[arg-type]
-                    variant_id=s.variant_id,  # type: ignore[arg-type]
-                    task_card_id=s.task_card_id,  # type: ignore[arg-type]
+                Session(
+                    session_id=s.id,
+                    experiment_id=str(s.experiment_id),
+                    variant_id=str(s.variant_id),
+                    task_card_id=str(s.task_card_id),
+                    harness_profile=s.harness_profile,
                     status=s.status,
                     started_at=s.started_at,
                     ended_at=s.ended_at,
                     operator_label=s.operator_label or "",
-                    repo_root=s.repo_root or "",  # type: ignore[attr-defined]
+                    repo_path=s.repo_path or "",
                     git_branch=s.git_branch or "",
-                    git_commit_sha=s.git_commit_sha or "",  # type: ignore[attr-defined]
+                    git_commit=s.git_commit or "",
                     git_dirty=s.git_dirty or False,
                 )
                 for s in sessions_orm
@@ -477,17 +440,6 @@ def compute_variant_rollups(
             db_session.commit()
 
             return len(rollups)
-
-        except (OSError, ValueError) as err:
-            db_session.rollback()
-            console.print(f"[red]Error during variant rollup computation: {err}[/red]")
-            raise typer.Exit(1) from err
-        except Exception as err:
-            db_session.rollback()
-            console.print(f"[red]Unexpected error during variant rollup computation: {err}[/red]")
-            raise typer.Exit(1) from err
-        finally:
-            db_session.close()
 
     count = asyncio.run(_run_async())
 
@@ -529,8 +481,7 @@ def compute_experiment_rollups(
     from benchmark_core.db.models import Variant as VariantORM
 
     async def _run_async() -> int:
-        db_session: SQLAlchemySession = get_db_session()  # type: ignore[assignment]
-        try:
+        with get_db_session() as db_session:
             # Fetch all variants for the experiment
             # First get all sessions for the experiment
             stmt = select(SessionORM).where(SessionORM.experiment_id == experiment_id)
@@ -538,20 +489,20 @@ def compute_experiment_rollups(
             sessions = result.scalars().all()
 
             # Get unique variant IDs
-            variant_ids = list({s.variant_id for s in sessions if s.variant_id})
+            variant_ids = list({s.variant_id for s in sessions})
 
             # Build variant data
             variants_data = []
             for vid in variant_ids:
                 # Get variant details
-                vstmt = select(VariantORM).where(VariantORM.variant_id == vid)  # type: ignore[attr-defined]
+                vstmt = select(VariantORM).where(VariantORM.id == vid)
                 vresult = db_session.execute(vstmt)
                 variant = vresult.scalar_one_or_none()
 
                 if variant:
                     variants_data.append(
                         {
-                            "variant_id": vid,
+                            "variant_id": str(vid),
                             "name": variant.name,
                             "session_count": sum(1 for s in sessions if s.variant_id == vid),
                         }
@@ -570,19 +521,6 @@ def compute_experiment_rollups(
 
             return len(rollups)
 
-        except (OSError, ValueError) as err:
-            db_session.rollback()
-            console.print(f"[red]Error during experiment rollup computation: {err}[/red]")
-            raise typer.Exit(1) from err
-        except Exception as err:
-            db_session.rollback()
-            console.print(
-                f"[red]Unexpected error during experiment rollup computation: {err}[/red]"
-            )
-            raise typer.Exit(1) from err
-        finally:
-            db_session.close()
-
     count = asyncio.run(_run_async())
 
     console.print("\n[bold green]Experiment Rollup Computation Complete[/bold green]")
@@ -600,7 +538,7 @@ async def _fetch_litellm_requests(
     litellm_key: str,
     start_time: str | None,
     end_time: str | None,
-) -> list[dict]:
+) -> list[dict[str, object]]:
     """Fetch raw requests from LiteLLM spend logs endpoint."""
     headers = {
         "Authorization": f"Bearer {litellm_key}",
@@ -623,8 +561,7 @@ async def _fetch_litellm_requests(
         data = response.json()
 
         if isinstance(data, list):
-            return data
-        elif isinstance(data, dict) and "logs" in data:
-            return data["logs"]  # type: ignore[no-any-return]
-        else:
-            return []
+            return [item for item in data if isinstance(item, dict)]
+        if isinstance(data, dict) and isinstance(data.get("logs"), list):
+            return [item for item in data["logs"] if isinstance(item, dict)]
+        return []

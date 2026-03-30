@@ -8,7 +8,6 @@ import typer
 from rich.console import Console
 from rich.table import Table
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import Request as RequestORM
 from benchmark_core.db.session import get_db_session
@@ -127,8 +126,7 @@ def run_normalization(
             return 0, report
 
         # Normal mode: write to database
-        db_session: SQLAlchemySession = get_db_session()  # type: ignore[assignment]
-        try:
+        with get_db_session() as db_session:
             repository = SQLRequestRepository(db_session)
             normalizer_job = RequestNormalizerJob(
                 repository=repository,
@@ -137,11 +135,6 @@ def run_normalization(
             written, report = await normalizer_job.run(raw_requests)
             db_session.commit()
             return len(written), report
-        except Exception:
-            db_session.rollback()
-            raise
-        finally:
-            db_session.close()
 
     try:
         count, report = asyncio.run(_run())
@@ -226,8 +219,7 @@ def show_reconciliation_report(
         raise typer.Exit(1) from err
 
     # Get request count for the session
-    db_session: SQLAlchemySession = get_db_session()  # type: ignore[assignment]
-    try:
+    with get_db_session() as db_session:
         # Query the actual count of normalized requests for this session
         stmt = select(func.count()).where(RequestORM.session_id == UUID(session_id))
         count = db_session.execute(stmt).scalar() or 0
@@ -266,16 +258,13 @@ def show_reconciliation_report(
         if error_count > 0:
             console.print(f"Requests with errors: {error_count}")
 
-    finally:
-        db_session.close()
-
 
 async def _fetch_litellm_requests(
     litellm_url: str,
     litellm_key: str,
     start_time: str | None,
     end_time: str | None,
-) -> list[dict]:
+) -> list[dict[str, object]]:
     """Fetch raw requests from LiteLLM spend logs endpoint."""
     headers = {
         "Authorization": f"Bearer {litellm_key}",
@@ -298,8 +287,7 @@ async def _fetch_litellm_requests(
         data = response.json()
 
         if isinstance(data, list):
-            return data
-        elif isinstance(data, dict) and "logs" in data:
-            return data["logs"]  # type: ignore[no-any-return]
-        else:
-            return []
+            return [item for item in data if isinstance(item, dict)]
+        if isinstance(data, dict) and isinstance(data.get("logs"), list):
+            return [item for item in data["logs"] if isinstance(item, dict)]
+        return []
