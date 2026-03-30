@@ -95,26 +95,16 @@ class TestCollectorFunctionSignatures:
 
     def test_litellm_collector_has_collect_function(self) -> None:
         """Test litellm_collector has collection function."""
-        from collectors import litellm_collector
+        from collectors.litellm_collector import LiteLLMCollector, CollectionDiagnostics
 
-        # Check for expected functions/classes
-        # This will vary based on actual implementation
-        assert hasattr(litellm_collector, "__all__") or any(
-            callable(getattr(litellm_collector, name))
-            for name in dir(litellm_collector)
-            if not name.startswith("_")
-        )
+        assert LiteLLMCollector is not None
+        assert CollectionDiagnostics is not None
 
     def test_prometheus_collector_has_collect_function(self) -> None:
         """Test prometheus_collector has collection function."""
-        from collectors import prometheus_collector
+        from collectors.prometheus_collector import PrometheusCollector
 
-        # Check for expected functions/classes
-        assert hasattr(prometheus_collector, "__all__") or any(
-            callable(getattr(prometheus_collector, name))
-            for name in dir(prometheus_collector)
-            if not name.startswith("_")
-        )
+        assert PrometheusCollector is not None
 
 
 class TestCollectorModuleDocstrings:
