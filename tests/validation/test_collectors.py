@@ -94,17 +94,38 @@ class TestCollectorImports:
             pytest.fail(f"Failed to import retention_cleanup: {e}")
 
 
-class TestCollectorFunctionSignatures:
-    """Test that collector functions have expected signatures."""
+class TestCollectorClassStructure:
+    """Test that collector classes have expected structure and methods."""
 
-    def test_litellm_collector_has_collect_function(self) -> None:
-        """Test litellm_collector has collection function."""
-        assert LiteLLMCollector is not None
-        assert CollectionDiagnostics is not None
+    def test_litellm_collector_has_required_attributes(self) -> None:
+        """Test LiteLLMCollector has expected constructor parameters."""
+        # Verify the class can be inspected for init parameters
+        import inspect
+        sig = inspect.signature(LiteLLMCollector.__init__)
+        params = list(sig.parameters.keys())
+        assert 'self' in params, "LiteLLMCollector missing self parameter"
+        assert 'repository' in params, "LiteLLMCollector missing repository parameter"
+        assert 'api_key' in params, "LiteLLMCollector missing api_key parameter"
 
-    def test_prometheus_collector_has_collect_function(self) -> None:
-        """Test prometheus_collector has collection function."""
-        assert PrometheusCollector is not None
+    def test_litellm_collector_collection_diagnostics_structure(self) -> None:
+        """Test CollectionDiagnostics has expected fields."""
+        import dataclasses
+        assert dataclasses.is_dataclass(CollectionDiagnostics), "CollectionDiagnostics should be a dataclass"
+        fields = {f.name for f in dataclasses.fields(CollectionDiagnostics)}
+        # Verify actual field names from the implementation
+        assert 'total_raw_records' in fields, "CollectionDiagnostics missing total_raw_records"
+        assert 'errors' in fields, "CollectionDiagnostics missing errors"
+        assert 'normalized_count' in fields, "CollectionDiagnostics missing normalized_count"
+
+    def test_prometheus_collector_has_required_attributes(self) -> None:
+        """Test PrometheusCollector has expected constructor parameters."""
+        import inspect
+        sig = inspect.signature(PrometheusCollector.__init__)
+        params = list(sig.parameters.keys())
+        assert 'self' in params, "PrometheusCollector missing self parameter"
+        # PrometheusCollector uses different parameter names
+        assert 'base_url' in params, "PrometheusCollector missing base_url parameter"
+        assert 'session_id' in params, "PrometheusCollector missing session_id parameter"
 
 
 class TestCollectorModuleDocstrings:
