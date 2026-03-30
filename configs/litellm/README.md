@@ -133,17 +133,19 @@ export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS="1"
 claude
 ```
 
+`SESSION_VIRTUAL_KEY` is a generated LiteLLM virtual key for one benchmark session. It is not your provider API key and should not be invented manually.
+
 #### OpenAI-Compatible CLI
 
 ```bash
 # Environment snippet from benchmark session manager
 export OPENAI_BASE_URL="http://localhost:4000"
 export OPENAI_API_KEY="${SESSION_VIRTUAL_KEY}"
-export OPENAI_MODEL="gpt-4o"
+export OPENAI_MODEL="gpt-5.4-mini"
 export OPENAI_TIMEOUT="120"
 
 # Use with any OpenAI-compatible CLI
-openai api chat.completions.create -m gpt-4o
+openai api responses.create -m gpt-5.4-mini
 ```
 
 ## Validation
@@ -193,8 +195,8 @@ The model aliases in `litellm.yaml` must exactly match the benchmark provider co
 
 | Benchmark Config | Route Name | Model Alias |
 |:---------------|:-----------|:------------|
-| `configs/providers/fireworks.yaml` | `fireworks-main` | `kimi-k2-5`, `glm-5` |
-| `configs/providers/openai.yaml` | `openai-main` | `gpt-4o`, `gpt-4o-mini` |
+| `configs/providers/fireworks.yaml` | `fireworks-main` | `kimi-k2-5`, `kimi-k2-5-turbo`, `glm-5`, `glm-5-fast` |
+| `configs/providers/openai.yaml` | `openai-main` | `gpt-5.4`, `gpt-5.4-mini` |
 
 When running a benchmark session, the harness profile renders environment variables that point to the LiteLLM proxy using the session-scoped virtual key. The model alias from the variant config is used as the model name in API requests.
 

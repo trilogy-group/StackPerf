@@ -294,7 +294,14 @@ Expected output: Session created with a unique `session_id` (UUID). Git metadata
 bench session env <session-id>
 ```
 
-Copy the output and apply it in your terminal:
+Copy the output and apply it in your terminal.
+
+Important:
+
+- `sk-benchmark-<session-id>` in the example below is a placeholder for a generated LiteLLM virtual key, not your Fireworks, OpenAI, or Anthropic provider key.
+- You do not make up this value by hand. The benchmark session manager should generate it for the session and print it in `bench session env <session-id>`.
+- The session ID and the session virtual key are different things. The session ID identifies the benchmark run in the benchmark database. The session virtual key is the proxy credential the harness uses when talking to LiteLLM.
+- Per-session segmentation is done by issuing a different virtual key for each benchmark session, usually with session metadata attached.
 
 ```bash
 # Example output for claude-code harness:
@@ -307,6 +314,23 @@ export ANTHROPIC_DEFAULT_OPUS_MODEL="kimi-k2-5"
 export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS="1"
 ```
 
+If you are setting up a harness manually before the session-manager flow is complete, generate a proxy key yourself:
+
+```bash
+curl -s -X POST http://localhost:4000/key/generate \
+  -H "Authorization: Bearer $LITELLM_MASTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metadata": {
+      "session_id": "manual-dev-session",
+      "harness": "claude-code"
+    },
+    "duration": "1h"
+  }'
+```
+
+Use the returned `key` value as the harness-facing `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`.
+
 #### 5. Launch the Harness
 
 With the environment set, launch your harness:
@@ -315,11 +339,63 @@ With the environment set, launch your harness:
 # For Claude Code
 claude
 
-# For OpenAI CLI
-openai api chat.completions.create -m gpt-4o
+# For an OpenAI-compatible CLI
+openai api responses.create -m gpt-5.4-mini
 ```
 
 The harness now routes all traffic through the local LiteLLM proxy with session correlation.
+
+#### 5a. Choosing a Harness and Model
+
+The harness talks to LiteLLM using a protocol surface, and LiteLLM maps the requested model alias to a real upstream provider route.
+
+Current built-in model aliases:
+
+- Fireworks: `kimi-k2-5`, `kimi-k2-5-turbo`, `glm-5`, `glm-5-fast`
+- OpenAI: `gpt-5.4`, `gpt-5.4-mini`
+- Anthropic: `claude-opus-4-6`, `claude-sonnet-4-6`
+
+You can see the current aliases with:
+
+```bash
+curl -s http://localhost:4000/models -H "Authorization: Bearer $LITELLM_MASTER_KEY"
+```
+
+Use those aliases as the model names your harness sends to the proxy.
+
+Examples:
+
+- Claude Code uses Anthropic-style env vars, but it can still target Fireworks or OpenAI routes through LiteLLM by setting `ANTHROPIC_MODEL` to a LiteLLM alias such as `kimi-k2-5` or `gpt-5.4-mini`.
+- OpenAI-compatible harnesses such as Codex, OpenCode, or OpenHands should generally use `OPENAI_BASE_URL=http://localhost:4000`, `OPENAI_API_KEY=<session virtual key>`, and whichever model alias you want to benchmark.
+- Anthropic-compatible harnesses should use `ANTHROPIC_BASE_URL=http://localhost:4000`, `ANTHROPIC_API_KEY=<session virtual key>`, and whichever model alias you want to benchmark.
+
+Examples by harness style:
+
+```bash
+# Claude Code against Fireworks Kimi K2.5
+export ANTHROPIC_BASE_URL="http://localhost:4000"
+export ANTHROPIC_API_KEY="$SESSION_VIRTUAL_KEY"
+export ANTHROPIC_MODEL="kimi-k2-5"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="kimi-k2-5"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="kimi-k2-5"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="kimi-k2-5"
+```
+
+```bash
+# OpenAI-compatible client against OpenAI GPT-5.4 Mini
+export OPENAI_BASE_URL="http://localhost:4000"
+export OPENAI_API_KEY="$SESSION_VIRTUAL_KEY"
+export OPENAI_MODEL="gpt-5.4-mini"
+```
+
+```bash
+# OpenAI-compatible client against Fireworks GLM-5 Fast
+export OPENAI_BASE_URL="http://localhost:4000"
+export OPENAI_API_KEY="$SESSION_VIRTUAL_KEY"
+export OPENAI_MODEL="glm-5-fast"
+```
+
+To add more models later, add a new LiteLLM alias in `configs/litellm/config.yaml` and keep the provider config in `configs/providers/` in sync.
 
 #### 6. Work on the Task
 
@@ -350,12 +426,6 @@ open http://localhost:3000
 bench export sessions --format csv --output sessions.csv
 ```
 
-### Next Steps
-
-- **Detailed Workflow**: See [docs/operator-workflow.md](docs/operator-workflow.md) for comprehensive session lifecycle guidance.
-- **Launch Recipes**: See [docs/launch-recipes.md](docs/launch-recipes.md) for detailed harness-specific setup instructions.
-- **Troubleshooting**: See [Troubleshooting](#troubleshooting) section below for common issues.
-
 ## Local operator workflow
 
 For a complete walkthrough of running a benchmark session, see [configs/litellm/README.md](configs/litellm/README.md). The quick version:
@@ -367,19 +437,6 @@ For a complete walkthrough of running a benchmark session, see [configs/litellm/
 5. Work on the task; the proxy captures all traffic with session correlation
 6. Finalize the session: `bench session finalize --session-id <id> --status completed`
 7. View metrics in Grafana and export comparison reports
-
-## MVP success criteria
-
-The MVP is complete when a developer can:
-
-1. start LiteLLM, Postgres, Prometheus, and Grafana locally with one command
-2. validate provider, harness profile, variant, experiment, and task-card configs
-3. create a session for a specific benchmark variant
-4. receive a session-specific environment snippet for a chosen harness
-5. run the harness interactively against the proxy
-6. collect and normalize request- and session-level data into the benchmark database
-7. view live metrics in Grafana and historical comparisons in the benchmark app
-8. export structured comparison results for providers, models, harnesses, and harness configurations
 
 ## Troubleshooting
 
