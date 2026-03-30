@@ -128,7 +128,7 @@ class LiteLLMCollector:
 
         # Idempotent bulk insert - repository handles duplicates
         try:
-            ingested = await self._repository.create_many(requests_to_ingest)
+            ingested = await self._repository.create_many(requests_to_ingest)  # type: ignore[attr-defined]
         except Exception as e:
             diagnostics.add_error(f"Repository bulk insert failed: {e}")
             return [], diagnostics, new_watermark
@@ -189,7 +189,7 @@ class LiteLLMCollector:
                 if isinstance(data, list):
                     return data
                 elif isinstance(data, dict) and "logs" in data:
-                    return data["logs"]
+                    return data["logs"]  # type: ignore[no-any-return]
                 else:
                     diagnostics.add_error(f"Unexpected API response format: {type(data)}")
                     return []

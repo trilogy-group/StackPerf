@@ -300,6 +300,6 @@ async def _fetch_litellm_requests(
         if isinstance(data, list):
             return data
         elif isinstance(data, dict) and "logs" in data:
-            return data["logs"]
+            return data["logs"]  # type: ignore[no-any-return]
         else:
             return []

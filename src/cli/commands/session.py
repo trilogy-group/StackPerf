@@ -123,9 +123,9 @@ def create(
             # Create session with git metadata and notes
             session = asyncio.run(
                 service.create_session(
-                    experiment_id=str(exp_id),
-                    variant_id=str(var_id),
-                    task_card_id=str(task_id),
+                    experiment_id=exp_id,
+                    variant_id=var_id,
+                    task_card_id=task_id,
                     harness_profile=harness_profile,
                     repo_path=git_metadata.repo_path if git_metadata else (repo_path or "."),
                     git_branch=git_metadata.branch if git_metadata else "unknown",
