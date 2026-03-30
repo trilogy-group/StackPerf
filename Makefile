@@ -1,4 +1,4 @@
-.PHONY: help install install-dev sync lint format format-check type-check test test-unit test-integration test-cov clean quality dev-setup dev-check
+.PHONY: help install install-dev sync lint format format-check type-check test test-unit test-integration test-cov clean quality dev-setup dev-check validate-config validate-migrations validate-collectors validate-all
 
 # Set PYTHONPATH for all targets (handle empty PYTHONPATH case)
 export PYTHONPATH := $(PWD)/src$(if $(PYTHONPATH),:$(PYTHONPATH),)
@@ -84,3 +84,19 @@ dev-check: ## Quick check before committing
 	@make lint
 	@make type-check
 	@make test-unit
+
+# Validation tests for CI
+validate-config: ## Run config validation tests
+	@echo "Running config validation tests..."
+	pytest tests/validation/test_config_validation.py -v
+
+validate-migrations: ## Run migration validation tests
+	@echo "Running migration validation tests..."
+	pytest tests/validation/test_migrations.py -v
+
+validate-collectors: ## Run collector validation tests
+	@echo "Running collector validation tests..."
+	pytest tests/validation/test_collectors.py -v
+
+validate-all: validate-config validate-migrations validate-collectors ## Run all validation tests
+	@echo "✓ All validation tests passed"

@@ -230,9 +230,7 @@ class TestExportSessionCommand:
         # Verify artifact was created
         # Need to refresh the session to see the artifact
         db_session.expire_all()
-        artifacts = db_session.query(Artifact).filter_by(
-            session_id=sample_data["session"].id
-        ).all()
+        artifacts = db_session.query(Artifact).filter_by(session_id=sample_data["session"].id).all()
         assert len(artifacts) >= 1
         assert any(a.artifact_type == "export" for a in artifacts)
 
@@ -399,9 +397,9 @@ class TestExportExperimentCommand:
 
         # Verify artifact was created
         db_session.expire_all()
-        artifacts = db_session.query(Artifact).filter_by(
-            experiment_id=sample_data["experiment"].id
-        ).all()
+        artifacts = (
+            db_session.query(Artifact).filter_by(experiment_id=sample_data["experiment"].id).all()
+        )
         assert len(artifacts) >= 1
 
 

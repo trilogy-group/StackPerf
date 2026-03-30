@@ -72,9 +72,7 @@ class ReconciliationReport:
         # Track error counts by category
         if error_message:
             error_category = self._categorize_error(error_message)
-            self.error_counts[error_category] = (
-                self.error_counts.get(error_category, 0) + 1
-            )
+            self.error_counts[error_category] = self.error_counts.get(error_category, 0) + 1
 
         # Store detailed diagnostics (limit to first 100 for memory efficiency)
         if len(self.unmapped_diagnostics) < 100:
@@ -145,12 +143,14 @@ class ReconciliationReport:
         ]
 
         if self.missing_field_counts:
-            lines.extend([
-                "## Missing Field Counts",
-                "",
-                "| Field | Count |",
-                "|-------|-------|",
-            ])
+            lines.extend(
+                [
+                    "## Missing Field Counts",
+                    "",
+                    "| Field | Count |",
+                    "|-------|-------|",
+                ]
+            )
             for field, count in sorted(
                 self.missing_field_counts.items(), key=lambda x: x[1], reverse=True
             ):
@@ -158,12 +158,14 @@ class ReconciliationReport:
             lines.append("")
 
         if self.error_counts:
-            lines.extend([
-                "## Error Categories",
-                "",
-                "| Category | Count |",
-                "|----------|-------|",
-            ])
+            lines.extend(
+                [
+                    "## Error Categories",
+                    "",
+                    "| Category | Count |",
+                    "|----------|-------|",
+                ]
+            )
             for category, count in sorted(
                 self.error_counts.items(), key=lambda x: x[1], reverse=True
             ):
@@ -171,16 +173,20 @@ class ReconciliationReport:
             lines.append("")
 
         if self.unmapped_diagnostics:
-            lines.extend([
-                "## Sample Unmapped Rows (First 10)",
-                "",
-            ])
-            for i, diag in enumerate(self.unmapped_diagnostics[:10]):
-                lines.extend([
-                    f"### Row {diag.row_index or i + 1}",
+            lines.extend(
+                [
+                    "## Sample Unmapped Rows (First 10)",
                     "",
-                    f"- **Reason**: {diag.reason}",
-                ])
+                ]
+            )
+            for i, diag in enumerate(self.unmapped_diagnostics[:10]):
+                lines.extend(
+                    [
+                        f"### Row {diag.row_index or i + 1}",
+                        "",
+                        f"- **Reason**: {diag.reason}",
+                    ]
+                )
                 if diag.missing_fields:
                     lines.append(f"- **Missing Fields**: {', '.join(diag.missing_fields)}")
                 if diag.error_message:
@@ -202,9 +208,7 @@ class ReconciliationReport:
             },
             "missing_field_counts": self.missing_field_counts,
             "error_counts": self.error_counts,
-            "unmapped_rows": [
-                diag.to_dict() for diag in self.unmapped_diagnostics[:50]
-            ],
+            "unmapped_rows": [diag.to_dict() for diag in self.unmapped_diagnostics[:50]],
         }
 
 
@@ -262,9 +266,7 @@ class RequestNormalizer:
 
         # Extract timestamp (required)
         timestamp_str = (
-            raw_data.get("startTime")
-            or raw_data.get("timestamp")
-            or raw_data.get("created_at")
+            raw_data.get("startTime") or raw_data.get("timestamp") or raw_data.get("created_at")
         )
         if not timestamp_str:
             missing_fields.append("timestamp")
@@ -283,9 +285,7 @@ class RequestNormalizer:
             if isinstance(timestamp_str, (int, float)):
                 timestamp = datetime.fromtimestamp(timestamp_str, tz=UTC)
             elif isinstance(timestamp_str, str):
-                timestamp = datetime.fromisoformat(
-                    timestamp_str.replace("Z", "+00:00")
-                )
+                timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
             else:
                 return None, UnmappedRowDiagnostics(
                     raw_data=raw_data,
@@ -375,9 +375,7 @@ class RequestNormalizer:
                 pass
         return None
 
-    def _extract_tokens(
-        self, raw_data: dict[str, Any]
-    ) -> tuple[int | None, int | None]:
+    def _extract_tokens(self, raw_data: dict[str, Any]) -> tuple[int | None, int | None]:
         """Extract prompt and completion token counts from raw data."""
         tokens_prompt = None
         tokens_completion = None
@@ -524,7 +522,9 @@ class RequestNormalizerJob:
                 # Data quality issues were already tracked during normalization above.
                 # Here we just need to report the infrastructure failure.
                 # Re-raise to let caller handle (e.g., transaction rollback, alerting)
-                raise RuntimeError(f"Bulk insert failed after normalizing {len(requests_to_ingest)} requests: {e}") from e
+                raise RuntimeError(
+                    f"Bulk insert failed after normalizing {len(requests_to_ingest)} requests: {e}"
+                ) from e
 
         return [], report
 

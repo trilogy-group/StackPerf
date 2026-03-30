@@ -223,6 +223,7 @@ class SessionService:
         # Validate outcome_state if provided
         if outcome_state is not None:
             from benchmark_core.models import SessionOutcomeState
+
             if not isinstance(outcome_state, SessionOutcomeState):
                 raise SessionValidationError(
                     f"outcome_state must be a SessionOutcomeState, got {type(outcome_state).__name__}"

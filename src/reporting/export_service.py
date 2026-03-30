@@ -151,9 +151,7 @@ class ExportService:
         # Include requests if requested
         if include_requests:
             requests = self._fetch_session_requests(session_id)
-            export["requests"] = [
-                self._format_request(req) for req in requests
-            ]
+            export["requests"] = [self._format_request(req) for req in requests]
 
             # Add summary statistics
             export["summary"] = self._calculate_session_summary(requests)
@@ -223,9 +221,7 @@ class ExportService:
                 # Include requests for each session if requested
                 if include_requests:
                     requests = self._fetch_session_requests(session.id)
-                    session_export["requests"] = [
-                        self._format_request(req) for req in requests
-                    ]
+                    session_export["requests"] = [self._format_request(req) for req in requests]
                     session_export["request_count"] = len(requests)
 
             export["sessions"] = sessions_list
@@ -244,11 +240,7 @@ class ExportService:
         Returns:
             List of Request objects.
         """
-        stmt = (
-            select(Request)
-            .where(Request.session_id == session_id)
-            .order_by(Request.timestamp)
-        )
+        stmt = select(Request).where(Request.session_id == session_id).order_by(Request.timestamp)
         result = self._db_session.execute(stmt).scalars().all()
         return list(result)
 
@@ -428,7 +420,14 @@ class ExportSerializer:
             fieldnames = ExportService.REQUEST_EXPORT_FIELDS
         elif record_type == "sessions" and "sessions" in data:
             records = data["sessions"]
-            fieldnames = ["id", "variant_id", "status", "started_at", "ended_at", "duration_seconds"]
+            fieldnames = [
+                "id",
+                "variant_id",
+                "status",
+                "started_at",
+                "ended_at",
+                "duration_seconds",
+            ]
         else:
             # Fallback to session-level data for single session export
             if "session" in data:
@@ -476,8 +475,7 @@ class ExportSerializer:
             import pyarrow.parquet as pq
         except ImportError as e:
             raise ImportError(
-                "Parquet export requires pyarrow. "
-                "Install with: pip install pyarrow"
+                "Parquet export requires pyarrow. Install with: pip install pyarrow"
             ) from e
 
         output_path.parent.mkdir(parents=True, exist_ok=True)

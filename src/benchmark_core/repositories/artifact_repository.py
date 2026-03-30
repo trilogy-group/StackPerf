@@ -117,7 +117,9 @@ class SQLArtifactRepository(SQLAlchemyRepository[ArtifactORM]):
         """
         return await super().delete(id)
 
-    async def list_by_session(self, session_id: UUID, limit: int = 100, offset: int = 0) -> list[ArtifactORM]:
+    async def list_by_session(
+        self, session_id: UUID, limit: int = 100, offset: int = 0
+    ) -> list[ArtifactORM]:
         """List all artifacts for a specific session.
 
         Args:

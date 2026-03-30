@@ -92,7 +92,9 @@ def run_normalization(
         raise typer.Exit(1) from err
 
     if not litellm_key:
-        console.print("[yellow]Warning: No LiteLLM API key provided. Set LITELLM_API_KEY env var.[/yellow]")
+        console.print(
+            "[yellow]Warning: No LiteLLM API key provided. Set LITELLM_API_KEY env var.[/yellow]"
+        )
 
     async def _run() -> tuple[int, ReconciliationReport]:
         # Fetch raw requests from LiteLLM
@@ -233,7 +235,7 @@ def show_reconciliation_report(
         # Query for any requests with errors
         error_stmt = select(func.count()).where(
             RequestORM.session_id == UUID(session_id),
-            RequestORM.error == True  # noqa: E712
+            RequestORM.error == True,  # noqa: E712
         )
         error_count = db_session.execute(error_stmt).scalar() or 0
 

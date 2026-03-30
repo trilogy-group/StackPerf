@@ -67,7 +67,9 @@ def render_env(
         variant_config = loader.load_variant(variant_name)
         if variant_config is None:
             console.print(f"[red]Error: Variant '{variant_name}' not found[/red]")
-            console.print(f"[dim]Looking in: {configs_dir / 'variants' / f'{variant_name}.yaml'}[/dim]")
+            console.print(
+                f"[dim]Looking in: {configs_dir / 'variants' / f'{variant_name}.yaml'}[/dim]"
+            )
             raise typer.Exit(1)
 
         variant = Variant(**variant_config)
@@ -79,7 +81,9 @@ def render_env(
         profile_config = loader.load_harness_profile(profile_name)
         if profile_config is None:
             console.print(f"[red]Error: Harness profile '{profile_name}' not found[/red]")
-            console.print(f"[dim]Looking in: {configs_dir / 'harnesses' / f'{profile_name}.yaml'}[/dim]")
+            console.print(
+                f"[dim]Looking in: {configs_dir / 'harnesses' / f'{profile_name}.yaml'}[/dim]"
+            )
             raise typer.Exit(1)
 
         profile = HarnessProfile(**profile_config)
@@ -97,7 +101,9 @@ def render_env(
 
         # Validate format
         if output_format not in ("shell", "dotenv"):
-            console.print(f"[red]Error: Invalid format '{output_format}'. Use 'shell' or 'dotenv'.[/red]")
+            console.print(
+                f"[red]Error: Invalid format '{output_format}'. Use 'shell' or 'dotenv'.[/red]"
+            )
             raise typer.Exit(1)
 
         # Render environment snippet
@@ -231,7 +237,9 @@ def list_profiles(
                 console.print(f"  [green]{profile.name}[/green]")
                 console.print(f"    Protocol: {profile.protocol_surface}")
                 console.print(f"    Format: {profile.render_format}")
-                console.print(f"    Env vars: {profile.base_url_env}, {profile.api_key_env}, {profile.model_env}")
+                console.print(
+                    f"    Env vars: {profile.base_url_env}, {profile.api_key_env}, {profile.model_env}"
+                )
                 if profile.extra_env:
                     console.print(f"    Extra: {', '.join(profile.extra_env.keys())}")
                 console.print()
@@ -269,7 +277,9 @@ def check_compatibility(
         # Load harness profile
         profile_config = loader.load_harness_profile(variant.harness_profile)
         if profile_config is None:
-            console.print(f"[red]Error: Harness profile '{variant.harness_profile}' not found[/red]")
+            console.print(
+                f"[red]Error: Harness profile '{variant.harness_profile}' not found[/red]"
+            )
             raise typer.Exit(1)
 
         profile = HarnessProfile(**profile_config)
@@ -290,7 +300,9 @@ def check_compatibility(
             for error in errors:
                 console.print(f"  ✗ {error}")
             console.print()
-            console.print("[yellow]Recommendation: Fix variant configuration or use a compatible profile[/yellow]")
+            console.print(
+                "[yellow]Recommendation: Fix variant configuration or use a compatible profile[/yellow]"
+            )
             raise typer.Exit(1)
         else:
             console.print("[green]✓ Variant and profile are compatible[/green]")
