@@ -145,39 +145,34 @@ def collect_litellm(
         finally:
             db_session.close()
 
-    try:
-        count, diagnostics = asyncio.run(_run_async())
+    count, diagnostics = asyncio.run(_run_async())
 
-        # Display results
-        console.print("\n[bold green]Collection Complete[/bold green]")
-        console.print(f"Total raw records: {diagnostics.total_raw_records}")
-        console.print(f"Normalized records: {diagnostics.normalized_count}")
-        console.print(f"Skipped records: {diagnostics.skipped_count}")
+    # Display results
+    console.print("\n[bold green]Collection Complete[/bold green]")
+    console.print(f"Total raw records: {diagnostics.total_raw_records}")
+    console.print(f"Normalized records: {diagnostics.normalized_count}")
+    console.print(f"Skipped records: {diagnostics.skipped_count}")
 
-        if dry_run:
-            console.print("\n[yellow]Dry run mode - no records written[/yellow]")
-        else:
-            console.print(f"Records written: {count}")
+    if dry_run:
+        console.print("\n[yellow]Dry run mode - no records written[/yellow]")
+    else:
+        console.print(f"Records written: {count}")
 
-        if diagnostics.missing_fields:
-            console.print("\n[bold]Missing Fields:[/bold]")
-            table = Table("Field", "Count")
-            for field, count in sorted(
-                diagnostics.missing_fields.items(),
-                key=lambda x: x[1],
-                reverse=True,
-            ):
-                table.add_row(field, str(count))
-            console.print(table)
+    if diagnostics.missing_fields:
+        console.print("\n[bold]Missing Fields:[/bold]")
+        table = Table("Field", "Count")
+        for field, count in sorted(
+            diagnostics.missing_fields.items(),
+            key=lambda x: x[1],
+            reverse=True,
+        ):
+            table.add_row(field, str(count))
+        console.print(table)
 
-        if diagnostics.errors:
-            console.print("\n[bold]Error Categories:[/bold]")
-            for error in diagnostics.errors:
-                console.print(f"  - {error}")
-
-    except Exception as err:
-        console.print(f"[red]Error during collection: {err}[/red]")
-        raise typer.Exit(1) from err
+    if diagnostics.errors:
+        console.print("\n[bold]Error Categories:[/bold]")
+        for error in diagnostics.errors:
+            console.print(f"  - {error}")
 
 
 @app.command(name="prometheus")
@@ -273,21 +268,16 @@ def collect_prometheus(
         finally:
             db_session.close()
 
-    try:
-        count = asyncio.run(_run_async())
+    count = asyncio.run(_run_async())
 
-        console.print("\n[bold green]Prometheus Collection Complete[/bold green]")
-        console.print(f"Time range: {start_time} to {end_time}")
+    console.print("\n[bold green]Prometheus Collection Complete[/bold green]")
+    console.print(f"Time range: {start_time} to {end_time}")
 
-        if dry_run:
-            console.print("\n[yellow]Dry run mode - no records written[/yellow]")
-            console.print(f"Would write {count} rollups")
-        else:
-            console.print(f"Rollups written: {count}")
-
-    except Exception as err:
-        console.print(f"[red]Error during Prometheus collection: {err}[/red]")
-        raise typer.Exit(1) from err
+    if dry_run:
+        console.print("\n[yellow]Dry run mode - no records written[/yellow]")
+        console.print(f"Would write {count} rollups")
+    else:
+        console.print(f"Rollups written: {count}")
 
 
 @app.command(name="rollup")
@@ -406,22 +396,17 @@ def compute_rollups(
         finally:
             db_session.close()
 
-    try:
-        request_count, session_count = asyncio.run(_run_async())
+    request_count, session_count = asyncio.run(_run_async())
 
-        console.print("\n[bold green]Rollup Computation Complete[/bold green]")
-        console.print(f"Session ID: {session_id}")
-        console.print(f"Request-level rollups: {request_count}")
-        console.print(f"Session-level rollups: {session_count}")
+    console.print("\n[bold green]Rollup Computation Complete[/bold green]")
+    console.print(f"Session ID: {session_id}")
+    console.print(f"Request-level rollups: {request_count}")
+    console.print(f"Session-level rollups: {session_count}")
 
-        if dry_run:
-            console.print("\n[yellow]Dry run mode - no records written[/yellow]")
-        else:
-            console.print(f"Total rollups written: {request_count + session_count}")
-
-    except Exception as err:
-        console.print(f"[red]Error during rollup computation: {err}[/red]")
-        raise typer.Exit(1) from err
+    if dry_run:
+        console.print("\n[yellow]Dry run mode - no records written[/yellow]")
+    else:
+        console.print(f"Total rollups written: {request_count + session_count}")
 
 
 @app.command(name="variant-rollup")
@@ -502,21 +487,16 @@ def compute_variant_rollups(
         finally:
             db_session.close()
 
-    try:
-        count = asyncio.run(_run_async())
+    count = asyncio.run(_run_async())
 
-        console.print("\n[bold green]Variant Rollup Computation Complete[/bold green]")
-        console.print(f"Variant ID: {variant_id}")
-        console.print(f"Rollups computed: {count}")
+    console.print("\n[bold green]Variant Rollup Computation Complete[/bold green]")
+    console.print(f"Variant ID: {variant_id}")
+    console.print(f"Rollups computed: {count}")
 
-        if dry_run:
-            console.print("\n[yellow]Dry run mode - no records written[/yellow]")
-        else:
-            console.print(f"Total rollups written: {count}")
-
-    except Exception as err:
-        console.print(f"[red]Error during variant rollup computation: {err}[/red]")
-        raise typer.Exit(1) from err
+    if dry_run:
+        console.print("\n[yellow]Dry run mode - no records written[/yellow]")
+    else:
+        console.print(f"Total rollups written: {count}")
 
 
 @app.command(name="experiment-rollup")
@@ -599,21 +579,16 @@ def compute_experiment_rollups(
         finally:
             db_session.close()
 
-    try:
-        count = asyncio.run(_run_async())
+    count = asyncio.run(_run_async())
 
-        console.print("\n[bold green]Experiment Rollup Computation Complete[/bold green]")
-        console.print(f"Experiment ID: {experiment_id}")
-        console.print(f"Rollups computed: {count}")
+    console.print("\n[bold green]Experiment Rollup Computation Complete[/bold green]")
+    console.print(f"Experiment ID: {experiment_id}")
+    console.print(f"Rollups computed: {count}")
 
-        if dry_run:
-            console.print("\n[yellow]Dry run mode - no records written[/yellow]")
-        else:
-            console.print(f"Total rollups written: {count}")
-
-    except Exception as err:
-        console.print(f"[red]Error during experiment rollup computation: {err}[/red]")
-        raise typer.Exit(1) from err
+    if dry_run:
+        console.print("\n[yellow]Dry run mode - no records written[/yellow]")
+    else:
+        console.print(f"Total rollups written: {count}")
 
 
 async def _fetch_litellm_requests(
