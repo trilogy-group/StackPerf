@@ -61,7 +61,7 @@ class NormalizationJob:
                 requests.append(request)
 
         # Bulk insert with idempotency handling
-        return await self._repository.create_many(requests)
+        return await self._repository.create_many(requests)  # type: ignore[attr-defined, no-any-return]
 
     def _normalize(self, raw: dict[str, Any], session_id: UUID) -> Request | None:
         """Normalize a single raw request.

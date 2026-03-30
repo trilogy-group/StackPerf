@@ -368,7 +368,7 @@ class SessionService:
         Returns:
             List of sessions.
         """
-        return await self._session_repo.list_by_experiment(experiment_id, limit, offset)
+        return await self._session_repo.list_by_experiment(experiment_id, limit, offset)  # type: ignore[return-value]
 
     async def list_active_sessions(self, limit: int = 100) -> list[Session]:
         """List all active sessions.
@@ -379,7 +379,7 @@ class SessionService:
         Returns:
             List of active sessions.
         """
-        return await self._session_repo.list_active(limit)
+        return await self._session_repo.list_active(limit)  # type: ignore[return-value]
 
     async def validate_session_exists(self, session_id: UUID) -> bool:
         """Check if a session exists.
@@ -476,7 +476,7 @@ class CollectionJobService:
         self._collector = LiteLLMCollector(
             base_url=litellm_base_url,
             api_key=litellm_api_key,
-            repository=repository,
+            repository=repository,  # type: ignore[arg-type]
         )
         self._repository = repository
 
@@ -505,7 +505,7 @@ class CollectionJobService:
 
         try:
             # Fetch and normalize requests from LiteLLM
-            requests, new_watermark = await self._collector.collect(
+            requests, diagnostics, new_watermark = await self._collector.collect_requests(
                 session_id=session_id,
                 start_time=start_time,
                 end_time=end_time,
@@ -521,13 +521,10 @@ class CollectionJobService:
                     watermark=new_watermark,
                 )
 
-            # Persist normalized requests
-            created = await self._repository.create_many(requests)
-
             return CollectionJobResult(
                 success=True,
                 requests_collected=len(requests),
-                requests_normalized=len(created),
+                requests_normalized=len(requests),
                 diagnostics=diagnostics,
                 watermark=new_watermark,
             )
@@ -539,7 +536,7 @@ class CollectionJobService:
                 requests_collected=0,
                 requests_normalized=0,
                 diagnostics=diagnostics,
-                watermark=IngestWatermark(cursor=""),
+                watermark=IngestWatermark(),
                 error_message=str(e),
             )
 

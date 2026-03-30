@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
 from benchmark_core.services.diagnostics_service import (
@@ -160,7 +161,7 @@ class TestDiagnosticsService:
 
         with (
             patch.dict(os.environ, {"LITELLM_MASTER_KEY": "sk-test"}),
-            patch("requests.get", side_effect=[mock_response, mock_models_response]),
+            patch("httpx.get", side_effect=[mock_response, mock_models_response]),
         ):
             diag = diagnostics_service._diagnose_litellm()
 
@@ -169,9 +170,13 @@ class TestDiagnosticsService:
 
     def test_diagnose_services_litellm_connection_error(self, diagnostics_service):
         """Test LiteLLM service diagnostics with connection error."""
-        import requests
-
-        with patch("requests.get", side_effect=requests.exceptions.ConnectionError()):
+        with patch(
+            "httpx.get",
+            side_effect=httpx.ConnectError(
+                "boom",
+                request=httpx.Request("GET", "http://localhost:4000/health/liveliness"),
+            ),
+        ):
             diag = diagnostics_service._diagnose_litellm()
 
         assert diag.status == "error"
@@ -187,7 +192,7 @@ class TestDiagnosticsService:
             "data": {"activeTargets": [{"labels": {"job": "litellm"}}]}
         }
 
-        with patch("requests.get", side_effect=[mock_response, mock_targets_response]):
+        with patch("httpx.get", side_effect=[mock_response, mock_targets_response]):
             diag = diagnostics_service._diagnose_prometheus()
 
         assert diag.status == "ok"
@@ -195,9 +200,13 @@ class TestDiagnosticsService:
 
     def test_diagnose_services_prometheus_connection_error(self, diagnostics_service):
         """Test Prometheus service diagnostics with connection error."""
-        import requests
-
-        with patch("requests.get", side_effect=requests.exceptions.ConnectionError()):
+        with patch(
+            "httpx.get",
+            side_effect=httpx.ConnectError(
+                "boom",
+                request=httpx.Request("GET", "http://localhost:9090/-/healthy"),
+            ),
+        ):
             diag = diagnostics_service._diagnose_prometheus()
 
         assert diag.status == "error"
@@ -214,7 +223,7 @@ class TestDiagnosticsService:
             mock_response.status_code = 200
             mock_response.json.return_value = {"data": []}
 
-            with patch("requests.get", return_value=mock_response):
+            with patch("httpx.get", return_value=mock_response):
                 report = service.run_diagnostics()
 
         assert isinstance(report, DiagnosticsReport)

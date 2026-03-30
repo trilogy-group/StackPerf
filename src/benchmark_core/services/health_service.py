@@ -4,13 +4,14 @@ import enum
 from dataclasses import dataclass, field
 from typing import Any
 
+import httpx
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from benchmark_core.db.session import create_database_engine, get_database_url
 
 
-class HealthStatus(str, enum.Enum):
+class HealthStatus(enum.StrEnum):
     """Health check status values."""
 
     HEALTHY = "healthy"
@@ -126,11 +127,9 @@ class HealthService:
             HealthCheckResult with LiteLLM proxy status.
         """
         try:
-            import requests
-
             health_url = f"{self._litellm_base_url}/health/liveliness"
 
-            response = requests.get(health_url, timeout=5)
+            response = httpx.get(health_url, timeout=5)
 
             if response.status_code == 200:
                 data = (
@@ -158,26 +157,19 @@ class HealthService:
                     suggestion="Check if LiteLLM container is running with 'docker ps'",
                 )
 
-        except requests.exceptions.ConnectionError:
+        except httpx.ConnectError:
             return HealthCheckResult(
                 name="litellm_proxy",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Cannot connect to LiteLLM proxy at {self._litellm_base_url}",
                 suggestion="Start LiteLLM proxy with 'docker-compose up -d litellm'",
             )
-        except requests.exceptions.Timeout:
+        except httpx.TimeoutException:
             return HealthCheckResult(
                 name="litellm_proxy",
                 status=HealthStatus.UNHEALTHY,
                 message="LiteLLM proxy health check timed out",
                 suggestion="LiteLLM proxy may be overloaded or starting up",
-            )
-        except ImportError:
-            return HealthCheckResult(
-                name="litellm_proxy",
-                status=HealthStatus.UNHEALTHY,
-                message="requests library not available",
-                suggestion="Install requests: pip install requests",
             )
         except Exception as e:
             return HealthCheckResult(
@@ -194,11 +186,9 @@ class HealthService:
             HealthCheckResult with Prometheus status.
         """
         try:
-            import requests
-
             health_url = f"{self._prometheus_url}/-/healthy"
 
-            response = requests.get(health_url, timeout=5)
+            response = httpx.get(health_url, timeout=5)
 
             if response.status_code == 200:
                 return HealthCheckResult(
@@ -216,26 +206,19 @@ class HealthService:
                     suggestion="Check Prometheus logs with 'docker logs litellm-prometheus'",
                 )
 
-        except requests.exceptions.ConnectionError:
+        except httpx.ConnectError:
             return HealthCheckResult(
                 name="prometheus",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Cannot connect to Prometheus at {self._prometheus_url}",
                 suggestion="Start Prometheus with 'docker-compose up -d prometheus'",
             )
-        except requests.exceptions.Timeout:
+        except httpx.TimeoutException:
             return HealthCheckResult(
                 name="prometheus",
                 status=HealthStatus.UNHEALTHY,
                 message="Prometheus health check timed out",
                 suggestion="Prometheus may be overloaded",
-            )
-        except ImportError:
-            return HealthCheckResult(
-                name="prometheus",
-                status=HealthStatus.UNHEALTHY,
-                message="requests library not available",
-                suggestion="Install requests: pip install requests",
             )
         except Exception as e:
             return HealthCheckResult(

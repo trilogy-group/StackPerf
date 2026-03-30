@@ -136,7 +136,9 @@ def demo_retention() -> None:
     print(f"normalized_requests: {settings.normalized_requests.retention_days} days")
     print(f"sessions: {settings.sessions.retention_days} days")
     print(f"session_credentials: {settings.session_credentials.retention_days} days")
-    print(f"artifacts: {settings.artifacts.retention_days} days (archive: {settings.artifacts.archive_before_delete})")
+    print(
+        f"artifacts: {settings.artifacts.retention_days} days (archive: {settings.artifacts.archive_before_delete})"
+    )
     print(f"metric_rollups: {settings.metric_rollups.retention_days} days")
 
     # Test cutoff date calculation

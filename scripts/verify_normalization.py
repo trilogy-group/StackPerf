@@ -131,7 +131,9 @@ def demo_error_handling() -> None:
             **error_fields,
         }
         result, _ = normalizer.normalize(raw)
-        print(f"  {'✓' if result else '✗'} {name}: error={result.error}, message={result.error_message}")
+        print(
+            f"  {'✓' if result else '✗'} {name}: error={result.error}, message={result.error_message}"
+        )
 
 
 def demo_reconciliation_report() -> None:
@@ -203,10 +205,12 @@ def demo_markdown_report() -> None:
         for i in range(95)
     ]
     # Add some failures
-    requests.extend([
-        {"startTime": "2025-03-26T10:30:00+00:00"},  # missing request_id
-        {"request_id": "bad-timestamp", "startTime": "invalid"},  # bad timestamp
-    ])
+    requests.extend(
+        [
+            {"startTime": "2025-03-26T10:30:00+00:00"},  # missing request_id
+            {"request_id": "bad-timestamp", "startTime": "invalid"},  # bad timestamp
+        ]
+    )
 
     for i, raw in enumerate(requests):
         normalized, diag = normalizer.normalize(raw, row_index=i)
@@ -244,7 +248,10 @@ def demo_json_output() -> None:
         {"request_id": "req-001", "startTime": "2025-03-26T10:30:00+00:00", "model": "gpt-4"},
         {"startTime": "2025-03-26T10:30:00+00:00"},  # missing request_id
         {"request_id": "req-003", "model": "gpt-4"},  # missing timestamp
-        {"request_id": "req-004", "startTime": "2025-03-26T10:30:00+00:00"},  # missing model (defaults to unknown)
+        {
+            "request_id": "req-004",
+            "startTime": "2025-03-26T10:30:00+00:00",
+        },  # missing model (defaults to unknown)
     ]
 
     for i, raw in enumerate(requests):
@@ -295,6 +302,7 @@ def main() -> None:
     except Exception as e:
         print(f"\n✗ Error during verification: {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

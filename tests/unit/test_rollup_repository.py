@@ -4,8 +4,6 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock
 from uuid import uuid4
 
-import pytest
-
 from benchmark_core.models import MetricRollup
 from benchmark_core.repositories.rollup_repository import SQLRollupRepository
 
@@ -39,8 +37,9 @@ class TestSQLRollupRepository:
 
     def test_to_domain_conversion(self) -> None:
         """Test ORM to domain model conversion."""
-        from benchmark_core.db.models import MetricRollup as MetricRollupORM
         import uuid
+
+        from benchmark_core.db.models import MetricRollup as MetricRollupORM
 
         orm = MetricRollupORM(
             id=uuid.uuid4(),
@@ -102,8 +101,9 @@ class TestSQLRollupRepository:
 
     def test_get_by_dimension_returns_domain_models(self) -> None:
         """Test get_by_dimension returns domain models."""
-        from benchmark_core.db.models import MetricRollup as MetricRollupORM
         import uuid
+
+        from benchmark_core.db.models import MetricRollup as MetricRollupORM
 
         # Create mock ORM objects with all required fields
         mock_orm1 = MetricRollupORM(

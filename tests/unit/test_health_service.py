@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
 from benchmark_core.services.health_service import (
@@ -71,7 +72,7 @@ class TestHealthService:
         mock_response.headers = {"content-type": "application/json"}
         mock_response.json.return_value = {"status": "healthy"}
 
-        with patch("requests.get", return_value=mock_response):
+        with patch("httpx.get", return_value=mock_response):
             result = health_service.check_litellm_proxy()
 
         assert result.status == HealthStatus.HEALTHY
@@ -79,9 +80,13 @@ class TestHealthService:
 
     def test_check_litellm_proxy_connection_error(self, health_service):
         """Test LiteLLM proxy check with connection error."""
-        import requests
-
-        with patch("requests.get", side_effect=requests.exceptions.ConnectionError()):
+        with patch(
+            "httpx.get",
+            side_effect=httpx.ConnectError(
+                "boom",
+                request=httpx.Request("GET", "http://localhost:4000/health/liveliness"),
+            ),
+        ):
             result = health_service.check_litellm_proxy()
 
         assert result.status == HealthStatus.UNHEALTHY
@@ -90,9 +95,7 @@ class TestHealthService:
 
     def test_check_litellm_proxy_timeout(self, health_service):
         """Test LiteLLM proxy check with timeout."""
-        import requests
-
-        with patch("requests.get", side_effect=requests.exceptions.Timeout()):
+        with patch("httpx.get", side_effect=httpx.TimeoutException("boom")):
             result = health_service.check_litellm_proxy()
 
         assert result.status == HealthStatus.UNHEALTHY
@@ -103,7 +106,7 @@ class TestHealthService:
         mock_response = MagicMock()
         mock_response.status_code = 503
 
-        with patch("requests.get", return_value=mock_response):
+        with patch("httpx.get", return_value=mock_response):
             result = health_service.check_litellm_proxy()
 
         assert result.status == HealthStatus.UNHEALTHY
@@ -114,7 +117,7 @@ class TestHealthService:
         mock_response = MagicMock()
         mock_response.status_code = 200
 
-        with patch("requests.get", return_value=mock_response):
+        with patch("httpx.get", return_value=mock_response):
             result = health_service.check_prometheus()
 
         assert result.status == HealthStatus.HEALTHY
@@ -122,9 +125,13 @@ class TestHealthService:
 
     def test_check_prometheus_connection_error(self, health_service):
         """Test Prometheus check with connection error."""
-        import requests
-
-        with patch("requests.get", side_effect=requests.exceptions.ConnectionError()):
+        with patch(
+            "httpx.get",
+            side_effect=httpx.ConnectError(
+                "boom",
+                request=httpx.Request("GET", "http://localhost:9090/-/healthy"),
+            ),
+        ):
             result = health_service.check_prometheus()
 
         assert result.status == HealthStatus.UNHEALTHY
@@ -183,7 +190,7 @@ class TestHealthService:
             mock_response.headers = {"content-type": "application/json"}
             mock_response.json.return_value = {"status": "healthy"}
 
-            with patch("requests.get", return_value=mock_response):
+            with patch("httpx.get", return_value=mock_response):
                 report = health_service.run_health_checks(temp_configs_dir)
 
         assert report.status == HealthStatus.HEALTHY
@@ -196,11 +203,15 @@ class TestHealthService:
         # Mock database to use SQLite
         db_path = tmp_path / "test.db"
 
-        import requests
-
         with (
             patch.dict(os.environ, {"DATABASE_URL": f"sqlite:///{db_path}"}),
-            patch("requests.get", side_effect=requests.exceptions.ConnectionError()),
+            patch(
+                "httpx.get",
+                side_effect=httpx.ConnectError(
+                    "boom",
+                    request=httpx.Request("GET", "http://localhost:4000/health/liveliness"),
+                ),
+            ),
         ):
             report = health_service.run_health_checks(temp_configs_dir)
 
