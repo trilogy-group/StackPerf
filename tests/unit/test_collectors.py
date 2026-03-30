@@ -561,9 +561,7 @@ async def test_collect_requests_idempotent_insert() -> None:
     ]
     collector._fetch_raw_requests = AsyncMock(return_value=raw_requests)  # type: ignore
 
-    collected, diagnostics, watermark = await collector.collect_requests(
-        session_id=session_id
-    )
+    collected, diagnostics, watermark = await collector.collect_requests(session_id=session_id)
 
     # Verify repository.create_many was called
     mock_repo.create_many.assert_called_once()
@@ -611,7 +609,9 @@ async def test_fetch_raw_requests_watermark_respects_start_time() -> None:
     assert route.called
     request = route.calls.last.request
     # The actual start_time used should be max(start_time, watermark.last_timestamp)
-    assert "start_time=2025-03-27T12%3A00%3A00" in str(request.url) or "start_time=2025-03-27T12:00:00" in str(request.url)
+    assert "start_time=2025-03-27T12%3A00%3A00" in str(
+        request.url
+    ) or "start_time=2025-03-27T12:00:00" in str(request.url)
 
 
 @pytest.mark.asyncio
@@ -644,7 +644,9 @@ async def test_fetch_raw_requests_uses_start_time_when_no_watermark() -> None:
     # Verify request uses the provided start_time
     assert route.called
     request = route.calls.last.request
-    assert "start_time=2025-03-26T10%3A00%3A00" in str(request.url) or "start_time=2025-03-26T10:00:00" in str(request.url)
+    assert "start_time=2025-03-26T10%3A00%3A00" in str(
+        request.url
+    ) or "start_time=2025-03-26T10:00:00" in str(request.url)
 
 
 # =============================================================================

@@ -1,6 +1,5 @@
 """Tests for artifact CLI commands."""
 
-
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -58,7 +57,6 @@ def mock_env_db_url(test_engine, monkeypatch):
     # Patch the session factory used by CLI commands
     from benchmark_core.db import session as db_session_module
 
-
     def mock_create_engine(url, **kwargs):
         return test_engine
 
@@ -66,7 +64,10 @@ def mock_env_db_url(test_engine, monkeypatch):
 
     # Also patch in the artifact module
     from cli.commands import artifact as artifact_module
-    monkeypatch.setattr(artifact_module, "get_db_session", lambda: db_session_module.get_db_session(test_engine))
+
+    monkeypatch.setattr(
+        artifact_module, "get_db_session", lambda: db_session_module.get_db_session(test_engine)
+    )
 
     yield test_engine
 
@@ -173,7 +174,9 @@ class TestArtifactRegisterCommand:
         assert artifact.experiment_id == experiment.id
         assert artifact.session_id is None
 
-    def test_register_artifact_requires_session_or_experiment(self, mock_env_db_url, runner, tmp_path):
+    def test_register_artifact_requires_session_or_experiment(
+        self, mock_env_db_url, runner, tmp_path
+    ):
         """Test that artifact registration requires session or experiment."""
         test_file = tmp_path / "test.txt"
         test_file.write_text("test")

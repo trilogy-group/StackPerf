@@ -170,6 +170,7 @@ class TestDiagnosticsService:
     def test_diagnose_services_litellm_connection_error(self, diagnostics_service):
         """Test LiteLLM service diagnostics with connection error."""
         import requests
+
         with patch("requests.get", side_effect=requests.exceptions.ConnectionError()):
             diag = diagnostics_service._diagnose_litellm()
 
@@ -195,6 +196,7 @@ class TestDiagnosticsService:
     def test_diagnose_services_prometheus_connection_error(self, diagnostics_service):
         """Test Prometheus service diagnostics with connection error."""
         import requests
+
         with patch("requests.get", side_effect=requests.exceptions.ConnectionError()):
             diag = diagnostics_service._diagnose_prometheus()
 

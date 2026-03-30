@@ -462,7 +462,9 @@ class ComparisonService:
         }.get(order_by, Variant.model_alias)
 
         if order_by in ["session_count", "avg_latency_ms", "error_rate"]:
-            stmt = stmt.order_by(order_column.desc().nulls_last(), Variant.provider.asc(), Variant.model_alias.asc())
+            stmt = stmt.order_by(
+                order_column.desc().nulls_last(), Variant.provider.asc(), Variant.model_alias.asc()
+            )
         else:
             stmt = stmt.order_by(order_column.asc(), Variant.provider.asc())
 

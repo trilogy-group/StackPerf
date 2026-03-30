@@ -234,7 +234,9 @@ def remove(
 
             # Confirm deletion
             if not force:
-                confirm = console.input(f"Remove artifact '{art.name}' ({artifact_id[:8]})? [y/N]: ")
+                confirm = console.input(
+                    f"Remove artifact '{art.name}' ({artifact_id[:8]})? [y/N]: "
+                )
                 if confirm.lower() != "y":
                     console.print("[yellow]Cancelled[/yellow]")
                     raise typer.Exit(0)

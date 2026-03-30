@@ -320,6 +320,7 @@ def finalize(
 
             # Finalize with status, outcome state, and end time
             from benchmark_core.models import SessionOutcomeState
+
             outcome_enum = SessionOutcomeState(outcome)
             updated = asyncio.run(
                 service.finalize_session(
@@ -413,9 +414,7 @@ def add_notes(
             new_notes = f"{session.notes}\n{notes}" if append and session.notes else notes
 
             # Update notes
-            updated = asyncio.run(
-                service.update_session_notes(sess_uuid, new_notes)
-            )
+            updated = asyncio.run(service.update_session_notes(sess_uuid, new_notes))
             if updated is None:
                 console.print(f"[red]Failed to update notes for session: {session_id}[/red]")
                 raise typer.Exit(1)

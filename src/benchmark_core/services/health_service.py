@@ -133,9 +133,11 @@ class HealthService:
             response = requests.get(health_url, timeout=5)
 
             if response.status_code == 200:
-                data = response.json() if response.headers.get("content-type", "").startswith(
-                    "application/json"
-                ) else {}
+                data = (
+                    response.json()
+                    if response.headers.get("content-type", "").startswith("application/json")
+                    else {}
+                )
 
                 return HealthCheckResult(
                     name="litellm_proxy",

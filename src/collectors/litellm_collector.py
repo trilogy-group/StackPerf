@@ -195,7 +195,9 @@ class LiteLLMCollector:
                     return []
 
         except httpx.HTTPStatusError as e:
-            diagnostics.add_error(f"HTTP error fetching logs: {e.response.status_code} - {e.response.text}")
+            diagnostics.add_error(
+                f"HTTP error fetching logs: {e.response.status_code} - {e.response.text}"
+            )
             return []
         except httpx.RequestError as e:
             diagnostics.add_error(f"Request error fetching logs: {e}")
@@ -235,7 +237,9 @@ class LiteLLMCollector:
             return None
 
         # Extract timestamp (required)
-        timestamp_str = raw_data.get("startTime") or raw_data.get("timestamp") or raw_data.get("created_at")
+        timestamp_str = (
+            raw_data.get("startTime") or raw_data.get("timestamp") or raw_data.get("created_at")
+        )
         if not timestamp_str:
             if diagnostics:
                 diagnostics.record_missing_field("timestamp")

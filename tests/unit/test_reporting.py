@@ -200,6 +200,7 @@ def test_comparison_service_empty_sessions() -> None:
 
     # Test with empty session list
     import asyncio
+
     result = asyncio.run(service.compare_sessions([]))
 
     assert result == {"sessions": [], "summary": {}}
@@ -221,6 +222,7 @@ def test_comparison_service_missing_experiment() -> None:
     service = ComparisonService(db_session=mock_session)
 
     import asyncio
+
     result = asyncio.run(service.compare_variants(uuid4()))
 
     assert result == []
@@ -251,6 +253,7 @@ def test_comparison_service_variant_query_construction() -> None:
 
     exp_id = uuid4()
     import asyncio
+
     result = asyncio.run(service.compare_variants(exp_id, include_invalid=False))
 
     assert result == []
@@ -284,6 +287,7 @@ def test_comparison_service_with_include_invalid() -> None:
 
     # Call with include_invalid=True should not add outcome_state filter
     import asyncio
+
     _ = asyncio.run(service.compare_variants(uuid4(), include_invalid=True))
 
     # Get the SQL that was executed
