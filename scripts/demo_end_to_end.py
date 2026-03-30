@@ -39,7 +39,7 @@ async def main():
         request_id = str(uuid4())
         latency = 500 + (i * 50)  # 500ms to 950ms
         ttft = 100 + (i * 10)  # 100ms to 190ms
-        
+
         requests.append(
             Request(
                 request_id=request_id,
@@ -66,7 +66,7 @@ async def main():
     # 2. Compute rollups using RollupJob
     print("2. Computing rollups using RollupJob...")
     rollup_job = RollupJob()
-    
+
     # Compute request-level rollups
     print("   a) Request-level rollups...")
     all_rollups: list[MetricRollup] = []
@@ -74,7 +74,7 @@ async def main():
         request_rollups = await rollup_job.compute_request_metrics(request)
         all_rollups.extend(request_rollups)
     print(f"      ✓ Computed {len(all_rollups)} request-level rollups")
-    
+
     # Compute session-level rollups
     print("   b) Session-level rollups...")
     session_rollups = await rollup_job.compute_session_metrics(test_session_id, requests)
@@ -85,9 +85,10 @@ async def main():
     # 3. Show repository conversion logic
     print("3. Demonstrating SQLRollupRepository conversion logic...")
     from unittest.mock import MagicMock
+
     mock_session = MagicMock()
     repository = SQLRollupRepository(mock_session)
-    
+
     # Show domain-to-ORM conversion
     print(f"   a) Converting {len(all_rollups)} MetricRollup domain models to ORM...")
     orm_entities = [repository._to_orm(r) for r in all_rollups[:5]]  # Just first 5 for demo
@@ -96,11 +97,11 @@ async def main():
     print(f"      - Example ORM metric_value: {orm_entities[0].metric_value}")
     print(f"      - Example ORM dimension_type: {orm_entities[0].dimension_type}")
     print()
-    
+
     # 4. Display key metrics
     print("4. Key Session-Level Metrics Summary:")
     print("-" * 70)
-    
+
     for rollup in session_rollups:
         if rollup.metric_name == "latency_median_ms":
             print(f"   Latency Median:    {rollup.metric_value:.1f}ms (ACCEPTANCE CRITERIA ✅)")
@@ -118,7 +119,7 @@ async def main():
             print(f"   Cache Hit Rate:    {rollup.metric_value:.2%}")
         elif rollup.metric_name == "request_count":
             print(f"   Request Count:     {int(rollup.metric_value)}")
-    
+
     print("-" * 70)
     print()
 
@@ -126,11 +127,11 @@ async def main():
     print("5. All Computed Metric Names:")
     request_metrics = {r.metric_name for r in all_rollups if r.dimension_type == "request"}
     session_metrics = {r.metric_name for r in session_rollups}
-    
+
     print("   Request-level metrics:")
     for name in sorted(request_metrics):
         print(f"     - {name}")
-    
+
     print()
     print("   Session-level metrics:")
     for name in sorted(session_metrics):
@@ -153,7 +154,7 @@ async def main():
     print("  ✓ latency_p95_ms computed")
     print("  ✓ error_rate computed")
     print()
-    
+
     return 0
 
 

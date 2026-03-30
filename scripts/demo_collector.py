@@ -133,8 +133,7 @@ async def demo_collector():
 
     print("\n--- Correlation Keys Preserved ---")
     for req in normalized_requests:
-        correlation_keys = {k: v for k, v in req.metadata.items()
-                          if k not in ["litellm_raw_keys"]}
+        correlation_keys = {k: v for k, v in req.metadata.items() if k not in ["litellm_raw_keys"]}
         if correlation_keys:
             print(f"\nRequest {req.request_id}:")
             for key, value in correlation_keys.items():

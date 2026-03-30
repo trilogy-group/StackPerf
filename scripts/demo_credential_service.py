@@ -95,9 +95,7 @@ async def demo_credential_issuance():
 
     # Show metadata tags
     print(f"\n4. Metadata Tags (for LiteLLM correlation):")
-    metadata = service._build_metadata_tags(
-        session_id, experiment_id, variant_id, harness_profile
-    )
+    metadata = service._build_metadata_tags(session_id, experiment_id, variant_id, harness_profile)
     for key, value in metadata.items():
         print(f"   {key}: {value}")
 

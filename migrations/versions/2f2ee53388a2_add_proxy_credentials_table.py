@@ -5,6 +5,7 @@ Revises: 03e22a58f3a7
 Create Date: 2025-03-27 02:30:00.000000+00:00
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -52,10 +53,7 @@ def upgrade() -> None:
     op.create_index("ix_proxy_credentials_session_id", "proxy_credentials", ["session_id"])
 
     # Add column to sessions table for credential alias reference (not a FK)
-    op.add_column(
-        "sessions",
-        sa.Column("proxy_credential_alias", sa.String(255), nullable=True)
-    )
+    op.add_column("sessions", sa.Column("proxy_credential_alias", sa.String(255), nullable=True))
 
     # Create index on the alias column for joins
     op.create_index("ix_sessions_proxy_credential_alias", "sessions", ["proxy_credential_alias"])

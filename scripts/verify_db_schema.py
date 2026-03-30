@@ -55,9 +55,11 @@ def verify_schema():
     )
     # Enable foreign keys for SQLite
     from sqlalchemy import event
+
     @event.listens_for(engine, "connect")
     def _fk_pragma_on_connect(dbapi_conn, connection_record):
         dbapi_conn.execute("PRAGMA foreign_keys=ON")
+
     init_db(engine)
     print("   ✓ Database initialized using init_db()")
 

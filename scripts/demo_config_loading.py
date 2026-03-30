@@ -56,9 +56,7 @@ def main() -> None:
     print("\n6. Protocol Surface Coverage:")
     print("-" * 40)
     anthropic_providers = [
-        n
-        for n, p in registry.providers.items()
-        if p.protocol_surface == "anthropic_messages"
+        n for n, p in registry.providers.items() if p.protocol_surface == "anthropic_messages"
     ]
     anthropic_harnesses = [
         n
@@ -69,9 +67,7 @@ def main() -> None:
         n for n, p in registry.providers.items() if p.protocol_surface == "openai_responses"
     ]
     openai_harnesses = [
-        n
-        for n, h in registry.harness_profiles.items()
-        if h.protocol_surface == "openai_responses"
+        n for n, h in registry.harness_profiles.items() if h.protocol_surface == "openai_responses"
     ]
 
     print("  Anthropic surfaces:")

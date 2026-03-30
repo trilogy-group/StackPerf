@@ -72,13 +72,47 @@ def main() -> None:
         )
 
         session_specs = [
-            (variants[0], "completed", "success", 18, [480, 520, 610], [130, 150, 170], [320, 340, 360]),
-            (variants[0], "completed", "success", 12, [450, 470, 500], [120, 135, 145], [300, 315, 325]),
-            (variants[1], "completed", "failed", 27, [720, 760, 910], [210, 240, None], [280, 290, 300]),
-            (variants[1], "completed", "success", 22, [640, 680, 710], [180, 195, 205], [295, 305, 315]),
+            (
+                variants[0],
+                "completed",
+                "success",
+                18,
+                [480, 520, 610],
+                [130, 150, 170],
+                [320, 340, 360],
+            ),
+            (
+                variants[0],
+                "completed",
+                "success",
+                12,
+                [450, 470, 500],
+                [120, 135, 145],
+                [300, 315, 325],
+            ),
+            (
+                variants[1],
+                "completed",
+                "failed",
+                27,
+                [720, 760, 910],
+                [210, 240, None],
+                [280, 290, 300],
+            ),
+            (
+                variants[1],
+                "completed",
+                "success",
+                22,
+                [640, 680, 710],
+                [180, 195, 205],
+                [295, 305, 315],
+            ),
         ]
 
-        for index, (variant, status, outcome, minutes, latencies, ttfts, completions) in enumerate(session_specs):
+        for index, (variant, status, outcome, minutes, latencies, ttfts, completions) in enumerate(
+            session_specs
+        ):
             started_at = now - timedelta(hours=index + 1)
             benchmark_session = BenchmarkSession(
                 experiment_id=experiment.id,
