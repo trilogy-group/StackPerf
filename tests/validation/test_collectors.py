@@ -8,6 +8,10 @@ from pathlib import Path
 
 import pytest
 
+# Late imports tested separately
+from collectors.litellm_collector import CollectionDiagnostics, LiteLLMCollector
+from collectors.prometheus_collector import PrometheusCollector
+
 
 class TestCollectorStructure:
     """Test collector module structure."""
@@ -95,15 +99,11 @@ class TestCollectorFunctionSignatures:
 
     def test_litellm_collector_has_collect_function(self) -> None:
         """Test litellm_collector has collection function."""
-        from collectors.litellm_collector import LiteLLMCollector, CollectionDiagnostics
-
         assert LiteLLMCollector is not None
         assert CollectionDiagnostics is not None
 
     def test_prometheus_collector_has_collect_function(self) -> None:
         """Test prometheus_collector has collection function."""
-        from collectors.prometheus_collector import PrometheusCollector
-
         assert PrometheusCollector is not None
 
 
