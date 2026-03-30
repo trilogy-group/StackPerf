@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from benchmark_core.db.session import create_database_engine, get_database_url
 
 
-class HealthStatus(str, enum.Enum):
+class HealthStatus(enum.StrEnum):
     """Health check status values."""
 
     HEALTHY = "healthy"

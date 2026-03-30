@@ -4,6 +4,7 @@ Tests for COE-311: Render harness-specific environment snippets from harness pro
 """
 
 import pytest
+from pydantic import ValidationError
 
 from benchmark_core.config import HarnessProfile, Variant
 from benchmark_core.services.rendering import (
@@ -341,7 +342,7 @@ class TestProfileValidation:
     ) -> None:
         """Profile without name fails validation at Pydantic level."""
         # Pydantic validates this at model construction time
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             HarnessProfile(
                 name="",  # Empty name
                 protocol_surface="openai_responses",
@@ -356,7 +357,7 @@ class TestProfileValidation:
     ) -> None:
         """Profile without required env vars fails validation at Pydantic level."""
         # Pydantic validates this at model construction time
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             HarnessProfile(
                 name="test-profile",
                 protocol_surface="openai_responses",
@@ -387,7 +388,7 @@ class TestProfileValidation:
     ) -> None:
         """Profile with invalid protocol surface fails at Pydantic level."""
         # Pydantic validates Literal types at model construction time
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             HarnessProfile(
                 name="test-profile",
                 protocol_surface="invalid_protocol",  # type: ignore
@@ -402,7 +403,7 @@ class TestProfileValidation:
     ) -> None:
         """Profile with invalid render format fails at Pydantic level."""
         # Pydantic validates Literal types at model construction time
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             HarnessProfile(
                 name="test-profile",
                 protocol_surface="openai_responses",
