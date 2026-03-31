@@ -230,11 +230,11 @@ class TestExperiment:
     def test_valid_experiment(self) -> None:
         """Test creating a valid Experiment."""
         experiment = Experiment(
-            name="fireworks-terminal-agents-comparison",
-            description="Compare Fireworks models across harnesses",
-            variants=["fireworks-kimi-k2-5-claude-code", "fireworks-glm-5-claude-code"],
+            name="fireworks-openhands-model-comparison",
+            description="Compare Fireworks models using OpenHands",
+            variants=["fireworks-kimi-k2-5-openhands", "fireworks-glm-5-openhands"],
         )
-        assert experiment.name == "fireworks-terminal-agents-comparison"
+        assert experiment.name == "fireworks-openhands-model-comparison"
         assert len(experiment.variants) == 2
 
     def test_experiment_duplicate_variants(self) -> None:
@@ -359,7 +359,7 @@ class TestConfigRegistry:
         # Register harness with openai_responses
         registry.register_harness_profile(
             HarnessProfile(
-                name="openai-cli",
+                name="codex",
                 protocol_surface="openai_responses",
                 base_url_env="OPENAI_BASE_URL",
                 api_key_env="OPENAI_API_KEY",
@@ -373,9 +373,9 @@ class TestConfigRegistry:
                 name="test-variant",
                 provider="fireworks",
                 model_alias="kimi-k2-5",
-                harness_profile="openai-cli",
+                harness_profile="codex",
                 benchmark_tags={
-                    "harness": "openai-cli",
+                    "harness": "codex",
                     "provider": "fireworks",
                     "model": "kimi-k2-5",
                 },
@@ -443,14 +443,17 @@ class TestConfigLoader:
 
         # Verify harnesses loaded
         assert "claude-code" in registry.harness_profiles
-        assert "openai-cli" in registry.harness_profiles
+        assert "codex" in registry.harness_profiles
+        assert "opencode" in registry.harness_profiles
+        assert "openhands" in registry.harness_profiles
 
         # Verify variants loaded
         assert "fireworks-kimi-k2-5-claude-code" in registry.variants
-        assert "openai-gpt-5.4-cli" in registry.variants
+        assert "openai-gpt-5.4-codex" in registry.variants
+        assert "fireworks-kimi-k2-5-openhands" in registry.variants
 
         # Verify experiments loaded
-        assert "fireworks-terminal-agents-comparison" in registry.experiments
+        assert "fireworks-openhands-model-comparison" in registry.experiments
 
         # Verify task cards loaded
         assert "repo-auth-analysis" in registry.task_cards

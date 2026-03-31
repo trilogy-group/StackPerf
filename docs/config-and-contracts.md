@@ -99,12 +99,10 @@ An experiment groups comparable variants.
 ### Example
 
 ```yaml
-name: fireworks-terminal-agents-comparison
+name: fireworks-openhands-model-comparison
 variants:
-  - fireworks-kimi-k2-5-claude-beta-off
-  - fireworks-glm-5-claude-beta-off
-  - fireworks-kimi-k2-5-openai-cli
-  - fireworks-glm-5-openai-cli
+  - fireworks-kimi-k2-5-openhands
+  - fireworks-glm-5-openhands
 ```
 
 ## Task-card config

@@ -105,9 +105,9 @@ curl -X POST http://localhost:4000/key/generate \
   -d '{
     "metadata": {
       "session_id": "session-abc123",
-      "experiment": "fireworks-terminal-agents-comparison",
-      "variant": "fireworks-kimi-k2-5-claude-code",
-      "harness": "claude-code",
+      "experiment": "fireworks-openhands-model-comparison",
+      "variant": "fireworks-kimi-k2-5-openhands",
+      "harness": "openhands",
       "task_card": "repo-auth-analysis"
     },
     "budget_duration": "1d",
