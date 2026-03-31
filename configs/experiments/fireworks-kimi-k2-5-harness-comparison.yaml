@@ -1,0 +1,5 @@
+name: fireworks-kimi-k2-5-harness-comparison
+description: Compare Claude Code and OpenCode against Fireworks Kimi K2.5
+variants:
+  - fireworks-kimi-k2-5-claude-code
+  - fireworks-kimi-k2-5-opencode

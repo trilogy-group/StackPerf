@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 # Define valid protocol surfaces
 ProtocolSurface = Literal["anthropic_messages", "openai_responses"]
-RenderFormat = Literal["shell", "dotenv"]
+RenderFormat = Literal["shell", "dotenv", "json", "toml"]
 
 
 class ProviderModel(BaseModel):

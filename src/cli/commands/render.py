@@ -31,7 +31,7 @@ def render_env(
         "http://localhost:4000", "--proxy", "-u", help="LiteLLM proxy base URL"
     ),
     output_format: str = typer.Option(
-        "shell", "--format", "-f", help="Output format: shell or dotenv"
+        "shell", "--format", "-f", help="Output format: shell, dotenv, json, or toml"
     ),
     include_secrets: bool = typer.Option(
         False, "--secrets", "-s", help="Include actual credential value in output"
@@ -100,9 +100,9 @@ def render_env(
             console.print()
 
         # Validate format
-        if output_format not in ("shell", "dotenv"):
+        if output_format not in ("shell", "dotenv", "json", "toml"):
             console.print(
-                f"[red]Error: Invalid format '{output_format}'. Use 'shell' or 'dotenv'.[/red]"
+                f"[red]Error: Invalid format '{output_format}'. Use 'shell', 'dotenv', 'json', or 'toml'.[/red]"
             )
             raise typer.Exit(1)
 
@@ -130,10 +130,13 @@ def render_env(
             console.print()
 
             # Display rendered content with syntax highlighting
-            if snippet.format == "shell":
-                syntax = Syntax(snippet.content, "bash", theme="monokai", line_numbers=False)
-            else:
-                syntax = Syntax(snippet.content, "yaml", theme="monokai", line_numbers=False)
+            language = {
+                "shell": "bash",
+                "dotenv": "sh",
+                "json": "json",
+                "toml": "toml",
+            }[snippet.format]
+            syntax = Syntax(snippet.content, language, theme="monokai", line_numbers=False)
             console.print(syntax)
 
         except RenderingError as e:

@@ -111,7 +111,7 @@ Before starting, ensure you have:
 - [ ] Docker and Docker Compose installed
 - [ ] `uv` package manager installed (for the benchmark application)
 - [ ] API keys for your target providers (e.g., `FIREWORKS_API_KEY`, `OPENAI_API_KEY`)
-- [ ] A terminal agent or CLI harness installed (e.g., Claude Code, OpenAI CLI)
+- [ ] A terminal agent or CLI harness installed (e.g., Claude Code, OpenCode, Codex)
 - [ ] A repository to benchmark against (can be any codebase)
 
 ### Step-by-Step: First Session
@@ -174,50 +174,56 @@ You can also validate cross-references between config files:
 uv run benchmark config validate
 ```
 
-#### 4. Create a Benchmark Session
+#### 4. Create Benchmark Sessions
+
+An experiment is the comparison bucket, not a single run. To compare Claude Code and OpenCode on Fireworks Kimi K2.5, create one session for each variant in the experiment.
 
 ```bash
 # Optional: avoid inheriting another project's DATABASE_URL
 unset DATABASE_URL
 
-# Create a session
+# Create a Claude Code session for the Kimi K2.5 harness comparison
 uv run benchmark session create \
-  --experiment fireworks-terminal-agents-comparison \
+  --experiment fireworks-kimi-k2-5-harness-comparison \
   --variant fireworks-kimi-k2-5-claude-code \
   --task-card repo-auth-analysis \
   --harness claude-code \
-  --label "first-session" \
+  --label "claude-code-run-1" \
+  --notes "Initial benchmark run"
+
+# Create an OpenCode session for the same comparison
+uv run benchmark session create \
+  --experiment fireworks-kimi-k2-5-harness-comparison \
+  --variant fireworks-kimi-k2-5-opencode \
+  --task-card repo-auth-analysis \
+  --harness opencode \
+  --label "opencode-run-1" \
   --notes "Initial benchmark run"
 ```
 
-Expected output: Session created with a unique `session_id` (UUID). Git metadata (branch, commit, dirty state) is captured automatically.
+Expected output: each command creates a unique `session_id` (UUID). Git metadata (branch, commit, dirty state) is captured automatically.
 
 #### 5. Render and Apply Harness Environment
 
 ```bash
-# Render the environment snippet for your session
+# Render the harness-specific snippet for your session
 uv run benchmark session env <session-id>
 ```
 
-Copy the output and apply it in your terminal.
+Use the generated output according to the harness:
+
+- Claude Code: evaluate the generated shell exports in your terminal
+- OpenHands: evaluate the generated `LLM_*` shell exports in your terminal
+- OpenCode: copy the generated JSON into `~/.config/opencode/opencode.json` or project `opencode.json`
+- Codex: copy the generated TOML into `~/.codex/config.toml`, and export the referenced API key env var before launching Codex
 
 Important:
 
-- `sk-benchmark-<session-id>` in the example below is a placeholder for a generated LiteLLM virtual key, not your Fireworks, OpenAI, or Anthropic provider key.
-- You do not make up this value by hand. The benchmark session manager should generate it for the session and print it in `uv run benchmark session env <session-id>`.
-- The session ID and the session virtual key are different things. The session ID identifies the benchmark run in the benchmark database. The session virtual key is the proxy credential the harness uses when talking to LiteLLM.
+- `sk-benchmark-<session-id>` is a placeholder for a generated LiteLLM virtual key, not your LLM provider API key.
+- The benchmark session manager should generate it for the session and print it in `uv run benchmark session env <session-id>`.
+- The session ID identifies the benchmark run in the benchmark database.
+- The session virtual key is the proxy credential the harness uses when talking to LiteLLM.
 - Per-session segmentation is done by issuing a different virtual key for each benchmark session, usually with session metadata attached.
-
-```bash
-# Example output for claude-code harness:
-export ANTHROPIC_BASE_URL="http://localhost:4000"
-export ANTHROPIC_API_KEY="sk-benchmark-<session-id>"
-export ANTHROPIC_MODEL="kimi-k2-5"
-export ANTHROPIC_DEFAULT_SONNET_MODEL="kimi-k2-5"
-export ANTHROPIC_DEFAULT_HAIKU_MODEL="kimi-k2-5"
-export ANTHROPIC_DEFAULT_OPUS_MODEL="kimi-k2-5"
-export CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS="1"
-```
 
 If you are setting up a harness manually before the session-manager flow is complete, generate a proxy key yourself:
 
@@ -234,7 +240,7 @@ curl -s -X POST http://localhost:4000/key/generate \
   }'
 ```
 
-Use the returned `key` value as the harness-facing `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`.
+Use the returned `key` value as the harness-facing session credential. For env-based harnesses, that means `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, or `LLM_API_KEY`. For file-configured harnesses like OpenCode or Codex, insert the returned key into the generated config snippet.
 
 #### 6. Launch the Harness
 
@@ -244,8 +250,11 @@ With the environment set, launch your harness:
 # For Claude Code
 claude
 
-# For an OpenAI-compatible CLI
-openai api responses.create -m gpt-5.4-mini
+# For OpenCode
+opencode
+
+# For Codex
+codex
 ```
 
 The harness now routes all traffic through the local LiteLLM proxy with session correlation.
@@ -270,35 +279,10 @@ Use those aliases as the model names your harness sends to the proxy.
 
 Examples:
 
-- Claude Code uses Anthropic-style env vars, but it can still target Fireworks or OpenAI routes through LiteLLM by setting `ANTHROPIC_MODEL` to a LiteLLM alias such as `kimi-k2-5` or `gpt-5.4-mini`.
-- OpenAI-compatible harnesses such as Codex, OpenCode, or OpenHands should generally use `OPENAI_BASE_URL=http://localhost:4000`, `OPENAI_API_KEY=<session virtual key>`, and whichever model alias you want to benchmark.
-- Anthropic-compatible harnesses should use `ANTHROPIC_BASE_URL=http://localhost:4000`, `ANTHROPIC_API_KEY=<session virtual key>`, and whichever model alias you want to benchmark.
-
-Examples by harness style:
-
-```bash
-# Claude Code against Fireworks Kimi K2.5
-export ANTHROPIC_BASE_URL="http://localhost:4000"
-export ANTHROPIC_API_KEY="$SESSION_VIRTUAL_KEY"
-export ANTHROPIC_MODEL="kimi-k2-5"
-export ANTHROPIC_DEFAULT_SONNET_MODEL="kimi-k2-5"
-export ANTHROPIC_DEFAULT_HAIKU_MODEL="kimi-k2-5"
-export ANTHROPIC_DEFAULT_OPUS_MODEL="kimi-k2-5"
-```
-
-```bash
-# OpenAI-compatible client against OpenAI GPT-5.4 Mini
-export OPENAI_BASE_URL="http://localhost:4000"
-export OPENAI_API_KEY="$SESSION_VIRTUAL_KEY"
-export OPENAI_MODEL="gpt-5.4-mini"
-```
-
-```bash
-# OpenAI-compatible client against Fireworks GLM-5 Fast
-export OPENAI_BASE_URL="http://localhost:4000"
-export OPENAI_API_KEY="$SESSION_VIRTUAL_KEY"
-export OPENAI_MODEL="glm-5-fast"
-```
+- Claude Code uses Anthropic-style env vars and works well with the LiteLLM Anthropic endpoint.
+- OpenHands uses `LLM_BASE_URL`, `LLM_API_KEY`, and `LLM_MODEL`.
+- OpenCode is configured through `~/.config/opencode/opencode.json` or project `opencode.json`.
+- Codex is configured through `~/.codex/config.toml`.
 
 To add more models later, add a new LiteLLM alias in `configs/litellm/config.yaml` and keep the provider config in `configs/providers/` in sync.
 
@@ -331,6 +315,25 @@ open http://localhost:3000
 uv run benchmark export sessions --format csv --output sessions.csv
 ```
 
+## Reset Local State
+
+If you want to wipe local benchmark sessions and start over from a clean slate:
+
+```bash
+unset DATABASE_URL
+rm -f benchmark.db
+docker compose down -v
+docker compose up -d --force-recreate
+uv run benchmark config init-db
+```
+
+What this resets:
+
+- `benchmark.db`: local benchmark sessions, requests, and imported config records
+- Docker volumes: local Postgres, Prometheus, and Grafana persisted state
+
+After this, `uv run benchmark session list` should be empty.
+
 ## Local operator workflow
 
 For a complete walkthrough of running a benchmark session, see [configs/litellm/README.md](configs/litellm/README.md). The quick version:
@@ -338,7 +341,8 @@ For a complete walkthrough of running a benchmark session, see [configs/litellm/
 1. Start the infrastructure stack (LiteLLM, PostgreSQL, Prometheus, Grafana)
 2. Run `uv run benchmark config init-db` to create the schema and import config records
 3. Use `uv run benchmark config list-experiments`, `list-variants`, and `list-task-cards` to pick a test case
-4. Create a session: `uv run benchmark session create --experiment <name> --variant <name> --task-card <name> --harness <name>`
+4. For onboarding, use the `fireworks-kimi-k2-5-harness-comparison` experiment to compare `claude-code` and `opencode`
+5. Create a session: `uv run benchmark session create --experiment <name> --variant <name> --task-card <name> --harness <name>`
 5. Copy the rendered environment snippet and launch your harness interactively
 6. Work on the task; the proxy captures all traffic with session correlation
 7. Finalize the session: `uv run benchmark session finalize --session-id <id> --status completed`

@@ -1,9 +1,10 @@
-"""Service for rendering harness-specific environment snippets from harness profiles.
+"""Service for rendering harness-specific harness snippets from harness profiles.
 
-This module provides environment rendering capabilities for benchmark sessions,
-supporting shell and dotenv formats with variant overrides and template substitution.
+This module provides rendering capabilities for benchmark sessions, supporting
+shell, dotenv, JSON, and TOML outputs depending on how a harness is configured.
 """
 
+import json
 import re
 
 from pydantic import BaseModel
@@ -138,8 +139,12 @@ class EnvRenderingService:
         # Render in the requested format
         if output_format == "shell":
             content = self._render_shell(env_vars)
-        else:  # dotenv
+        elif output_format == "dotenv":
             content = self._render_dotenv(env_vars)
+        elif output_format == "json":
+            content = self._render_json(harness_profile.name, env_vars, effective_model)
+        else:
+            content = self._render_toml(harness_profile.name, env_vars, effective_model)
 
         return EnvSnippet(
             format=output_format,
@@ -282,7 +287,7 @@ class EnvRenderingService:
             )
 
         # Check render format
-        valid_formats = ["shell", "dotenv"]
+        valid_formats = ["shell", "dotenv", "json", "toml"]
         if harness_profile.render_format not in valid_formats:
             errors.append(
                 f"invalid render_format '{harness_profile.render_format}'; "
@@ -406,6 +411,50 @@ class EnvRenderingService:
                 lines.append(f'{key}="{escaped}"')
             else:
                 lines.append(f"{key}={value}")
+        return "\n".join(lines)
+
+    def _render_json(self, profile_name: str, env_vars: dict[str, str], model_alias: str) -> str:
+        """Render harness configuration as JSON."""
+        if profile_name != "opencode":
+            raise RenderingError(f"json rendering is not supported for profile '{profile_name}'")
+
+        config = {
+            "$schema": "https://opencode.ai/config.json",
+            "provider": {
+                "stackperf": {
+                    "npm": "@ai-sdk/openai-compatible",
+                    "name": "StackPerf LiteLLM",
+                    "options": {
+                        "baseURL": env_vars["OPENAI_BASE_URL"],
+                        "apiKey": env_vars["OPENAI_API_KEY"],
+                    },
+                    "models": {
+                        model_alias: {
+                            "name": model_alias,
+                        }
+                    },
+                }
+            },
+            "model": f"stackperf/{model_alias}",
+        }
+        return json.dumps(config, indent=2)
+
+    def _render_toml(self, profile_name: str, env_vars: dict[str, str], model_alias: str) -> str:
+        """Render harness configuration as TOML."""
+        if profile_name != "codex":
+            raise RenderingError(f"toml rendering is not supported for profile '{profile_name}'")
+
+        escaped_key = env_vars["OPENAI_API_KEY"].replace("'", "'\''")
+        lines = [
+            f"# Export before starting Codex: export OPENAI_API_KEY='{escaped_key}'",
+            f'model = "{model_alias}"',
+            'model_provider = "stackperf"',
+            "",
+            "[model_providers.stackperf]",
+            'name = "StackPerf LiteLLM"',
+            f'base_url = "{env_vars["OPENAI_BASE_URL"]}"',
+            'env_key = "OPENAI_API_KEY"',
+        ]
         return "\n".join(lines)
 
 

@@ -5,11 +5,15 @@ from uuid import UUID
 
 import typer
 from rich.console import Console
+from rich.syntax import Syntax
 from sqlalchemy.orm import Session as SQLAlchemySession
 
+from benchmark_core.config import HarnessProfile as HarnessProfileConfig
+from benchmark_core.config import Variant as VariantConfig
 from benchmark_core.db.models import (
     Experiment as DBExperiment,
 )
+from benchmark_core.db.models import HarnessProfile as DBHarnessProfile
 from benchmark_core.db.models import (
     Session as DBSession,
 )
@@ -23,6 +27,7 @@ from benchmark_core.db.session import get_db_session
 from benchmark_core.git import get_git_metadata
 from benchmark_core.models import SessionOutcomeState
 from benchmark_core.repositories.session_repository import SQLSessionRepository
+from benchmark_core.services.rendering import EnvRenderingService
 from benchmark_core.services.session_service import SessionService
 
 app = typer.Typer(help="Manage benchmark sessions")
@@ -365,11 +370,61 @@ def env(session_id: str) -> None:
                 console.print(f"[red]Session not found: {session_id}[/red]")
                 raise typer.Exit(1)
 
+            profile_row = (
+                db.query(DBHarnessProfile).filter_by(name=db_session.harness_profile).first()
+            )
+            if profile_row is None:
+                console.print(
+                    f"[red]Harness profile not found for session: {db_session.harness_profile}[/red]"
+                )
+                raise typer.Exit(1)
+
+            variant_row = db.query(DBVariant).filter_by(id=db_session.variant_id).first()
+            if variant_row is None:
+                console.print(f"[red]Variant not found for session: {db_session.variant_id}[/red]")
+                raise typer.Exit(1)
+
+            profile = HarnessProfileConfig(
+                name=profile_row.name,
+                protocol_surface=profile_row.protocol_surface,
+                base_url_env=profile_row.base_url_env,
+                api_key_env=profile_row.api_key_env,
+                model_env=profile_row.model_env,
+                extra_env=profile_row.extra_env,
+                render_format=profile_row.render_format,
+                launch_checks=profile_row.launch_checks,
+            )
+            variant = VariantConfig(
+                name=variant_row.name,
+                provider=variant_row.provider,
+                provider_route=variant_row.provider_route,
+                model_alias=variant_row.model_alias,
+                harness_profile=variant_row.harness_profile,
+                harness_env_overrides=variant_row.harness_env_overrides,
+                benchmark_tags=variant_row.benchmark_tags,
+            )
+
+            rendering = EnvRenderingService()
+            credential = db_session.proxy_credential_alias or f"sk-benchmark-{db_session.id}"
+            snippet = rendering.render_env_snippet(
+                harness_profile=profile,
+                variant=variant,
+                credential=credential,
+                include_secrets=True,
+            )
+
             console.print(f"[bold blue]Environment for session {session_id}:[/bold blue]")
             console.print(f"# Session: {db_session.id}")
             console.print(f"# Harness Profile: {db_session.harness_profile}")
-            console.print("export OPENAI_API_BASE=http://localhost:4000")
-            console.print(f"export OPENAI_API_KEY=sk-benchmark-{db_session.id}")
+            console.print(f"# Model Alias: {variant.model_alias}")
+            language = {
+                "shell": "bash",
+                "dotenv": "sh",
+                "json": "json",
+                "toml": "toml",
+            }[snippet.format]
+            syntax = Syntax(snippet.content, language, theme="monokai", line_numbers=False)
+            console.print(syntax)
 
         except typer.BadParameter:
             raise
