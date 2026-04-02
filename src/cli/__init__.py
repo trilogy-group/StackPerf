@@ -4,6 +4,7 @@ import click
 from rich.console import Console
 
 from src import __version__
+from src.cli.diagnose import diagnose as diagnose_group
 
 console = Console()
 
@@ -19,6 +20,10 @@ def main() -> None:
 def version() -> None:
     """Show version information."""
     console.print(f"StackPerf version: {__version__}")
+
+
+# Register diagnose commands
+main.add_command(diagnose_group, name="diagnose")
 
 
 if __name__ == "__main__":

@@ -29,8 +29,8 @@ dev = [
 ]
 
 [project.scripts]
-stackperf = "cli:main"
-bench = "cli:main"
+stackperf = "cli.__init__:main"
+bench = "cli.__init__:main"
 
 [build-system]
 requires = ["hatchling"]

@@ -1,0 +1,53 @@
+{
+  "conversation_id": "eb89411d-f8d9-4f22-8336-ca25a3a2dced",
+  "workspace": {
+    "working_dir": "/Users/magos/.opensymphony/workspaces/COE-299",
+    "kind": "LocalWorkspace"
+  },
+  "persistence_dir": "/Users/magos/.opensymphony/workspaces/COE-299/.opensymphony/openhands",
+  "max_iterations": 500,
+  "stuck_detection": true,
+  "confirmation_policy": {
+    "kind": "NeverConfirm"
+  },
+  "agent": {
+    "kind": "Agent",
+    "llm": {
+      "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+      "api_key": "fw_AcjEczksuPyLK3WUPUTYsG",
+      "base_url": "https://api.fireworks.ai/inference/v1"
+    },
+    "condenser": {
+      "kind": "LLMSummarizingCondenser",
+      "llm": {
+        "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+        "api_key": "fw_AcjEczksuPyLK3WUPUTYsG",
+        "base_url": "https://api.fireworks.ai/inference/v1",
+        "usage_id": "condenser"
+      },
+      "max_size": 240,
+      "keep_first": 2
+    },
+    "tools": [
+      {
+        "name": "terminal",
+        "params": {}
+      },
+      {
+        "name": "file_editor",
+        "params": {}
+      }
+    ]
+  },
+  "mcp_config": {
+    "stdio_servers": [
+      {
+        "name": "linear",
+        "command": "opensymphony",
+        "args": [
+          "linear-mcp"
+        ]
+      }
+    ]
+  }
+}

@@ -72,8 +72,8 @@ jobs:
       - name: Sync dependencies
         run: uv sync --all-extras
         
-      - name: Validate configs
-        run: uv run stackperf validate --all-configs
+      - name: Validate environment
+        run: uv run stackperf diagnose env
         continue-on-error: true
         
   migration-smoke:

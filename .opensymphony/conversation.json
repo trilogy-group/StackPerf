@@ -1,0 +1,65 @@
+{
+  "issue_id": "3a078d03-fdb4-417b-8328-79488563646d",
+  "identifier": "COE-299",
+  "conversation_id": "eb89411d-f8d9-4f22-8336-ca25a3a2dced",
+  "reuse_policy": "per_issue",
+  "server_base_url": "http://127.0.0.1:8000",
+  "transport_target": "loopback",
+  "http_auth_mode": "none",
+  "websocket_auth_mode": "none",
+  "persistence_dir": "/Users/magos/.opensymphony/workspaces/COE-299/.opensymphony/openhands",
+  "created_at": "2026-04-02T15:28:05.267698Z",
+  "updated_at": "2026-04-02T15:56:19.682602Z",
+  "last_attached_at": "2026-04-02T15:56:19.681420Z",
+  "launch_profile": {
+    "workspace_kind": "LocalWorkspace",
+    "confirmation_policy_kind": "NeverConfirm",
+    "agent_kind": "Agent",
+    "llm_model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+    "condenser": {
+      "max_size": 240,
+      "keep_first": 2
+    },
+    "agent_tools": [
+      {
+        "name": "terminal",
+        "params": {}
+      },
+      {
+        "name": "file_editor",
+        "params": {}
+      }
+    ],
+    "agent_include_default_tools": null,
+    "max_iterations": 500,
+    "stuck_detection": true,
+    "mcp_stdio_servers": [
+      {
+        "name": "linear",
+        "command": "opensymphony",
+        "args": [
+          "linear-mcp"
+        ]
+      }
+    ],
+    "llm_api_key_fingerprint": "7ef308eede318460"
+  },
+  "llm_config_fingerprint": {
+    "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo"
+  },
+  "fresh_conversation": false,
+  "workflow_prompt_seeded": true,
+  "runtime_contract_version": "openhands-sdk-agent-server-v1",
+  "last_prompt_kind": "continuation",
+  "last_prompt_at": "2026-04-02T15:56:19.682602Z",
+  "last_prompt_path": "/Users/magos/.opensymphony/workspaces/COE-299/.opensymphony/prompts/last-continuation-prompt.md",
+  "last_execution_status": "finished",
+  "last_event_id": "d32b7f2a-c01c-43c2-92ed-5e42200a4dc5",
+  "last_event_kind": "ConversationStateUpdateEvent",
+  "last_event_at": "2026-04-02T10:56:12.297151Z",
+  "last_event_summary": "status: finished",
+  "input_tokens": 11119094,
+  "output_tokens": 75772,
+  "cache_read_tokens": 10806272,
+  "last_token_accumulation_at": "2026-04-02T10:56:12.304019Z"
+}

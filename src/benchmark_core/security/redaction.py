@@ -188,9 +188,56 @@ def redact_dict(
 
     for key, value in data.items():
         # Check if key itself indicates sensitive data
-        if key.lower() in cfg.sensitive_keys:
+        key_lower = key.lower()
+        # Check if key is a sensitive key or if key name itself matches secret patterns
+        if key_lower in cfg.sensitive_keys or _is_key_patterned_secret(key, cfg):
             result[key] = cfg.placeholder
         else:
             result[key] = redact_value(value, key, cfg)
 
     return result
+
+
+def _is_key_patterned_secret(key: str, config: RedactionConfig) -> bool:
+    """Check if a key name itself appears to contain a secret value.
+
+    This catches keys like "api_key_sk-abc123" or "token_eyJxxxxx" where
+    the key name suffix/prefix contains what looks like a secret.
+
+    Args:
+        key: The dictionary key to check.
+        config: Redaction configuration.
+
+    Returns:
+        True if the key appears to contain a secret pattern.
+    """
+    # Check if key contains any secret patterns (like sk-, eyJ for JWT, etc.)
+    for pattern_name, pattern in REDACTION_PATTERNS:
+        # Skip overly generic patterns that would match normal identifiers
+        if pattern_name in ("generic_secret", "base64_secret"):
+            continue
+        if pattern.search(key):
+            return True
+
+    # Check for common secret-containing key suffixes
+    secret_indicators = [
+        "_key_",
+        "_token_",
+        "_secret_",
+        "_password_",
+        "_credential_",
+        "sk-",
+        "eyJ",  # JWT prefix
+    ]
+    key_lower = key.lower()
+    for indicator in secret_indicators:
+        if indicator in key_lower:
+            # Check if what follows looks like a secret value
+            parts = key_lower.split(indicator)
+            if len(parts) > 1 and parts[-1]:
+                # The part after the indicator looks like a secret fragment
+                suffix = parts[-1]
+                if len(suffix) >= 8 and suffix.isalnum():
+                    return True
+
+    return False

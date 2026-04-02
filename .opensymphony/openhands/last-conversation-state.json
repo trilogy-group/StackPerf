@@ -1,0 +1,3356 @@
+{
+  "conversation_id": "eb89411d-f8d9-4f22-8336-ca25a3a2dced",
+  "workspace": {
+    "working_dir": "/Users/magos/.opensymphony/workspaces/COE-299",
+    "kind": "LocalWorkspace"
+  },
+  "persistence_dir": "workspace/conversations/eb89411df8d94f228336ca25a3a2dced",
+  "max_iterations": 500,
+  "stuck_detection": true,
+  "execution_status": "finished",
+  "confirmation_policy": {
+    "kind": "NeverConfirm"
+  },
+  "agent": {
+    "kind": "Agent",
+    "llm": {
+      "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+      "base_url": "https://api.fireworks.ai/inference/v1",
+      "usage_id": "default"
+    },
+    "condenser": {
+      "kind": "LLMSummarizingCondenser",
+      "llm": {
+        "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+        "base_url": "https://api.fireworks.ai/inference/v1",
+        "usage_id": "condenser"
+      },
+      "max_size": 240,
+      "keep_first": 2
+    },
+    "tools": [
+      {
+        "name": "terminal",
+        "params": {}
+      },
+      {
+        "name": "file_editor",
+        "params": {}
+      }
+    ],
+    "include_default_tools": [
+      "FinishTool",
+      "ThinkTool"
+    ]
+  },
+  "stats": {
+    "usage_to_metrics": {
+      "condenser": {
+        "accumulated_cost": 0.0,
+        "accumulated_token_usage": {
+          "cache_read_tokens": 0,
+          "cache_write_tokens": 0,
+          "completion_tokens": 4533,
+          "context_window": 0,
+          "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+          "per_turn_token": 14125,
+          "prompt_tokens": 35737,
+          "reasoning_tokens": 0,
+          "response_id": ""
+        },
+        "costs": [],
+        "max_budget_per_task": null,
+        "model_name": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+        "response_latencies": [
+          {
+            "latency": 16.254766941070557,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ffb9753c-7367-4d35-906b-994713cc029d"
+          },
+          {
+            "latency": 7.1858789920806885,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b87d75db-f525-4e35-9892-45d36b04e2e1"
+          },
+          {
+            "latency": 10.263065099716188,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "951b9457-64f7-414a-a607-221bbc535874"
+          }
+        ],
+        "token_usages": [
+          {
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+            "completion_tokens": 2040,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 13587,
+            "prompt_tokens": 11547,
+            "reasoning_tokens": 0,
+            "response_id": "ffb9753c-7367-4d35-906b-994713cc029d"
+          },
+          {
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+            "completion_tokens": 976,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 12558,
+            "prompt_tokens": 11582,
+            "reasoning_tokens": 0,
+            "response_id": "b87d75db-f525-4e35-9892-45d36b04e2e1"
+          },
+          {
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+            "completion_tokens": 1517,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 14125,
+            "prompt_tokens": 12608,
+            "reasoning_tokens": 0,
+            "response_id": "951b9457-64f7-414a-a607-221bbc535874"
+          }
+        ]
+      },
+      "default": {
+        "accumulated_cost": 0.0,
+        "accumulated_token_usage": {
+          "cache_read_tokens": 10806272,
+          "cache_write_tokens": 0,
+          "completion_tokens": 75772,
+          "context_window": 0,
+          "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+          "per_turn_token": 60289,
+          "prompt_tokens": 11119094,
+          "reasoning_tokens": 0,
+          "response_id": ""
+        },
+        "costs": [],
+        "max_budget_per_task": null,
+        "model_name": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+        "response_latencies": [
+          {
+            "latency": 3.46830677986145,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "5ff426d9-e2d8-4ec5-a989-92d7d199f4dd"
+          },
+          {
+            "latency": 2.224943161010742,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6314afbb-38e8-9357-b8f1-db3b83c1406c"
+          },
+          {
+            "latency": 2.5598931312561035,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "34b78a71-c08f-4b60-95c4-92d9aabc3b0d"
+          },
+          {
+            "latency": 3.726404190063477,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "9ea50b9d-a0b3-49b6-b0ba-b357113bac87"
+          },
+          {
+            "latency": 2.358985185623169,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "7c11ac8a-a61c-4df6-802a-3837047ceb86"
+          },
+          {
+            "latency": 3.284770965576172,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6ec3fe30-a69e-4ece-895c-ab18295d4729"
+          },
+          {
+            "latency": 2.920696973800659,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "de2ddbc5-2c67-4f0d-b68e-ee4578994ce1"
+          },
+          {
+            "latency": 3.4601831436157227,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "c6ecdf18-d9cd-4cf3-91fd-0941ca790463"
+          },
+          {
+            "latency": 3.9765172004699703,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f75a7c16-092c-460e-9c86-4cf6415d39b9"
+          },
+          {
+            "latency": 3.6068248748779297,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "fb892a11-de8a-4d03-814c-9f83660da158"
+          },
+          {
+            "latency": 2.2494001388549805,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "bf4a740e-a17f-4903-9933-3c63e1a62a40"
+          },
+          {
+            "latency": 3.185520887374878,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "0a27ab5f-4a30-46e6-b548-1b294ae0d092"
+          },
+          {
+            "latency": 3.706552743911743,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "0a71520e-a001-466d-a6f3-02fe955cbf69"
+          },
+          {
+            "latency": 5.989307880401611,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f539226a-4faf-4287-82b3-78fce40cae5f"
+          },
+          {
+            "latency": 2.41947078704834,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "cda96c0e-7197-4468-8aa2-0457f12e424b"
+          },
+          {
+            "latency": 3.032804250717163,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "85a4850a-de3b-45c8-9703-0626a7c11c09"
+          },
+          {
+            "latency": 3.216402053833008,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ca0ff0f5-6c5c-42b6-9c39-72ab263a32ee"
+          },
+          {
+            "latency": 2.2927448749542236,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e1081753-28a6-45d1-8431-43bf2bb1cb40"
+          },
+          {
+            "latency": 7.956331968307495,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "45461848-3ad2-4a0c-8ffd-710cf70cc27c"
+          },
+          {
+            "latency": 1.8687570095062256,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "4c3a5989-34e5-4eea-8246-297b427e5530"
+          },
+          {
+            "latency": 3.214505910873413,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a4fcb50a-6d85-44d6-8e02-90233a52e6ec"
+          },
+          {
+            "latency": 3.0312390327453613,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ffb87161-fe11-42e3-a671-bc07da69cd10"
+          },
+          {
+            "latency": 2.283071994781494,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "7e5710d4-1178-4a32-a694-090dd091d0b1"
+          },
+          {
+            "latency": 4.448709726333618,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f303e270-2456-4c9c-846d-fefe81987894"
+          },
+          {
+            "latency": 2.5453858375549316,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b3d75e1a-1256-4435-9f36-32ce8bbbfe0f"
+          },
+          {
+            "latency": 2.841188907623291,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "eb1e7278-5c0a-48b2-8456-b1f91e9e16ee"
+          },
+          {
+            "latency": 2.7741968631744385,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "4a29fa99-f3a1-468b-afb5-1d5716c3bfba"
+          },
+          {
+            "latency": 3.4381041526794434,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "bf808167-d199-424e-9a58-e4dc8f6b5494"
+          },
+          {
+            "latency": 3.2663872241973877,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b2269f15-444f-406b-8663-114753ac2381"
+          },
+          {
+            "latency": 3.2889599800109863,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "040d68e5-fe11-4f2b-a726-c95ca9c276ae"
+          },
+          {
+            "latency": 3.233366012573242,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e043d257-78f5-4bdc-be81-f56be3b23384"
+          },
+          {
+            "latency": 4.418463945388794,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6a23f18b-8036-47b1-abd2-c9b8c1b30d97"
+          },
+          {
+            "latency": 3.0922532081604004,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a253b279-fd23-4404-bcaa-694a464312f2"
+          },
+          {
+            "latency": 4.392696142196655,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6a7b525b-bc6a-41c9-8191-a3b7520a4a6b"
+          },
+          {
+            "latency": 2.71725082397461,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "c137cef1-3fb7-412a-8b3c-386f50b4ff8e"
+          },
+          {
+            "latency": 10.614546060562134,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "83c61e28-e6f1-4c43-bc9c-73012c5720e7"
+          },
+          {
+            "latency": 3.3694419860839844,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "3a5345c3-9370-4fed-8bda-9442285baf82"
+          },
+          {
+            "latency": 5.030279159545898,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "190ff5d9-a8d5-4217-b219-12b913506698"
+          },
+          {
+            "latency": 9.160850048065186,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "9915e37a-bd90-4de4-a371-885b7e88d33e"
+          },
+          {
+            "latency": 1.9490339756011963,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "1181ddba-c4b9-4b81-b011-2d69e73e6010"
+          },
+          {
+            "latency": 3.9889800548553462,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6e9a9346-99a4-4b87-8825-1aeb33f8b3c7"
+          },
+          {
+            "latency": 3.1742610931396484,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "2f612ffc-8de9-455a-bb40-c1c1b9a57ff1"
+          },
+          {
+            "latency": 4.1176347732543945,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "004539ea-ed46-4f5e-989f-defea9e752b6"
+          },
+          {
+            "latency": 7.408036947250366,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "c77ce05e-602b-4a1a-b539-2281ebac4386"
+          },
+          {
+            "latency": 6.686795949935913,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "c18f1c45-7174-4dda-af42-2ca9187c2974"
+          },
+          {
+            "latency": 7.730270862579346,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "7a610f28-eaca-413e-8bf3-97ba6c0484a4"
+          },
+          {
+            "latency": 5.334419012069702,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "21d73b8a-96f3-495a-b879-3a1c88ebd347"
+          },
+          {
+            "latency": 4.140132904052734,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "08d3b793-1250-49b3-a290-42ed7f7a3ffa"
+          },
+          {
+            "latency": 3.730715036392212,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "7a76be7c-ed44-45fc-889e-dfee5df507af"
+          },
+          {
+            "latency": 0.30355215072631836,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "c1a8d310-e938-44c3-90a9-a6ada3ff75d6"
+          },
+          {
+            "latency": 6.41244912147522,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "d1bd13e0-f2c0-42f8-aa0b-e24d1af4baeb"
+          },
+          {
+            "latency": 4.147253036499023,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "5cd2dde7-86ad-4d26-b61b-9b1977686588"
+          },
+          {
+            "latency": 5.068907022476196,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "5f5d7b13-4911-40e6-91a3-0cb839e09f83"
+          },
+          {
+            "latency": 5.985708951950073,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "eab50de7-0899-456c-88e7-7b28b79ff6f4"
+          },
+          {
+            "latency": 6.743948936462402,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "3928d1b9-f981-49b1-ad9a-076a5a8ede67"
+          },
+          {
+            "latency": 5.249059200286865,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f2558ab0-eb72-429b-938e-4c9473ba2348"
+          },
+          {
+            "latency": 10.491602897644045,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "3a9085f9-bb23-9e8d-9946-6f853aaa1f27"
+          },
+          {
+            "latency": 7.01226806640625,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "643eb2c5-b11d-4188-b5de-a8c09bd56eb5"
+          },
+          {
+            "latency": 3.033595085144043,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "024f7f40-0342-47ae-a73e-bdc3818b23a9"
+          },
+          {
+            "latency": 3.1624650955200195,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "69b6437f-454e-45f1-b24b-65124e1a3cdd"
+          },
+          {
+            "latency": 2.738688707351685,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a83086b8-a18b-49a1-9ab0-0525b0cdc9d3"
+          },
+          {
+            "latency": 4.6559271812438965,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "554e736f-fb1d-4319-a79d-83037dafeab3"
+          },
+          {
+            "latency": 5.595416069030762,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ba3fb5c9-df97-44b3-b2b7-7e3100b001a9"
+          },
+          {
+            "latency": 5.232276916503906,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b46934da-c0be-448b-ab8e-5945fdf9dec3"
+          },
+          {
+            "latency": 6.355996131896973,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "8f18f5cd-6d5b-484f-9978-ef888b8e71b3"
+          },
+          {
+            "latency": 4.043239116668701,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "74f5dfff-7ee7-4c09-a79e-037d90266981"
+          },
+          {
+            "latency": 4.254786014556885,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "c51df3a8-0ff4-4dc6-8c68-c6d78e6c78f8"
+          },
+          {
+            "latency": 2.3052730560302734,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "fad00d82-82a3-4686-a34c-093b007bd92e"
+          },
+          {
+            "latency": 4.7907140254974365,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "82a05564-6aab-46b6-a6f2-23da477bb2be"
+          },
+          {
+            "latency": 6.809960842132568,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "26b5609e-aa79-4292-bb59-cbd5f889917f"
+          },
+          {
+            "latency": 5.467488765716553,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "058d6cdd-fc77-4fe3-8f2d-82f0b00b80ad"
+          },
+          {
+            "latency": 6.619763135910034,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "08caa1c6-4936-4a76-b5c7-681c9fb84ab7"
+          },
+          {
+            "latency": 4.297083854675293,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "81d3243f-a438-4117-b108-144eeb6a5ad5"
+          },
+          {
+            "latency": 5.628515958786011,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "9eb926c9-1fc4-4827-9a4a-b9890b0fa9de"
+          },
+          {
+            "latency": 7.091835021972656,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "43300a57-48bd-403f-9850-cfbb8821c2da"
+          },
+          {
+            "latency": 3.7681851387023926,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b509250f-a7bb-4361-85e3-1419d4f5a695"
+          },
+          {
+            "latency": 10.81463885307312,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "9b4f476d-4cbb-4813-b1a0-4071390a62d0"
+          },
+          {
+            "latency": 4.422346115112305,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "48a13d8d-3c25-4682-b6e6-6fbee708431c"
+          },
+          {
+            "latency": 4.198112964630127,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "8c882180-15f6-4df4-809a-c5e54d4ccf1a"
+          },
+          {
+            "latency": 3.762394905090332,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "d12dd497-2c4a-444a-a42a-aed98055f588"
+          },
+          {
+            "latency": 4.873539924621582,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "03646246-857c-41d8-a315-abf063b15898"
+          },
+          {
+            "latency": 3.5528931617736816,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "26b4a9e8-8e75-47da-acae-3ea003f40955"
+          },
+          {
+            "latency": 4.339437246322632,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "4d23c9af-8b82-4abc-821b-128ad8ae6625"
+          },
+          {
+            "latency": 5.3583691120147705,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6f47762f-3bdd-4aac-803c-4152b910ff8b"
+          },
+          {
+            "latency": 5.811018943786621,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "bbf176dd-3a54-4080-a69c-962ae68db3ea"
+          },
+          {
+            "latency": 2.6299991607666016,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "9b6efc26-3151-4b20-ae41-504877450398"
+          },
+          {
+            "latency": 5.183429956436157,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ba34701f-ff8c-44c4-af7e-fb7d5314fc10"
+          },
+          {
+            "latency": 7.140139818191528,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "7681c34e-ed05-46a0-98bc-f3556af8b76a"
+          },
+          {
+            "latency": 5.074558258056641,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "d6cb5311-12a7-40a5-9fc8-242cbde5b497"
+          },
+          {
+            "latency": 5.493203163146973,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "1b6e06b4-e124-424a-a3c0-6987fa3dd551"
+          },
+          {
+            "latency": 4.203190088272095,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "66fd2526-403e-496f-af58-0f3319011d94"
+          },
+          {
+            "latency": 7.596461057662964,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a9b822d5-49f6-46e4-b7fe-aee3c82a7b5a"
+          },
+          {
+            "latency": 4.657141923904419,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ab1bdfa8-12ef-4098-8d63-b8dd324d601b"
+          },
+          {
+            "latency": 7.919384956359863,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e81a4881-459c-4e3e-af9c-57602bfce388"
+          },
+          {
+            "latency": 6.180524826049805,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b8f3192d-160b-409b-b2e5-81d6689a7cc6"
+          },
+          {
+            "latency": 4.460621118545532,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "700b1914-8424-4312-8519-65fe0296b9f7"
+          },
+          {
+            "latency": 8.223425149917603,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "84dc9e45-d8cb-4c17-92c3-6be4d3863f6e"
+          },
+          {
+            "latency": 4.073586940765381,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ab947a06-9a55-4175-93e3-f89ab11bcc2c"
+          },
+          {
+            "latency": 5.607985973358154,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "d768e7cd-31e0-4224-b653-da66f0e11c6a"
+          },
+          {
+            "latency": 10.78984308242798,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "d52f054a-dd79-428e-abe4-d2cfeb584545"
+          },
+          {
+            "latency": 6.201127767562866,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "4d5ccd5d-dc53-43d8-8f7a-f269850655ec"
+          },
+          {
+            "latency": 4.908141136169434,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "39c03f8e-702d-4311-9e83-dd529e3833fd"
+          },
+          {
+            "latency": 5.4263081550598145,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "9ac1aac4-f49d-46dd-9562-d2856a133106"
+          },
+          {
+            "latency": 8.189937114715576,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b5350c3c-4684-4f30-a182-77b6e35a7435"
+          },
+          {
+            "latency": 4.240645170211792,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "7b5c7d89-d07e-4988-bc5c-dd1365c3b2bf"
+          },
+          {
+            "latency": 6.398983955383301,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "691c5568-f304-4226-9d92-5e6eaad176d3"
+          },
+          {
+            "latency": 6.912129878997803,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "3b4443fb-22d4-4c72-a81c-03bd416594d0"
+          },
+          {
+            "latency": 8.411547899246216,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "890851c2-3d3b-4367-9d19-7a174d73c1df"
+          },
+          {
+            "latency": 6.811884641647339,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a1c51c9d-4a8a-4ab9-9da4-87807a2b36f9"
+          },
+          {
+            "latency": 6.782287836074829,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b465e040-740e-461b-8742-756c51c997eb"
+          },
+          {
+            "latency": 4.392979145050049,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "5bfb5e0e-9d76-4396-a859-8a88918b6d4d"
+          },
+          {
+            "latency": 5.326875925064087,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "d19f6260-7fe6-4822-9eea-65d4706b44c5"
+          },
+          {
+            "latency": 6.641025066375732,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ab90e094-8cb0-4a18-ae94-08886df959aa"
+          },
+          {
+            "latency": 5.96301794052124,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b2ec0749-1c94-4844-81e0-306670285fc8"
+          },
+          {
+            "latency": 3.854231834411621,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6cf543e0-3b7d-4dce-a03c-19a034c6c2b0"
+          },
+          {
+            "latency": 4.804224729537964,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a60d0341-0351-4f3a-8e27-078c0d8f7ee1"
+          },
+          {
+            "latency": 3.6418631076812744,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "365da1f9-232c-4973-b5cc-7448ba9af2ff"
+          },
+          {
+            "latency": 4.7730138301849365,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "9e7d5f56-752f-4ce4-8f04-dc3ddc23f765"
+          },
+          {
+            "latency": 3.55428409576416,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "110775a1-9cf7-458f-8cfe-9c93d890ce5a"
+          },
+          {
+            "latency": 6.834154844284058,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e5f3486d-2bab-47a0-81d7-faacb7516900"
+          },
+          {
+            "latency": 4.228353977203369,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e57613fe-0a15-430a-8d8f-28f164eee87f"
+          },
+          {
+            "latency": 4.96186089515686,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "534d42f6-4cac-4a9f-86c9-8007e3bccca6"
+          },
+          {
+            "latency": 3.193264961242676,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e6716664-bb30-4f56-846e-903678ffe76b"
+          },
+          {
+            "latency": 5.206721067428589,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "fe89489c-c1dc-48be-be00-2f9b5e4c0378"
+          },
+          {
+            "latency": 5.216608047485352,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "533a8c39-2dae-493c-8b5b-3e7da9f7e766"
+          },
+          {
+            "latency": 2.5923938751220703,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b43f2123-4df7-4248-b6a2-f6f49ca827c0"
+          },
+          {
+            "latency": 4.365135908126831,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "4213dd6e-cb2c-4dbe-b3c4-7c47dcf6b15c"
+          },
+          {
+            "latency": 4.352226972579956,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f1751655-b226-4bb1-b430-a9f78b03e05a"
+          },
+          {
+            "latency": 6.09855580329895,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6a43c273-7a52-472a-85b2-34e765663cbc"
+          },
+          {
+            "latency": 4.54052996635437,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "207281a7-0a7d-44ba-b5d3-c24c6231a7a8"
+          },
+          {
+            "latency": 4.25557279586792,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e1592bbb-c863-4210-ba3b-87ea7c2e93a2"
+          },
+          {
+            "latency": 6.222887992858887,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a433d5c8-bc30-409c-b0e3-e400ec8bdce2"
+          },
+          {
+            "latency": 4.482481002807617,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "51ddacb5-8512-40aa-80bc-a8538522212a"
+          },
+          {
+            "latency": 3.2761971950531006,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "23aa8c1f-d134-46ca-bb2d-6e21a6e6bfd7"
+          },
+          {
+            "latency": 3.877493143081665,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e5641866-0a57-4eb2-a503-44be36f3621a"
+          },
+          {
+            "latency": 4.907691955566406,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "48fbfc26-6906-4d35-af1f-2240553158a0"
+          },
+          {
+            "latency": 3.4065496921539307,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "fd711afd-1cf0-4683-91ec-ae7b3bb37011"
+          },
+          {
+            "latency": 3.859943866729736,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "2a130a10-6eb3-4969-9f76-212ae8b09003"
+          },
+          {
+            "latency": 4.19196629524231,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "dc436be9-0e80-4735-af4c-8e4a7d8d376c"
+          },
+          {
+            "latency": 2.7984611988067627,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e8bfb964-cf83-42aa-aae1-602e2978ed8f"
+          },
+          {
+            "latency": 4.183634996414185,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "023b0304-8b2e-401d-93a4-7df2ba4f1a2f"
+          },
+          {
+            "latency": 5.104758024215698,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a7d05f12-0d27-4236-87db-1da5c4f6c5f7"
+          },
+          {
+            "latency": 3.083353281021118,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6ce1859d-4a43-4fe5-b326-27295570a6b5"
+          },
+          {
+            "latency": 3.70514702796936,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "1f0c3450-4807-4aae-b36c-544e5cf048cc"
+          },
+          {
+            "latency": 4.121088027954102,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f3c097d1-7d15-4fee-bafb-281df2ccf996"
+          },
+          {
+            "latency": 2.6129071712493896,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ca83e491-98fd-4808-b416-4b7313dc4955"
+          },
+          {
+            "latency": 2.7826218605041504,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "8f7050d1-c958-4cba-aa31-9841703c2821"
+          },
+          {
+            "latency": 4.101838827133179,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ccba8158-e1a3-445f-919a-5013af8051bb"
+          },
+          {
+            "latency": 3.6504969596862793,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "22713724-fb0f-4a1b-b33b-f9122de00bd9"
+          },
+          {
+            "latency": 3.498218059539795,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "910c0014-5509-48b3-b143-f02e0f7a396b"
+          },
+          {
+            "latency": 4.518532991409302,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "964a9204-f348-42c2-a274-16512ca3df4c"
+          },
+          {
+            "latency": 3.3021039962768555,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "186a4146-4638-4582-bbdb-0283d0718910"
+          },
+          {
+            "latency": 3.779059886932373,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6a1cb732-39fe-4d76-8e00-36744444d870"
+          },
+          {
+            "latency": 3.1053450107574463,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "1cfb7d10-0fc1-48a1-abb3-b455e52df80d"
+          },
+          {
+            "latency": 6.745223045349121,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "5a76ab2a-0de4-4103-a7b7-8707a8ea7483"
+          },
+          {
+            "latency": 9.43181610107422,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "b62596ca-1249-4966-b871-a94a927ae0f9"
+          },
+          {
+            "latency": 3.272932767868042,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a5944ec7-cb1b-4575-b73b-a692ea23d38d"
+          },
+          {
+            "latency": 5.490125894546509,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "75c277da-3c7d-4a02-bd64-6cf14269d4fe"
+          },
+          {
+            "latency": 7.067615032196045,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "2f1e21a4-73d0-4310-af1b-e8dcd2db119a"
+          },
+          {
+            "latency": 7.308709144592285,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "4bee3dc7-c442-47b0-9329-4b9c1d98ce08"
+          },
+          {
+            "latency": 3.637700080871582,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6024817c-c02b-4a7b-9c6d-b7db473dbb73"
+          },
+          {
+            "latency": 6.451622009277344,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6a16250c-b093-4525-8ee7-519eb3dd2a47"
+          },
+          {
+            "latency": 3.960182666778565,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e442a155-b558-46b7-af51-768f34dfaa87"
+          },
+          {
+            "latency": 2.8446760177612305,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "1de2d35c-d69d-400c-8179-d2d7a784ce3f"
+          },
+          {
+            "latency": 3.2970221042633057,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "3313e511-071a-43b2-82b4-28709c883f93"
+          },
+          {
+            "latency": 5.629920959472656,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "496a7c29-345e-4287-89eb-8b63b6dfad27"
+          },
+          {
+            "latency": 5.319706916809082,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "7cffcdb2-2227-481c-9b13-5250a7c7ed67"
+          },
+          {
+            "latency": 2.308673858642578,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "d6841fcf-073f-4c9b-8be6-3abf270947ee"
+          },
+          {
+            "latency": 4.592719793319702,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "33e3a84c-b2cd-4cb1-b9e9-36d894cd4e82"
+          },
+          {
+            "latency": 5.005824089050293,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "7dcbff37-fd94-4c52-8b7c-f2bb138352b3"
+          },
+          {
+            "latency": 5.100914239883423,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f492c035-275b-41fc-8fd7-c1edd730ccff"
+          },
+          {
+            "latency": 4.040130138397217,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "0576de83-e36a-4d91-8ef4-6d7068faf6e5"
+          },
+          {
+            "latency": 3.2619261741638184,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e2c83d01-865a-4614-b4f1-8acfea1126c9"
+          },
+          {
+            "latency": 5.1090850830078125,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f6f8714a-0c13-4a64-adb9-2237e14a6e59"
+          },
+          {
+            "latency": 3.090674877166748,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "5e68ea1c-c9a8-4b08-96f9-5c6bca4c9618"
+          },
+          {
+            "latency": 5.0259997844696045,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "328face6-4456-4218-8587-f845abc3d092"
+          },
+          {
+            "latency": 4.773174047470093,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "af667f40-dcf4-9b71-a2b2-3b4e0a49399b"
+          },
+          {
+            "latency": 4.94794774055481,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "618108dd-03d0-4444-9d40-980e474a71a8"
+          },
+          {
+            "latency": 3.3962810039520264,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "75f99888-d350-4fe7-bdbb-479836be7e2f"
+          },
+          {
+            "latency": 4.78225040435791,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "ad67875b-2e13-4e15-b9a7-929faac1cbbf"
+          },
+          {
+            "latency": 4.7237389087677,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "aecd2e26-1c51-43d0-b11f-d0eb0f18ed60"
+          },
+          {
+            "latency": 2.757199764251709,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "d210ed7a-64d9-4b80-86bd-c65a75a60c2b"
+          },
+          {
+            "latency": 3.4292709827423096,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "862c2c59-57c3-494d-9fa4-b8c5e50df616"
+          },
+          {
+            "latency": 8.206212997436523,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "54921fe7-6b0a-4270-8e85-d628939730f2"
+          },
+          {
+            "latency": 5.8953680992126465,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "6e6568b5-0136-4a5c-89bc-f9ce9c7fe598"
+          },
+          {
+            "latency": 4.021552801132202,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "c2967001-2375-4834-aa15-c618cd94642a"
+          },
+          {
+            "latency": 6.077387094497681,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "4507febb-c070-41e1-bba3-b1afe556f2dc"
+          },
+          {
+            "latency": 3.7943410873413086,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a9fd0f2d-7189-42a8-8425-5131b8eac181"
+          },
+          {
+            "latency": 8.463075160980225,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "5e6c5b8f-cc5d-48eb-b0a8-f923e194aae7"
+          },
+          {
+            "latency": 4.315748929977417,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a5a8314f-8068-425f-941b-a9a59fbf292d"
+          },
+          {
+            "latency": 3.593690872192383,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "e528b1aa-060d-423c-8325-dc145955ee40"
+          },
+          {
+            "latency": 3.9053549766540527,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "c1248227-db5c-489d-82b2-30787efbcd99"
+          },
+          {
+            "latency": 2.7805490493774414,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "4e47eed4-836e-4f24-8117-3630f6515b19"
+          },
+          {
+            "latency": 8.43009090423584,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f9c1484e-5b4b-4d75-a94c-292bf604e7b6"
+          },
+          {
+            "latency": 5.862137079238892,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "57620e11-018a-45f9-b291-e654289f0c5d"
+          },
+          {
+            "latency": 2.973206043243408,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "34c5a998-1637-4fb5-b28a-6c1886dafbe3"
+          },
+          {
+            "latency": 4.789815902709961,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "a6306638-c0f4-4891-a63d-35b10c7a7b4d"
+          },
+          {
+            "latency": 3.5324888229370117,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "c26bfd2e-e32e-4a31-8ac4-3d5a313efd98"
+          },
+          {
+            "latency": 3.2776708602905273,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "f1b07d66-84db-4e48-98dd-56e9cbd9517c"
+          },
+          {
+            "latency": 3.408493995666504,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "fd328cd5-6880-49bd-bd1d-127dd7b1d827"
+          },
+          {
+            "latency": 3.660227298736572,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "response_id": "052d7a9d-24e7-4325-a31a-fdd6afa31375"
+          }
+        ],
+        "token_usages": [
+          {
+            "cache_read_tokens": 4608,
+            "cache_write_tokens": 0,
+            "completion_tokens": 305,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 11099,
+            "prompt_tokens": 10794,
+            "reasoning_tokens": 0,
+            "response_id": "5ff426d9-e2d8-4ec5-a989-92d7d199f4dd"
+          },
+          {
+            "cache_read_tokens": 10752,
+            "cache_write_tokens": 0,
+            "completion_tokens": 143,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 17626,
+            "prompt_tokens": 17483,
+            "reasoning_tokens": 0,
+            "response_id": "6314afbb-38e8-9357-b8f1-db3b83c1406c"
+          },
+          {
+            "cache_read_tokens": 17408,
+            "cache_write_tokens": 0,
+            "completion_tokens": 174,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 21881,
+            "prompt_tokens": 21707,
+            "reasoning_tokens": 0,
+            "response_id": "34b78a71-c08f-4b60-95c4-92d9aabc3b0d"
+          },
+          {
+            "cache_read_tokens": 21504,
+            "cache_write_tokens": 0,
+            "completion_tokens": 295,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 22693,
+            "prompt_tokens": 22398,
+            "reasoning_tokens": 0,
+            "response_id": "9ea50b9d-a0b3-49b6-b0ba-b357113bac87"
+          },
+          {
+            "cache_read_tokens": 22016,
+            "cache_write_tokens": 0,
+            "completion_tokens": 62,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 23244,
+            "prompt_tokens": 23182,
+            "reasoning_tokens": 0,
+            "response_id": "7c11ac8a-a61c-4df6-802a-3837047ceb86"
+          },
+          {
+            "cache_read_tokens": 23040,
+            "cache_write_tokens": 0,
+            "completion_tokens": 57,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 23742,
+            "prompt_tokens": 23685,
+            "reasoning_tokens": 0,
+            "response_id": "6ec3fe30-a69e-4ece-895c-ab18295d4729"
+          },
+          {
+            "cache_read_tokens": 23552,
+            "cache_write_tokens": 0,
+            "completion_tokens": 175,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 23991,
+            "prompt_tokens": 23816,
+            "reasoning_tokens": 0,
+            "response_id": "de2ddbc5-2c67-4f0d-b68e-ee4578994ce1"
+          },
+          {
+            "cache_read_tokens": 23552,
+            "cache_write_tokens": 0,
+            "completion_tokens": 238,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 24873,
+            "prompt_tokens": 24635,
+            "reasoning_tokens": 0,
+            "response_id": "c6ecdf18-d9cd-4cf3-91fd-0941ca790463"
+          },
+          {
+            "cache_read_tokens": 24576,
+            "cache_write_tokens": 0,
+            "completion_tokens": 282,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 25557,
+            "prompt_tokens": 25275,
+            "reasoning_tokens": 0,
+            "response_id": "f75a7c16-092c-460e-9c86-4cf6415d39b9"
+          },
+          {
+            "cache_read_tokens": 25088,
+            "cache_write_tokens": 0,
+            "completion_tokens": 293,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 26261,
+            "prompt_tokens": 25968,
+            "reasoning_tokens": 0,
+            "response_id": "fb892a11-de8a-4d03-814c-9f83660da158"
+          },
+          {
+            "cache_read_tokens": 25600,
+            "cache_write_tokens": 0,
+            "completion_tokens": 188,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 31178,
+            "prompt_tokens": 30990,
+            "reasoning_tokens": 0,
+            "response_id": "bf4a740e-a17f-4903-9933-3c63e1a62a40"
+          },
+          {
+            "cache_read_tokens": 30720,
+            "cache_write_tokens": 0,
+            "completion_tokens": 160,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 32921,
+            "prompt_tokens": 32761,
+            "reasoning_tokens": 0,
+            "response_id": "0a27ab5f-4a30-46e6-b548-1b294ae0d092"
+          },
+          {
+            "cache_read_tokens": 32256,
+            "cache_write_tokens": 0,
+            "completion_tokens": 176,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 33296,
+            "prompt_tokens": 33120,
+            "reasoning_tokens": 0,
+            "response_id": "0a71520e-a001-466d-a6f3-02fe955cbf69"
+          },
+          {
+            "cache_read_tokens": 32768,
+            "cache_write_tokens": 0,
+            "completion_tokens": 397,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 34121,
+            "prompt_tokens": 33724,
+            "reasoning_tokens": 0,
+            "response_id": "f539226a-4faf-4287-82b3-78fce40cae5f"
+          },
+          {
+            "cache_read_tokens": 33280,
+            "cache_write_tokens": 0,
+            "completion_tokens": 139,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 34229,
+            "prompt_tokens": 34090,
+            "reasoning_tokens": 0,
+            "response_id": "cda96c0e-7197-4468-8aa2-0457f12e424b"
+          },
+          {
+            "cache_read_tokens": 33792,
+            "cache_write_tokens": 0,
+            "completion_tokens": 131,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 34833,
+            "prompt_tokens": 34702,
+            "reasoning_tokens": 0,
+            "response_id": "85a4850a-de3b-45c8-9703-0626a7c11c09"
+          },
+          {
+            "cache_read_tokens": 34304,
+            "cache_write_tokens": 0,
+            "completion_tokens": 80,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 35189,
+            "prompt_tokens": 35109,
+            "reasoning_tokens": 0,
+            "response_id": "ca0ff0f5-6c5c-42b6-9c39-72ab263a32ee"
+          },
+          {
+            "cache_read_tokens": 34816,
+            "cache_write_tokens": 0,
+            "completion_tokens": 106,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 35350,
+            "prompt_tokens": 35244,
+            "reasoning_tokens": 0,
+            "response_id": "e1081753-28a6-45d1-8431-43bf2bb1cb40"
+          },
+          {
+            "cache_read_tokens": 34816,
+            "cache_write_tokens": 0,
+            "completion_tokens": 1070,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 37612,
+            "prompt_tokens": 36542,
+            "reasoning_tokens": 0,
+            "response_id": "45461848-3ad2-4a0c-8ffd-710cf70cc27c"
+          },
+          {
+            "cache_read_tokens": 36352,
+            "cache_write_tokens": 0,
+            "completion_tokens": 114,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 37730,
+            "prompt_tokens": 37616,
+            "reasoning_tokens": 0,
+            "response_id": "4c3a5989-34e5-4eea-8246-297b427e5530"
+          },
+          {
+            "cache_read_tokens": 37376,
+            "cache_write_tokens": 0,
+            "completion_tokens": 76,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 38130,
+            "prompt_tokens": 38054,
+            "reasoning_tokens": 0,
+            "response_id": "a4fcb50a-6d85-44d6-8e02-90233a52e6ec"
+          },
+          {
+            "cache_read_tokens": 37888,
+            "cache_write_tokens": 0,
+            "completion_tokens": 178,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 38366,
+            "prompt_tokens": 38188,
+            "reasoning_tokens": 0,
+            "response_id": "ffb87161-fe11-42e3-a671-bc07da69cd10"
+          },
+          {
+            "cache_read_tokens": 37888,
+            "cache_write_tokens": 0,
+            "completion_tokens": 84,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 38748,
+            "prompt_tokens": 38664,
+            "reasoning_tokens": 0,
+            "response_id": "7e5710d4-1178-4a32-a694-090dd091d0b1"
+          },
+          {
+            "cache_read_tokens": 38400,
+            "cache_write_tokens": 0,
+            "completion_tokens": 458,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 39642,
+            "prompt_tokens": 39184,
+            "reasoning_tokens": 0,
+            "response_id": "f303e270-2456-4c9c-846d-fefe81987894"
+          },
+          {
+            "cache_read_tokens": 38912,
+            "cache_write_tokens": 0,
+            "completion_tokens": 59,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 40027,
+            "prompt_tokens": 39968,
+            "reasoning_tokens": 0,
+            "response_id": "b3d75e1a-1256-4435-9f36-32ce8bbbfe0f"
+          },
+          {
+            "cache_read_tokens": 39936,
+            "cache_write_tokens": 0,
+            "completion_tokens": 80,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 40192,
+            "prompt_tokens": 40112,
+            "reasoning_tokens": 0,
+            "response_id": "eb1e7278-5c0a-48b2-8456-b1f91e9e16ee"
+          },
+          {
+            "cache_read_tokens": 39936,
+            "cache_write_tokens": 0,
+            "completion_tokens": 154,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 40394,
+            "prompt_tokens": 40240,
+            "reasoning_tokens": 0,
+            "response_id": "4a29fa99-f3a1-468b-afb5-1d5716c3bfba"
+          },
+          {
+            "cache_read_tokens": 39936,
+            "cache_write_tokens": 0,
+            "completion_tokens": 178,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 40700,
+            "prompt_tokens": 40522,
+            "reasoning_tokens": 0,
+            "response_id": "bf808167-d199-424e-9a58-e4dc8f6b5494"
+          },
+          {
+            "cache_read_tokens": 40448,
+            "cache_write_tokens": 0,
+            "completion_tokens": 180,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 40997,
+            "prompt_tokens": 40817,
+            "reasoning_tokens": 0,
+            "response_id": "b2269f15-444f-406b-8663-114753ac2381"
+          },
+          {
+            "cache_read_tokens": 40448,
+            "cache_write_tokens": 0,
+            "completion_tokens": 267,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 41456,
+            "prompt_tokens": 41189,
+            "reasoning_tokens": 0,
+            "response_id": "040d68e5-fe11-4f2b-a726-c95ca9c276ae"
+          },
+          {
+            "cache_read_tokens": 40960,
+            "cache_write_tokens": 0,
+            "completion_tokens": 190,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 42589,
+            "prompt_tokens": 42399,
+            "reasoning_tokens": 0,
+            "response_id": "e043d257-78f5-4bdc-be81-f56be3b23384"
+          },
+          {
+            "cache_read_tokens": 41984,
+            "cache_write_tokens": 0,
+            "completion_tokens": 211,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 43331,
+            "prompt_tokens": 43120,
+            "reasoning_tokens": 0,
+            "response_id": "6a23f18b-8036-47b1-abd2-c9b8c1b30d97"
+          },
+          {
+            "cache_read_tokens": 43008,
+            "cache_write_tokens": 0,
+            "completion_tokens": 225,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 43870,
+            "prompt_tokens": 43645,
+            "reasoning_tokens": 0,
+            "response_id": "a253b279-fd23-4404-bcaa-694a464312f2"
+          },
+          {
+            "cache_read_tokens": 43520,
+            "cache_write_tokens": 0,
+            "completion_tokens": 383,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 44731,
+            "prompt_tokens": 44348,
+            "reasoning_tokens": 0,
+            "response_id": "6a7b525b-bc6a-41c9-8191-a3b7520a4a6b"
+          },
+          {
+            "cache_read_tokens": 44032,
+            "cache_write_tokens": 0,
+            "completion_tokens": 242,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 45054,
+            "prompt_tokens": 44812,
+            "reasoning_tokens": 0,
+            "response_id": "c137cef1-3fb7-412a-8b3c-386f50b4ff8e"
+          },
+          {
+            "cache_read_tokens": 44544,
+            "cache_write_tokens": 0,
+            "completion_tokens": 1465,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 46654,
+            "prompt_tokens": 45189,
+            "reasoning_tokens": 0,
+            "response_id": "83c61e28-e6f1-4c43-bc9c-73012c5720e7"
+          },
+          {
+            "cache_read_tokens": 45056,
+            "cache_write_tokens": 0,
+            "completion_tokens": 67,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 47128,
+            "prompt_tokens": 47061,
+            "reasoning_tokens": 0,
+            "response_id": "3a5345c3-9370-4fed-8bda-9442285baf82"
+          },
+          {
+            "cache_read_tokens": 46592,
+            "cache_write_tokens": 0,
+            "completion_tokens": 338,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 47526,
+            "prompt_tokens": 47188,
+            "reasoning_tokens": 0,
+            "response_id": "190ff5d9-a8d5-4217-b219-12b913506698"
+          },
+          {
+            "cache_read_tokens": 47104,
+            "cache_write_tokens": 0,
+            "completion_tokens": 1050,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 48893,
+            "prompt_tokens": 47843,
+            "reasoning_tokens": 0,
+            "response_id": "9915e37a-bd90-4de4-a371-885b7e88d33e"
+          },
+          {
+            "cache_read_tokens": 47616,
+            "cache_write_tokens": 0,
+            "completion_tokens": 74,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 49362,
+            "prompt_tokens": 49288,
+            "reasoning_tokens": 0,
+            "response_id": "1181ddba-c4b9-4b81-b011-2d69e73e6010"
+          },
+          {
+            "cache_read_tokens": 49152,
+            "cache_write_tokens": 0,
+            "completion_tokens": 321,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 51945,
+            "prompt_tokens": 51624,
+            "reasoning_tokens": 0,
+            "response_id": "6e9a9346-99a4-4b87-8825-1aeb33f8b3c7"
+          },
+          {
+            "cache_read_tokens": 51200,
+            "cache_write_tokens": 0,
+            "completion_tokens": 128,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 52170,
+            "prompt_tokens": 52042,
+            "reasoning_tokens": 0,
+            "response_id": "2f612ffc-8de9-455a-bb40-c1c1b9a57ff1"
+          },
+          {
+            "cache_read_tokens": 51712,
+            "cache_write_tokens": 0,
+            "completion_tokens": 245,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 52579,
+            "prompt_tokens": 52334,
+            "reasoning_tokens": 0,
+            "response_id": "004539ea-ed46-4f5e-989f-defea9e752b6"
+          },
+          {
+            "cache_read_tokens": 52224,
+            "cache_write_tokens": 0,
+            "completion_tokens": 544,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 53344,
+            "prompt_tokens": 52800,
+            "reasoning_tokens": 0,
+            "response_id": "c77ce05e-602b-4a1a-b539-2281ebac4386"
+          },
+          {
+            "cache_read_tokens": 52736,
+            "cache_write_tokens": 0,
+            "completion_tokens": 401,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 54374,
+            "prompt_tokens": 53973,
+            "reasoning_tokens": 0,
+            "response_id": "c18f1c45-7174-4dda-af42-2ca9187c2974"
+          },
+          {
+            "cache_read_tokens": 53760,
+            "cache_write_tokens": 0,
+            "completion_tokens": 604,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 55464,
+            "prompt_tokens": 54860,
+            "reasoning_tokens": 0,
+            "response_id": "7a610f28-eaca-413e-8bf3-97ba6c0484a4"
+          },
+          {
+            "cache_read_tokens": 54784,
+            "cache_write_tokens": 0,
+            "completion_tokens": 337,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 56394,
+            "prompt_tokens": 56057,
+            "reasoning_tokens": 0,
+            "response_id": "21d73b8a-96f3-495a-b879-3a1c88ebd347"
+          },
+          {
+            "cache_read_tokens": 55808,
+            "cache_write_tokens": 0,
+            "completion_tokens": 277,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 57390,
+            "prompt_tokens": 57113,
+            "reasoning_tokens": 0,
+            "response_id": "08d3b793-1250-49b3-a290-42ed7f7a3ffa"
+          },
+          {
+            "cache_read_tokens": 56832,
+            "cache_write_tokens": 0,
+            "completion_tokens": 297,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 58074,
+            "prompt_tokens": 57777,
+            "reasoning_tokens": 0,
+            "response_id": "7a76be7c-ed44-45fc-889e-dfee5df507af"
+          },
+          {
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+            "completion_tokens": 2247,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 2728,
+            "prompt_tokens": 481,
+            "reasoning_tokens": 0,
+            "response_id": "c1a8d310-e938-44c3-90a9-a6ada3ff75d6"
+          },
+          {
+            "cache_read_tokens": 57344,
+            "cache_write_tokens": 0,
+            "completion_tokens": 504,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 59746,
+            "prompt_tokens": 59242,
+            "reasoning_tokens": 0,
+            "response_id": "d1bd13e0-f2c0-42f8-aa0b-e24d1af4baeb"
+          },
+          {
+            "cache_read_tokens": 58880,
+            "cache_write_tokens": 0,
+            "completion_tokens": 244,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 59824,
+            "prompt_tokens": 59580,
+            "reasoning_tokens": 0,
+            "response_id": "5cd2dde7-86ad-4d26-b61b-9b1977686588"
+          },
+          {
+            "cache_read_tokens": 59392,
+            "cache_write_tokens": 0,
+            "completion_tokens": 330,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 60612,
+            "prompt_tokens": 60282,
+            "reasoning_tokens": 0,
+            "response_id": "5f5d7b13-4911-40e6-91a3-0cb839e09f83"
+          },
+          {
+            "cache_read_tokens": 59904,
+            "cache_write_tokens": 0,
+            "completion_tokens": 466,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 63706,
+            "prompt_tokens": 63240,
+            "reasoning_tokens": 0,
+            "response_id": "eab50de7-0899-456c-88e7-7b28b79ff6f4"
+          },
+          {
+            "cache_read_tokens": 62976,
+            "cache_write_tokens": 0,
+            "completion_tokens": 591,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 64711,
+            "prompt_tokens": 64120,
+            "reasoning_tokens": 0,
+            "response_id": "3928d1b9-f981-49b1-ad9a-076a5a8ede67"
+          },
+          {
+            "cache_read_tokens": 64000,
+            "cache_write_tokens": 0,
+            "completion_tokens": 287,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 68249,
+            "prompt_tokens": 67962,
+            "reasoning_tokens": 0,
+            "response_id": "f2558ab0-eb72-429b-938e-4c9473ba2348"
+          },
+          {
+            "cache_read_tokens": 67584,
+            "cache_write_tokens": 0,
+            "completion_tokens": 841,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 69303,
+            "prompt_tokens": 68462,
+            "reasoning_tokens": 0,
+            "response_id": "3a9085f9-bb23-9e8d-9946-6f853aaa1f27"
+          },
+          {
+            "cache_read_tokens": 68096,
+            "cache_write_tokens": 0,
+            "completion_tokens": 461,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 69245,
+            "prompt_tokens": 68784,
+            "reasoning_tokens": 0,
+            "response_id": "643eb2c5-b11d-4188-b5de-a8c09bd56eb5"
+          },
+          {
+            "cache_read_tokens": 68608,
+            "cache_write_tokens": 0,
+            "completion_tokens": 62,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 69663,
+            "prompt_tokens": 69601,
+            "reasoning_tokens": 0,
+            "response_id": "024f7f40-0342-47ae-a73e-bdc3818b23a9"
+          },
+          {
+            "cache_read_tokens": 69120,
+            "cache_write_tokens": 0,
+            "completion_tokens": 67,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 69812,
+            "prompt_tokens": 69745,
+            "reasoning_tokens": 0,
+            "response_id": "69b6437f-454e-45f1-b24b-65124e1a3cdd"
+          },
+          {
+            "cache_read_tokens": 69632,
+            "cache_write_tokens": 0,
+            "completion_tokens": 158,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 70030,
+            "prompt_tokens": 69872,
+            "reasoning_tokens": 0,
+            "response_id": "a83086b8-a18b-49a1-9ab0-0525b0cdc9d3"
+          },
+          {
+            "cache_read_tokens": 69632,
+            "cache_write_tokens": 0,
+            "completion_tokens": 167,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 70621,
+            "prompt_tokens": 70454,
+            "reasoning_tokens": 0,
+            "response_id": "554e736f-fb1d-4319-a79d-83037dafeab3"
+          },
+          {
+            "cache_read_tokens": 70144,
+            "cache_write_tokens": 0,
+            "completion_tokens": 361,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 71095,
+            "prompt_tokens": 70734,
+            "reasoning_tokens": 0,
+            "response_id": "ba3fb5c9-df97-44b3-b2b7-7e3100b001a9"
+          },
+          {
+            "cache_read_tokens": 70656,
+            "cache_write_tokens": 0,
+            "completion_tokens": 351,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 71779,
+            "prompt_tokens": 71428,
+            "reasoning_tokens": 0,
+            "response_id": "b46934da-c0be-448b-ab8e-5945fdf9dec3"
+          },
+          {
+            "cache_read_tokens": 71168,
+            "cache_write_tokens": 0,
+            "completion_tokens": 460,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 73085,
+            "prompt_tokens": 72625,
+            "reasoning_tokens": 0,
+            "response_id": "8f18f5cd-6d5b-484f-9978-ef888b8e71b3"
+          },
+          {
+            "cache_read_tokens": 72192,
+            "cache_write_tokens": 0,
+            "completion_tokens": 349,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 73944,
+            "prompt_tokens": 73595,
+            "reasoning_tokens": 0,
+            "response_id": "74f5dfff-7ee7-4c09-a79e-037d90266981"
+          },
+          {
+            "cache_read_tokens": 73216,
+            "cache_write_tokens": 0,
+            "completion_tokens": 323,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 74584,
+            "prompt_tokens": 74261,
+            "reasoning_tokens": 0,
+            "response_id": "c51df3a8-0ff4-4dc6-8c68-c6d78e6c78f8"
+          },
+          {
+            "cache_read_tokens": 74240,
+            "cache_write_tokens": 0,
+            "completion_tokens": 88,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 74772,
+            "prompt_tokens": 74684,
+            "reasoning_tokens": 0,
+            "response_id": "fad00d82-82a3-4686-a34c-093b007bd92e"
+          },
+          {
+            "cache_read_tokens": 74240,
+            "cache_write_tokens": 0,
+            "completion_tokens": 319,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 75684,
+            "prompt_tokens": 75365,
+            "reasoning_tokens": 0,
+            "response_id": "82a05564-6aab-46b6-a6f2-23da477bb2be"
+          },
+          {
+            "cache_read_tokens": 75264,
+            "cache_write_tokens": 0,
+            "completion_tokens": 608,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 76698,
+            "prompt_tokens": 76090,
+            "reasoning_tokens": 0,
+            "response_id": "26b5609e-aa79-4292-bb59-cbd5f889917f"
+          },
+          {
+            "cache_read_tokens": 75776,
+            "cache_write_tokens": 0,
+            "completion_tokens": 366,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 77594,
+            "prompt_tokens": 77228,
+            "reasoning_tokens": 0,
+            "response_id": "058d6cdd-fc77-4fe3-8f2d-82f0b00b80ad"
+          },
+          {
+            "cache_read_tokens": 76800,
+            "cache_write_tokens": 0,
+            "completion_tokens": 498,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 78773,
+            "prompt_tokens": 78275,
+            "reasoning_tokens": 0,
+            "response_id": "08caa1c6-4936-4a76-b5c7-681c9fb84ab7"
+          },
+          {
+            "cache_read_tokens": 77824,
+            "cache_write_tokens": 0,
+            "completion_tokens": 141,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 79287,
+            "prompt_tokens": 79146,
+            "reasoning_tokens": 0,
+            "response_id": "81d3243f-a438-4117-b108-144eeb6a5ad5"
+          },
+          {
+            "cache_read_tokens": 78848,
+            "cache_write_tokens": 0,
+            "completion_tokens": 337,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 80262,
+            "prompt_tokens": 79925,
+            "reasoning_tokens": 0,
+            "response_id": "9eb926c9-1fc4-4827-9a4a-b9890b0fa9de"
+          },
+          {
+            "cache_read_tokens": 79872,
+            "cache_write_tokens": 0,
+            "completion_tokens": 689,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 81965,
+            "prompt_tokens": 81276,
+            "reasoning_tokens": 0,
+            "response_id": "43300a57-48bd-403f-9850-cfbb8821c2da"
+          },
+          {
+            "cache_read_tokens": 80896,
+            "cache_write_tokens": 0,
+            "completion_tokens": 202,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 81807,
+            "prompt_tokens": 81605,
+            "reasoning_tokens": 0,
+            "response_id": "b509250f-a7bb-4361-85e3-1419d4f5a695"
+          },
+          {
+            "cache_read_tokens": 81408,
+            "cache_write_tokens": 0,
+            "completion_tokens": 823,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 83061,
+            "prompt_tokens": 82238,
+            "reasoning_tokens": 0,
+            "response_id": "9b4f476d-4cbb-4813-b1a0-4071390a62d0"
+          },
+          {
+            "cache_read_tokens": 81920,
+            "cache_write_tokens": 0,
+            "completion_tokens": 349,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 83845,
+            "prompt_tokens": 83496,
+            "reasoning_tokens": 0,
+            "response_id": "48a13d8d-3c25-4682-b6e6-6fbee708431c"
+          },
+          {
+            "cache_read_tokens": 83456,
+            "cache_write_tokens": 0,
+            "completion_tokens": 387,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 84577,
+            "prompt_tokens": 84190,
+            "reasoning_tokens": 0,
+            "response_id": "8c882180-15f6-4df4-809a-c5e54d4ccf1a"
+          },
+          {
+            "cache_read_tokens": 83968,
+            "cache_write_tokens": 0,
+            "completion_tokens": 364,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 85352,
+            "prompt_tokens": 84988,
+            "reasoning_tokens": 0,
+            "response_id": "d12dd497-2c4a-444a-a42a-aed98055f588"
+          },
+          {
+            "cache_read_tokens": 84480,
+            "cache_write_tokens": 0,
+            "completion_tokens": 373,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 86009,
+            "prompt_tokens": 85636,
+            "reasoning_tokens": 0,
+            "response_id": "03646246-857c-41d8-a315-abf063b15898"
+          },
+          {
+            "cache_read_tokens": 85504,
+            "cache_write_tokens": 0,
+            "completion_tokens": 306,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 86438,
+            "prompt_tokens": 86132,
+            "reasoning_tokens": 0,
+            "response_id": "26b4a9e8-8e75-47da-acae-3ea003f40955"
+          },
+          {
+            "cache_read_tokens": 86016,
+            "cache_write_tokens": 0,
+            "completion_tokens": 342,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 86864,
+            "prompt_tokens": 86522,
+            "reasoning_tokens": 0,
+            "response_id": "4d23c9af-8b82-4abc-821b-128ad8ae6625"
+          },
+          {
+            "cache_read_tokens": 86016,
+            "cache_write_tokens": 0,
+            "completion_tokens": 307,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 87479,
+            "prompt_tokens": 87172,
+            "reasoning_tokens": 0,
+            "response_id": "6f47762f-3bdd-4aac-803c-4152b910ff8b"
+          },
+          {
+            "cache_read_tokens": 87040,
+            "cache_write_tokens": 0,
+            "completion_tokens": 535,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 88391,
+            "prompt_tokens": 87856,
+            "reasoning_tokens": 0,
+            "response_id": "bbf176dd-3a54-4080-a69c-962ae68db3ea"
+          },
+          {
+            "cache_read_tokens": 10752,
+            "cache_write_tokens": 0,
+            "completion_tokens": 84,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 46149,
+            "prompt_tokens": 46065,
+            "reasoning_tokens": 0,
+            "response_id": "9b6efc26-3151-4b20-ae41-504877450398"
+          },
+          {
+            "cache_read_tokens": 45568,
+            "cache_write_tokens": 0,
+            "completion_tokens": 540,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 47478,
+            "prompt_tokens": 46938,
+            "reasoning_tokens": 0,
+            "response_id": "ba34701f-ff8c-44c4-af7e-fb7d5314fc10"
+          },
+          {
+            "cache_read_tokens": 46592,
+            "cache_write_tokens": 0,
+            "completion_tokens": 794,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 48738,
+            "prompt_tokens": 47944,
+            "reasoning_tokens": 0,
+            "response_id": "7681c34e-ed05-46a0-98bc-f3556af8b76a"
+          },
+          {
+            "cache_read_tokens": 47616,
+            "cache_write_tokens": 0,
+            "completion_tokens": 572,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 49874,
+            "prompt_tokens": 49302,
+            "reasoning_tokens": 0,
+            "response_id": "d6cb5311-12a7-40a5-9fc8-242cbde5b497"
+          },
+          {
+            "cache_read_tokens": 49152,
+            "cache_write_tokens": 0,
+            "completion_tokens": 537,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 53186,
+            "prompt_tokens": 52649,
+            "reasoning_tokens": 0,
+            "response_id": "1b6e06b4-e124-424a-a3c0-6987fa3dd551"
+          },
+          {
+            "cache_read_tokens": 52224,
+            "cache_write_tokens": 0,
+            "completion_tokens": 282,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 53867,
+            "prompt_tokens": 53585,
+            "reasoning_tokens": 0,
+            "response_id": "66fd2526-403e-496f-af58-0f3319011d94"
+          },
+          {
+            "cache_read_tokens": 53248,
+            "cache_write_tokens": 0,
+            "completion_tokens": 671,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 55317,
+            "prompt_tokens": 54646,
+            "reasoning_tokens": 0,
+            "response_id": "a9b822d5-49f6-46e4-b7fe-aee3c82a7b5a"
+          },
+          {
+            "cache_read_tokens": 54272,
+            "cache_write_tokens": 0,
+            "completion_tokens": 198,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 55219,
+            "prompt_tokens": 55021,
+            "reasoning_tokens": 0,
+            "response_id": "ab1bdfa8-12ef-4098-8d63-b8dd324d601b"
+          },
+          {
+            "cache_read_tokens": 54784,
+            "cache_write_tokens": 0,
+            "completion_tokens": 867,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 57303,
+            "prompt_tokens": 56436,
+            "reasoning_tokens": 0,
+            "response_id": "e81a4881-459c-4e3e-af9c-57602bfce388"
+          },
+          {
+            "cache_read_tokens": 56320,
+            "cache_write_tokens": 0,
+            "completion_tokens": 642,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 58083,
+            "prompt_tokens": 57441,
+            "reasoning_tokens": 0,
+            "response_id": "b8f3192d-160b-409b-b2e5-81d6689a7cc6"
+          },
+          {
+            "cache_read_tokens": 57344,
+            "cache_write_tokens": 0,
+            "completion_tokens": 444,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 59133,
+            "prompt_tokens": 58689,
+            "reasoning_tokens": 0,
+            "response_id": "700b1914-8424-4312-8519-65fe0296b9f7"
+          },
+          {
+            "cache_read_tokens": 58368,
+            "cache_write_tokens": 0,
+            "completion_tokens": 848,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 59954,
+            "prompt_tokens": 59106,
+            "reasoning_tokens": 0,
+            "response_id": "84dc9e45-d8cb-4c17-92c3-6be4d3863f6e"
+          },
+          {
+            "cache_read_tokens": 58880,
+            "cache_write_tokens": 0,
+            "completion_tokens": 342,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 60884,
+            "prompt_tokens": 60542,
+            "reasoning_tokens": 0,
+            "response_id": "ab947a06-9a55-4175-93e3-f89ab11bcc2c"
+          },
+          {
+            "cache_read_tokens": 60416,
+            "cache_write_tokens": 0,
+            "completion_tokens": 581,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 61807,
+            "prompt_tokens": 61226,
+            "reasoning_tokens": 0,
+            "response_id": "d768e7cd-31e0-4224-b653-da66f0e11c6a"
+          },
+          {
+            "cache_read_tokens": 60928,
+            "cache_write_tokens": 0,
+            "completion_tokens": 945,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 62598,
+            "prompt_tokens": 61653,
+            "reasoning_tokens": 0,
+            "response_id": "d52f054a-dd79-428e-abe4-d2cfeb584545"
+          },
+          {
+            "cache_read_tokens": 61440,
+            "cache_write_tokens": 0,
+            "completion_tokens": 408,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 63659,
+            "prompt_tokens": 63251,
+            "reasoning_tokens": 0,
+            "response_id": "4d5ccd5d-dc53-43d8-8f7a-f269850655ec"
+          },
+          {
+            "cache_read_tokens": 62976,
+            "cache_write_tokens": 0,
+            "completion_tokens": 428,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 64687,
+            "prompt_tokens": 64259,
+            "reasoning_tokens": 0,
+            "response_id": "39c03f8e-702d-4311-9e83-dd529e3833fd"
+          },
+          {
+            "cache_read_tokens": 64000,
+            "cache_write_tokens": 0,
+            "completion_tokens": 419,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 65331,
+            "prompt_tokens": 64912,
+            "reasoning_tokens": 0,
+            "response_id": "9ac1aac4-f49d-46dd-9562-d2856a133106"
+          },
+          {
+            "cache_read_tokens": 64512,
+            "cache_write_tokens": 0,
+            "completion_tokens": 675,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 66835,
+            "prompt_tokens": 66160,
+            "reasoning_tokens": 0,
+            "response_id": "b5350c3c-4684-4f30-a182-77b6e35a7435"
+          },
+          {
+            "cache_read_tokens": 66048,
+            "cache_write_tokens": 0,
+            "completion_tokens": 250,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 67031,
+            "prompt_tokens": 66781,
+            "reasoning_tokens": 0,
+            "response_id": "7b5c7d89-d07e-4988-bc5c-dd1365c3b2bf"
+          },
+          {
+            "cache_read_tokens": 66560,
+            "cache_write_tokens": 0,
+            "completion_tokens": 664,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 68032,
+            "prompt_tokens": 67368,
+            "reasoning_tokens": 0,
+            "response_id": "691c5568-f304-4226-9d92-5e6eaad176d3"
+          },
+          {
+            "cache_read_tokens": 67072,
+            "cache_write_tokens": 0,
+            "completion_tokens": 473,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 68629,
+            "prompt_tokens": 68156,
+            "reasoning_tokens": 0,
+            "response_id": "3b4443fb-22d4-4c72-a81c-03bd416594d0"
+          },
+          {
+            "cache_read_tokens": 68096,
+            "cache_write_tokens": 0,
+            "completion_tokens": 778,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 69605,
+            "prompt_tokens": 68827,
+            "reasoning_tokens": 0,
+            "response_id": "890851c2-3d3b-4367-9d19-7a174d73c1df"
+          },
+          {
+            "cache_read_tokens": 68608,
+            "cache_write_tokens": 0,
+            "completion_tokens": 478,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 70425,
+            "prompt_tokens": 69947,
+            "reasoning_tokens": 0,
+            "response_id": "a1c51c9d-4a8a-4ab9-9da4-87807a2b36f9"
+          },
+          {
+            "cache_read_tokens": 69632,
+            "cache_write_tokens": 0,
+            "completion_tokens": 569,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 71511,
+            "prompt_tokens": 70942,
+            "reasoning_tokens": 0,
+            "response_id": "b465e040-740e-461b-8742-756c51c997eb"
+          },
+          {
+            "cache_read_tokens": 70656,
+            "cache_write_tokens": 0,
+            "completion_tokens": 440,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 72029,
+            "prompt_tokens": 71589,
+            "reasoning_tokens": 0,
+            "response_id": "5bfb5e0e-9d76-4396-a859-8a88918b6d4d"
+          },
+          {
+            "cache_read_tokens": 71168,
+            "cache_write_tokens": 0,
+            "completion_tokens": 487,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 72660,
+            "prompt_tokens": 72173,
+            "reasoning_tokens": 0,
+            "response_id": "d19f6260-7fe6-4822-9eea-65d4706b44c5"
+          },
+          {
+            "cache_read_tokens": 71680,
+            "cache_write_tokens": 0,
+            "completion_tokens": 641,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 73475,
+            "prompt_tokens": 72834,
+            "reasoning_tokens": 0,
+            "response_id": "ab90e094-8cb0-4a18-ae94-08886df959aa"
+          },
+          {
+            "cache_read_tokens": 72704,
+            "cache_write_tokens": 0,
+            "completion_tokens": 498,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 74478,
+            "prompt_tokens": 73980,
+            "reasoning_tokens": 0,
+            "response_id": "b2ec0749-1c94-4844-81e0-306670285fc8"
+          },
+          {
+            "cache_read_tokens": 73728,
+            "cache_write_tokens": 0,
+            "completion_tokens": 242,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 75225,
+            "prompt_tokens": 74983,
+            "reasoning_tokens": 0,
+            "response_id": "6cf543e0-3b7d-4dce-a03c-19a034c6c2b0"
+          },
+          {
+            "cache_read_tokens": 74752,
+            "cache_write_tokens": 0,
+            "completion_tokens": 354,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 75901,
+            "prompt_tokens": 75547,
+            "reasoning_tokens": 0,
+            "response_id": "a60d0341-0351-4f3a-8e27-078c0d8f7ee1"
+          },
+          {
+            "cache_read_tokens": 75264,
+            "cache_write_tokens": 0,
+            "completion_tokens": 316,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 76507,
+            "prompt_tokens": 76191,
+            "reasoning_tokens": 0,
+            "response_id": "365da1f9-232c-4973-b5cc-7448ba9af2ff"
+          },
+          {
+            "cache_read_tokens": 75776,
+            "cache_write_tokens": 0,
+            "completion_tokens": 453,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 77295,
+            "prompt_tokens": 76842,
+            "reasoning_tokens": 0,
+            "response_id": "9e7d5f56-752f-4ce4-8f04-dc3ddc23f765"
+          },
+          {
+            "cache_read_tokens": 76800,
+            "cache_write_tokens": 0,
+            "completion_tokens": 268,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 78059,
+            "prompt_tokens": 77791,
+            "reasoning_tokens": 0,
+            "response_id": "110775a1-9cf7-458f-8cfe-9c93d890ce5a"
+          },
+          {
+            "cache_read_tokens": 77312,
+            "cache_write_tokens": 0,
+            "completion_tokens": 709,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 79046,
+            "prompt_tokens": 78337,
+            "reasoning_tokens": 0,
+            "response_id": "e5f3486d-2bab-47a0-81d7-faacb7516900"
+          },
+          {
+            "cache_read_tokens": 78336,
+            "cache_write_tokens": 0,
+            "completion_tokens": 373,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 79364,
+            "prompt_tokens": 78991,
+            "reasoning_tokens": 0,
+            "response_id": "e57613fe-0a15-430a-8d8f-28f164eee87f"
+          },
+          {
+            "cache_read_tokens": 78848,
+            "cache_write_tokens": 0,
+            "completion_tokens": 404,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 80007,
+            "prompt_tokens": 79603,
+            "reasoning_tokens": 0,
+            "response_id": "534d42f6-4cac-4a9f-86c9-8007e3bccca6"
+          },
+          {
+            "cache_read_tokens": 79360,
+            "cache_write_tokens": 0,
+            "completion_tokens": 223,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 80535,
+            "prompt_tokens": 80312,
+            "reasoning_tokens": 0,
+            "response_id": "e6716664-bb30-4f56-846e-903678ffe76b"
+          },
+          {
+            "cache_read_tokens": 79872,
+            "cache_write_tokens": 0,
+            "completion_tokens": 421,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 81267,
+            "prompt_tokens": 80846,
+            "reasoning_tokens": 0,
+            "response_id": "fe89489c-c1dc-48be-be00-2f9b5e4c0378"
+          },
+          {
+            "cache_read_tokens": 10752,
+            "cache_write_tokens": 0,
+            "completion_tokens": 484,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 44268,
+            "prompt_tokens": 43784,
+            "reasoning_tokens": 0,
+            "response_id": "533a8c39-2dae-493c-8b5b-3e7da9f7e766"
+          },
+          {
+            "cache_read_tokens": 43520,
+            "cache_write_tokens": 0,
+            "completion_tokens": 254,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 45093,
+            "prompt_tokens": 44839,
+            "reasoning_tokens": 0,
+            "response_id": "b43f2123-4df7-4248-b6a2-f6f49ca827c0"
+          },
+          {
+            "cache_read_tokens": 44544,
+            "cache_write_tokens": 0,
+            "completion_tokens": 352,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 45717,
+            "prompt_tokens": 45365,
+            "reasoning_tokens": 0,
+            "response_id": "4213dd6e-cb2c-4dbe-b3c4-7c47dcf6b15c"
+          },
+          {
+            "cache_read_tokens": 45056,
+            "cache_write_tokens": 0,
+            "completion_tokens": 317,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 46399,
+            "prompt_tokens": 46082,
+            "reasoning_tokens": 0,
+            "response_id": "f1751655-b226-4bb1-b430-a9f78b03e05a"
+          },
+          {
+            "cache_read_tokens": 46080,
+            "cache_write_tokens": 0,
+            "completion_tokens": 601,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 47392,
+            "prompt_tokens": 46791,
+            "reasoning_tokens": 0,
+            "response_id": "6a43c273-7a52-472a-85b2-34e765663cbc"
+          },
+          {
+            "cache_read_tokens": 46592,
+            "cache_write_tokens": 0,
+            "completion_tokens": 424,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 48138,
+            "prompt_tokens": 47714,
+            "reasoning_tokens": 0,
+            "response_id": "207281a7-0a7d-44ba-b5d3-c24c6231a7a8"
+          },
+          {
+            "cache_read_tokens": 47616,
+            "cache_write_tokens": 0,
+            "completion_tokens": 286,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 48427,
+            "prompt_tokens": 48141,
+            "reasoning_tokens": 0,
+            "response_id": "e1592bbb-c863-4210-ba3b-87ea7c2e93a2"
+          },
+          {
+            "cache_read_tokens": 48128,
+            "cache_write_tokens": 0,
+            "completion_tokens": 568,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 49263,
+            "prompt_tokens": 48695,
+            "reasoning_tokens": 0,
+            "response_id": "a433d5c8-bc30-409c-b0e3-e400ec8bdce2"
+          },
+          {
+            "cache_read_tokens": 48640,
+            "cache_write_tokens": 0,
+            "completion_tokens": 354,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 50017,
+            "prompt_tokens": 49663,
+            "reasoning_tokens": 0,
+            "response_id": "51ddacb5-8512-40aa-80bc-a8538522212a"
+          },
+          {
+            "cache_read_tokens": 49152,
+            "cache_write_tokens": 0,
+            "completion_tokens": 261,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 50641,
+            "prompt_tokens": 50380,
+            "reasoning_tokens": 0,
+            "response_id": "23aa8c1f-d134-46ca-bb2d-6e21a6e6bfd7"
+          },
+          {
+            "cache_read_tokens": 50176,
+            "cache_write_tokens": 0,
+            "completion_tokens": 346,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 51284,
+            "prompt_tokens": 50938,
+            "reasoning_tokens": 0,
+            "response_id": "e5641866-0a57-4eb2-a503-44be36f3621a"
+          },
+          {
+            "cache_read_tokens": 50688,
+            "cache_write_tokens": 0,
+            "completion_tokens": 310,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 51932,
+            "prompt_tokens": 51622,
+            "reasoning_tokens": 0,
+            "response_id": "48fbfc26-6906-4d35-af1f-2240553158a0"
+          },
+          {
+            "cache_read_tokens": 51200,
+            "cache_write_tokens": 0,
+            "completion_tokens": 202,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 52491,
+            "prompt_tokens": 52289,
+            "reasoning_tokens": 0,
+            "response_id": "fd711afd-1cf0-4683-91ec-ae7b3bb37011"
+          },
+          {
+            "cache_read_tokens": 52224,
+            "cache_write_tokens": 0,
+            "completion_tokens": 203,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 53038,
+            "prompt_tokens": 52835,
+            "reasoning_tokens": 0,
+            "response_id": "2a130a10-6eb3-4969-9f76-212ae8b09003"
+          },
+          {
+            "cache_read_tokens": 52736,
+            "cache_write_tokens": 0,
+            "completion_tokens": 350,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 53587,
+            "prompt_tokens": 53237,
+            "reasoning_tokens": 0,
+            "response_id": "dc436be9-0e80-4735-af4c-8e4a7d8d376c"
+          },
+          {
+            "cache_read_tokens": 52736,
+            "cache_write_tokens": 0,
+            "completion_tokens": 251,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 54185,
+            "prompt_tokens": 53934,
+            "reasoning_tokens": 0,
+            "response_id": "e8bfb964-cf83-42aa-aae1-602e2978ed8f"
+          },
+          {
+            "cache_read_tokens": 53760,
+            "cache_write_tokens": 0,
+            "completion_tokens": 287,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 54781,
+            "prompt_tokens": 54494,
+            "reasoning_tokens": 0,
+            "response_id": "023b0304-8b2e-401d-93a4-7df2ba4f1a2f"
+          },
+          {
+            "cache_read_tokens": 54272,
+            "cache_write_tokens": 0,
+            "completion_tokens": 327,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 55338,
+            "prompt_tokens": 55011,
+            "reasoning_tokens": 0,
+            "response_id": "a7d05f12-0d27-4236-87db-1da5c4f6c5f7"
+          },
+          {
+            "cache_read_tokens": 54784,
+            "cache_write_tokens": 0,
+            "completion_tokens": 230,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 55938,
+            "prompt_tokens": 55708,
+            "reasoning_tokens": 0,
+            "response_id": "6ce1859d-4a43-4fe5-b326-27295570a6b5"
+          },
+          {
+            "cache_read_tokens": 55296,
+            "cache_write_tokens": 0,
+            "completion_tokens": 191,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 56458,
+            "prompt_tokens": 56267,
+            "reasoning_tokens": 0,
+            "response_id": "1f0c3450-4807-4aae-b36c-544e5cf048cc"
+          },
+          {
+            "cache_read_tokens": 55808,
+            "cache_write_tokens": 0,
+            "completion_tokens": 296,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 56905,
+            "prompt_tokens": 56609,
+            "reasoning_tokens": 0,
+            "response_id": "f3c097d1-7d15-4fee-bafb-281df2ccf996"
+          },
+          {
+            "cache_read_tokens": 56320,
+            "cache_write_tokens": 0,
+            "completion_tokens": 246,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 57552,
+            "prompt_tokens": 57306,
+            "reasoning_tokens": 0,
+            "response_id": "ca83e491-98fd-4808-b416-4b7313dc4955"
+          },
+          {
+            "cache_read_tokens": 56832,
+            "cache_write_tokens": 0,
+            "completion_tokens": 247,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 58095,
+            "prompt_tokens": 57848,
+            "reasoning_tokens": 0,
+            "response_id": "8f7050d1-c958-4cba-aa31-9841703c2821"
+          },
+          {
+            "cache_read_tokens": 57344,
+            "cache_write_tokens": 0,
+            "completion_tokens": 340,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 58542,
+            "prompt_tokens": 58202,
+            "reasoning_tokens": 0,
+            "response_id": "ccba8158-e1a3-445f-919a-5013af8051bb"
+          },
+          {
+            "cache_read_tokens": 57856,
+            "cache_write_tokens": 0,
+            "completion_tokens": 202,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 59101,
+            "prompt_tokens": 58899,
+            "reasoning_tokens": 0,
+            "response_id": "22713724-fb0f-4a1b-b33b-f9122de00bd9"
+          },
+          {
+            "cache_read_tokens": 58880,
+            "cache_write_tokens": 0,
+            "completion_tokens": 276,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 59716,
+            "prompt_tokens": 59440,
+            "reasoning_tokens": 0,
+            "response_id": "910c0014-5509-48b3-b143-f02e0f7a396b"
+          },
+          {
+            "cache_read_tokens": 59392,
+            "cache_write_tokens": 0,
+            "completion_tokens": 311,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 60173,
+            "prompt_tokens": 59862,
+            "reasoning_tokens": 0,
+            "response_id": "964a9204-f348-42c2-a274-16512ca3df4c"
+          },
+          {
+            "cache_read_tokens": 59392,
+            "cache_write_tokens": 0,
+            "completion_tokens": 241,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 60800,
+            "prompt_tokens": 60559,
+            "reasoning_tokens": 0,
+            "response_id": "186a4146-4638-4582-bbdb-0283d0718910"
+          },
+          {
+            "cache_read_tokens": 60416,
+            "cache_write_tokens": 0,
+            "completion_tokens": 314,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 61413,
+            "prompt_tokens": 61099,
+            "reasoning_tokens": 0,
+            "response_id": "6a1cb732-39fe-4d76-8e00-36744444d870"
+          },
+          {
+            "cache_read_tokens": 60928,
+            "cache_write_tokens": 0,
+            "completion_tokens": 217,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 61957,
+            "prompt_tokens": 61740,
+            "reasoning_tokens": 0,
+            "response_id": "1cfb7d10-0fc1-48a1-abb3-b455e52df80d"
+          },
+          {
+            "cache_read_tokens": 61440,
+            "cache_write_tokens": 0,
+            "completion_tokens": 485,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 62593,
+            "prompt_tokens": 62108,
+            "reasoning_tokens": 0,
+            "response_id": "5a76ab2a-0de4-4103-a7b7-8707a8ea7483"
+          },
+          {
+            "cache_read_tokens": 61952,
+            "cache_write_tokens": 0,
+            "completion_tokens": 831,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 63743,
+            "prompt_tokens": 62912,
+            "reasoning_tokens": 0,
+            "response_id": "b62596ca-1249-4966-b871-a94a927ae0f9"
+          },
+          {
+            "cache_read_tokens": 62464,
+            "cache_write_tokens": 0,
+            "completion_tokens": 118,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 63344,
+            "prompt_tokens": 63226,
+            "reasoning_tokens": 0,
+            "response_id": "a5944ec7-cb1b-4575-b73b-a692ea23d38d"
+          },
+          {
+            "cache_read_tokens": 62976,
+            "cache_write_tokens": 0,
+            "completion_tokens": 345,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 63793,
+            "prompt_tokens": 63448,
+            "reasoning_tokens": 0,
+            "response_id": "75c277da-3c7d-4a02-bd64-6cf14269d4fe"
+          },
+          {
+            "cache_read_tokens": 62976,
+            "cache_write_tokens": 0,
+            "completion_tokens": 577,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 64575,
+            "prompt_tokens": 63998,
+            "reasoning_tokens": 0,
+            "response_id": "2f1e21a4-73d0-4310-af1b-e8dcd2db119a"
+          },
+          {
+            "cache_read_tokens": 63488,
+            "cache_write_tokens": 0,
+            "completion_tokens": 535,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 65445,
+            "prompt_tokens": 64910,
+            "reasoning_tokens": 0,
+            "response_id": "4bee3dc7-c442-47b0-9329-4b9c1d98ce08"
+          },
+          {
+            "cache_read_tokens": 64512,
+            "cache_write_tokens": 0,
+            "completion_tokens": 272,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 65879,
+            "prompt_tokens": 65607,
+            "reasoning_tokens": 0,
+            "response_id": "6024817c-c02b-4a7b-9c6d-b7db473dbb73"
+          },
+          {
+            "cache_read_tokens": 65536,
+            "cache_write_tokens": 0,
+            "completion_tokens": 738,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 66920,
+            "prompt_tokens": 66182,
+            "reasoning_tokens": 0,
+            "response_id": "6a16250c-b093-4525-8ee7-519eb3dd2a47"
+          },
+          {
+            "cache_read_tokens": 66048,
+            "cache_write_tokens": 0,
+            "completion_tokens": 384,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 67386,
+            "prompt_tokens": 67002,
+            "reasoning_tokens": 0,
+            "response_id": "e442a155-b558-46b7-af51-768f34dfaa87"
+          },
+          {
+            "cache_read_tokens": 66560,
+            "cache_write_tokens": 0,
+            "completion_tokens": 133,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 67805,
+            "prompt_tokens": 67672,
+            "reasoning_tokens": 0,
+            "response_id": "1de2d35c-d69d-400c-8179-d2d7a784ce3f"
+          },
+          {
+            "cache_read_tokens": 67584,
+            "cache_write_tokens": 0,
+            "completion_tokens": 239,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 68198,
+            "prompt_tokens": 67959,
+            "reasoning_tokens": 0,
+            "response_id": "3313e511-071a-43b2-82b4-28709c883f93"
+          },
+          {
+            "cache_read_tokens": 67584,
+            "cache_write_tokens": 0,
+            "completion_tokens": 569,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 69125,
+            "prompt_tokens": 68556,
+            "reasoning_tokens": 0,
+            "response_id": "496a7c29-345e-4287-89eb-8b63b6dfad27"
+          },
+          {
+            "cache_read_tokens": 10752,
+            "cache_write_tokens": 0,
+            "completion_tokens": 460,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 36685,
+            "prompt_tokens": 36225,
+            "reasoning_tokens": 0,
+            "response_id": "7cffcdb2-2227-481c-9b13-5250a7c7ed67"
+          },
+          {
+            "cache_read_tokens": 35840,
+            "cache_write_tokens": 0,
+            "completion_tokens": 193,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 37115,
+            "prompt_tokens": 36922,
+            "reasoning_tokens": 0,
+            "response_id": "d6841fcf-073f-4c9b-8be6-3abf270947ee"
+          },
+          {
+            "cache_read_tokens": 36864,
+            "cache_write_tokens": 0,
+            "completion_tokens": 321,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 37640,
+            "prompt_tokens": 37319,
+            "reasoning_tokens": 0,
+            "response_id": "33e3a84c-b2cd-4cb1-b9e9-36d894cd4e82"
+          },
+          {
+            "cache_read_tokens": 36864,
+            "cache_write_tokens": 0,
+            "completion_tokens": 422,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 38336,
+            "prompt_tokens": 37914,
+            "reasoning_tokens": 0,
+            "response_id": "7dcbff37-fd94-4c52-8b7c-f2bb138352b3"
+          },
+          {
+            "cache_read_tokens": 37888,
+            "cache_write_tokens": 0,
+            "completion_tokens": 484,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 38942,
+            "prompt_tokens": 38458,
+            "reasoning_tokens": 0,
+            "response_id": "f492c035-275b-41fc-8fd7-c1edd730ccff"
+          },
+          {
+            "cache_read_tokens": 38400,
+            "cache_write_tokens": 0,
+            "completion_tokens": 242,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 39354,
+            "prompt_tokens": 39112,
+            "reasoning_tokens": 0,
+            "response_id": "0576de83-e36a-4d91-8ef4-6d7068faf6e5"
+          },
+          {
+            "cache_read_tokens": 38912,
+            "cache_write_tokens": 0,
+            "completion_tokens": 256,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 39941,
+            "prompt_tokens": 39685,
+            "reasoning_tokens": 0,
+            "response_id": "e2c83d01-865a-4614-b4f1-8acfea1126c9"
+          },
+          {
+            "cache_read_tokens": 39424,
+            "cache_write_tokens": 0,
+            "completion_tokens": 400,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 40477,
+            "prompt_tokens": 40077,
+            "reasoning_tokens": 0,
+            "response_id": "f6f8714a-0c13-4a64-adb9-2237e14a6e59"
+          },
+          {
+            "cache_read_tokens": 39936,
+            "cache_write_tokens": 0,
+            "completion_tokens": 209,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 40983,
+            "prompt_tokens": 40774,
+            "reasoning_tokens": 0,
+            "response_id": "5e68ea1c-c9a8-4b08-96f9-5c6bca4c9618"
+          },
+          {
+            "cache_read_tokens": 40448,
+            "cache_write_tokens": 0,
+            "completion_tokens": 403,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 41734,
+            "prompt_tokens": 41331,
+            "reasoning_tokens": 0,
+            "response_id": "328face6-4456-4218-8587-f845abc3d092"
+          },
+          {
+            "cache_read_tokens": 40960,
+            "cache_write_tokens": 0,
+            "completion_tokens": 326,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 42023,
+            "prompt_tokens": 41697,
+            "reasoning_tokens": 0,
+            "response_id": "af667f40-dcf4-9b71-a2b2-3b4e0a49399b"
+          },
+          {
+            "cache_read_tokens": 41472,
+            "cache_write_tokens": 0,
+            "completion_tokens": 467,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 42818,
+            "prompt_tokens": 42351,
+            "reasoning_tokens": 0,
+            "response_id": "618108dd-03d0-4444-9d40-980e474a71a8"
+          },
+          {
+            "cache_read_tokens": 41984,
+            "cache_write_tokens": 0,
+            "completion_tokens": 231,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 43127,
+            "prompt_tokens": 42896,
+            "reasoning_tokens": 0,
+            "response_id": "75f99888-d350-4fe7-bdbb-479836be7e2f"
+          },
+          {
+            "cache_read_tokens": 42496,
+            "cache_write_tokens": 0,
+            "completion_tokens": 530,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 43953,
+            "prompt_tokens": 43423,
+            "reasoning_tokens": 0,
+            "response_id": "ad67875b-2e13-4e15-b9a7-929faac1cbbf"
+          },
+          {
+            "cache_read_tokens": 43008,
+            "cache_write_tokens": 0,
+            "completion_tokens": 319,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 44571,
+            "prompt_tokens": 44252,
+            "reasoning_tokens": 0,
+            "response_id": "aecd2e26-1c51-43d0-b11f-d0eb0f18ed60"
+          },
+          {
+            "cache_read_tokens": 44032,
+            "cache_write_tokens": 0,
+            "completion_tokens": 220,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 45126,
+            "prompt_tokens": 44906,
+            "reasoning_tokens": 0,
+            "response_id": "d210ed7a-64d9-4b80-86bd-c65a75a60c2b"
+          },
+          {
+            "cache_read_tokens": 44544,
+            "cache_write_tokens": 0,
+            "completion_tokens": 200,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 45637,
+            "prompt_tokens": 45437,
+            "reasoning_tokens": 0,
+            "response_id": "862c2c59-57c3-494d-9fa4-b8c5e50df616"
+          },
+          {
+            "cache_read_tokens": 45056,
+            "cache_write_tokens": 0,
+            "completion_tokens": 725,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 46587,
+            "prompt_tokens": 45862,
+            "reasoning_tokens": 0,
+            "response_id": "54921fe7-6b0a-4270-8e85-d628939730f2"
+          },
+          {
+            "cache_read_tokens": 45568,
+            "cache_write_tokens": 0,
+            "completion_tokens": 578,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 47137,
+            "prompt_tokens": 46559,
+            "reasoning_tokens": 0,
+            "response_id": "6e6568b5-0136-4a5c-89bc-f9ce9c7fe598"
+          },
+          {
+            "cache_read_tokens": 46080,
+            "cache_write_tokens": 0,
+            "completion_tokens": 351,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 47437,
+            "prompt_tokens": 47086,
+            "reasoning_tokens": 0,
+            "response_id": "c2967001-2375-4834-aa15-c618cd94642a"
+          },
+          {
+            "cache_read_tokens": 46592,
+            "cache_write_tokens": 0,
+            "completion_tokens": 583,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 48181,
+            "prompt_tokens": 47598,
+            "reasoning_tokens": 0,
+            "response_id": "4507febb-c070-41e1-bba3-b1afe556f2dc"
+          },
+          {
+            "cache_read_tokens": 47104,
+            "cache_write_tokens": 0,
+            "completion_tokens": 255,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 48507,
+            "prompt_tokens": 48252,
+            "reasoning_tokens": 0,
+            "response_id": "a9fd0f2d-7189-42a8-8425-5131b8eac181"
+          },
+          {
+            "cache_read_tokens": 48128,
+            "cache_write_tokens": 0,
+            "completion_tokens": 745,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 49549,
+            "prompt_tokens": 48804,
+            "reasoning_tokens": 0,
+            "response_id": "5e6c5b8f-cc5d-48eb-b0a8-f923e194aae7"
+          },
+          {
+            "cache_read_tokens": 48640,
+            "cache_write_tokens": 0,
+            "completion_tokens": 348,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 50397,
+            "prompt_tokens": 50049,
+            "reasoning_tokens": 0,
+            "response_id": "a5a8314f-8068-425f-941b-a9a59fbf292d"
+          },
+          {
+            "cache_read_tokens": 49664,
+            "cache_write_tokens": 0,
+            "completion_tokens": 237,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 50940,
+            "prompt_tokens": 50703,
+            "reasoning_tokens": 0,
+            "response_id": "e528b1aa-060d-423c-8325-dc145955ee40"
+          },
+          {
+            "cache_read_tokens": 50688,
+            "cache_write_tokens": 0,
+            "completion_tokens": 384,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 51487,
+            "prompt_tokens": 51103,
+            "reasoning_tokens": 0,
+            "response_id": "c1248227-db5c-489d-82b2-30787efbcd99"
+          },
+          {
+            "cache_read_tokens": 50688,
+            "cache_write_tokens": 0,
+            "completion_tokens": 98,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 51768,
+            "prompt_tokens": 51670,
+            "reasoning_tokens": 0,
+            "response_id": "4e47eed4-836e-4f24-8117-3630f6515b19"
+          },
+          {
+            "cache_read_tokens": 51200,
+            "cache_write_tokens": 0,
+            "completion_tokens": 796,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 56382,
+            "prompt_tokens": 55586,
+            "reasoning_tokens": 0,
+            "response_id": "f9c1484e-5b4b-4d75-a94c-292bf604e7b6"
+          },
+          {
+            "cache_read_tokens": 55296,
+            "cache_write_tokens": 0,
+            "completion_tokens": 452,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 57139,
+            "prompt_tokens": 56687,
+            "reasoning_tokens": 0,
+            "response_id": "57620e11-018a-45f9-b291-e654289f0c5d"
+          },
+          {
+            "cache_read_tokens": 56320,
+            "cache_write_tokens": 0,
+            "completion_tokens": 234,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 57575,
+            "prompt_tokens": 57341,
+            "reasoning_tokens": 0,
+            "response_id": "34c5a998-1637-4fb5-b28a-6c1886dafbe3"
+          },
+          {
+            "cache_read_tokens": 56832,
+            "cache_write_tokens": 0,
+            "completion_tokens": 313,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 58208,
+            "prompt_tokens": 57895,
+            "reasoning_tokens": 0,
+            "response_id": "a6306638-c0f4-4891-a63d-35b10c7a7b4d"
+          },
+          {
+            "cache_read_tokens": 57856,
+            "cache_write_tokens": 0,
+            "completion_tokens": 289,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 58614,
+            "prompt_tokens": 58325,
+            "reasoning_tokens": 0,
+            "response_id": "c26bfd2e-e32e-4a31-8ac4-3d5a313efd98"
+          },
+          {
+            "cache_read_tokens": 57856,
+            "cache_write_tokens": 0,
+            "completion_tokens": 243,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 59222,
+            "prompt_tokens": 58979,
+            "reasoning_tokens": 0,
+            "response_id": "f1b07d66-84db-4e48-98dd-56e9cbd9517c"
+          },
+          {
+            "cache_read_tokens": 58880,
+            "cache_write_tokens": 0,
+            "completion_tokens": 287,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 59810,
+            "prompt_tokens": 59523,
+            "reasoning_tokens": 0,
+            "response_id": "fd328cd5-6880-49bd-bd1d-127dd7b1d827"
+          },
+          {
+            "cache_read_tokens": 59392,
+            "cache_write_tokens": 0,
+            "completion_tokens": 338,
+            "context_window": 0,
+            "model": "openai/accounts/fireworks/routers/kimi-k2p5-turbo",
+            "per_turn_token": 60289,
+            "prompt_tokens": 59951,
+            "reasoning_tokens": 0,
+            "response_id": "052d7a9d-24e7-4325-a31a-fdd6afa31375"
+          }
+        ]
+      }
+    }
+  }
+}
