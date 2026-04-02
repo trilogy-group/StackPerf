@@ -64,8 +64,8 @@ REDACTION_PATTERNS: Final[list[tuple[str, re.Pattern[str]]]] = [
         "aws_access_key",
         re.compile(r"(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}"),
     ),
-    # Generic API key: hex-encoded secrets (32+ hex chars)
-    ("hex_secret", re.compile(r"\b[a-f0-9]{32,}\b", re.IGNORECASE)),
+    # Generic API key: hex-encoded secrets (41+ hex chars to avoid matching git SHAs)
+    ("hex_secret", re.compile(r"\b[a-f0-9]{41,}\b", re.IGNORECASE)),
     # Generic API key: base64-like strings with mixed case and digits
     ("base64_like_secret", re.compile(r"\b[A-Za-z0-9+/]{32,}={0,2}\b")),
     # Connection strings with passwords
