@@ -386,12 +386,12 @@ def env(session_id: str) -> None:
 
             profile = HarnessProfileConfig(
                 name=profile_row.name,
-                protocol_surface=profile_row.protocol_surface,
+                protocol_surface=profile_row.protocol_surface,  # type: ignore[arg-type]
                 base_url_env=profile_row.base_url_env,
                 api_key_env=profile_row.api_key_env,
                 model_env=profile_row.model_env,
                 extra_env=profile_row.extra_env,
-                render_format=profile_row.render_format,
+                render_format=profile_row.render_format,  # type: ignore[arg-type]
                 launch_checks=profile_row.launch_checks,
             )
             variant = VariantConfig(

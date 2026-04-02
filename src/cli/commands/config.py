@@ -7,6 +7,9 @@ from rich.console import Console
 from rich.table import Table
 from sqlalchemy.orm import Session as SQLAlchemySession
 
+from benchmark_core.config import Experiment as ExperimentConfig
+from benchmark_core.config import HarnessProfile as HarnessProfileConfig
+from benchmark_core.config import ProviderConfig, TaskCard as TaskCardConfig, Variant as VariantConfig
 from benchmark_core.config_loader import ConfigLoader, ConfigValidationError
 from benchmark_core.db.models import Experiment, ExperimentVariant, HarnessProfile, Provider, ProviderModel
 from benchmark_core.db.models import TaskCard as DBTaskCard
@@ -35,7 +38,7 @@ def _print_name_table(title: str, names: list[str]) -> None:
     console.print(table)
 
 
-def _upsert_provider(db: SQLAlchemySession, provider_config) -> Provider:
+def _upsert_provider(db: SQLAlchemySession, provider_config: ProviderConfig) -> Provider:
     provider = db.query(Provider).filter_by(name=provider_config.name).one_or_none()
     if provider is None:
         provider = Provider(
@@ -61,7 +64,7 @@ def _upsert_provider(db: SQLAlchemySession, provider_config) -> Provider:
     return provider
 
 
-def _upsert_harness_profile(db: SQLAlchemySession, profile_config) -> HarnessProfile:
+def _upsert_harness_profile(db: SQLAlchemySession, profile_config: HarnessProfileConfig) -> HarnessProfile:
     profile = db.query(HarnessProfile).filter_by(name=profile_config.name).one_or_none()
     if profile is None:
         profile = HarnessProfile(
@@ -83,7 +86,7 @@ def _upsert_harness_profile(db: SQLAlchemySession, profile_config) -> HarnessPro
     return profile
 
 
-def _upsert_variant(db: SQLAlchemySession, variant_config) -> Variant:
+def _upsert_variant(db: SQLAlchemySession, variant_config: VariantConfig) -> Variant:
     variant = db.query(Variant).filter_by(name=variant_config.name).one_or_none()
     if variant is None:
         variant = Variant(
@@ -103,7 +106,7 @@ def _upsert_variant(db: SQLAlchemySession, variant_config) -> Variant:
     return variant
 
 
-def _upsert_task_card(db: SQLAlchemySession, task_card_config) -> DBTaskCard:
+def _upsert_task_card(db: SQLAlchemySession, task_card_config: TaskCardConfig) -> DBTaskCard:
     task_card = db.query(DBTaskCard).filter_by(name=task_card_config.name).one_or_none()
     if task_card is None:
         task_card = DBTaskCard(
@@ -123,7 +126,7 @@ def _upsert_task_card(db: SQLAlchemySession, task_card_config) -> DBTaskCard:
     return task_card
 
 
-def _upsert_experiment(db: SQLAlchemySession, experiment_config, variant_map: dict[str, Variant]) -> Experiment:
+def _upsert_experiment(db: SQLAlchemySession, experiment_config: ExperimentConfig, variant_map: dict[str, Variant]) -> Experiment:
     experiment = db.query(Experiment).filter_by(name=experiment_config.name).one_or_none()
     if experiment is None:
         experiment = Experiment(name=experiment_config.name, description=experiment_config.description)
