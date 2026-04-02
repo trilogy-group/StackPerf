@@ -1,72 +1,102 @@
-# StackPerf Makefile
-# CI-aligned commands for local development
+.PHONY: help install install-dev sync lint format format-check type-check test test-unit test-integration test-cov clean quality dev-setup dev-check validate-config validate-migrations validate-collectors validate-all
 
-.PHONY: help sync lint type test check ci clean build
+# Set PYTHONPATH for all targets (handle empty PYTHONPATH case)
+export PYTHONPATH := $(PWD)/src$(if $(PYTHONPATH),:$(PYTHONPATH),)
 
 # Default target
-help:
-	@echo "StackPerf Development Commands"
-	@echo "==============================="
-	@echo ""
-	@echo "Setup & Sync:"
-	@echo "  sync       Sync dependencies with uv"
-	@echo "  clean      Remove build artifacts and caches"
-	@echo ""
-	@echo "Quality Gates:"
-	@echo "  lint       Run ruff linter"
-	@echo "  type       Run mypy type checker"
-	@echo "  test       Run pytest test suite"
-	@echo "  check      Run all quality gates (lint + type + test)"
-	@echo "  ci         Run full CI pipeline (same as check)"
-	@echo ""
-	@echo "Build:"
-	@echo "  build      Build distribution packages"
-	@echo ""
+help: ## Show this help message
+	@echo "Available commands:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-# Setup & Sync
-sync:
-	uv sync --all-extras
+# Installation
+install: ## Install production dependencies with uv
+	@echo "Installing production dependencies..."
+	uv pip install -e .
 
-# Quality Gates
-lint:
-	uv run ruff check src/ tests/
+install-dev: ## Install all dependencies including dev tools with uv
+	@echo "Installing development dependencies..."
+	uv pip install -e ".[dev]"
 
-lint-fix:
-	uv run ruff check --fix src/ tests/
+sync: ## Sync dependencies from pyproject.toml using uv
+	@echo "Syncing dependencies..."
+	uv pip install -e ".[dev]"
 
-format:
-	uv run ruff format src/ tests/
+# Code quality
+lint: ## Run ruff linter
+	@echo "Running linter..."
+	ruff check src tests
 
-format-check:
-	uv run ruff format --check src/ tests/
+format: ## Run ruff formatter
+	@echo "Running formatter..."
+	ruff format src tests
 
-type:
-	uv run mypy src/
+format-check: ## Check formatting without modifying files
+	@echo "Checking formatting..."
+	ruff format --check src tests
 
-test:
-	uv run pytest tests/ -v
+type-check: ## Run mypy type checker
+	@echo "Running type checker..."
+	mypy src
 
-test-cov:
-	uv run pytest tests/ --cov=src --cov-report=term-missing
+# Testing
+test: ## Run all tests
+	@echo "Running tests..."
+	pytest tests/ -v
 
-# Full CI pipeline (runs all checks)
-check: lint type test
-	@echo "All quality gates passed ✓"
+test-unit: ## Run unit tests only
+	@echo "Running unit tests..."
+	pytest tests/unit -v
 
-ci: check
-	@echo "CI pipeline completed ✓"
+test-integration: ## Run integration tests only
+	@echo "Running integration tests..."
+	pytest tests/integration -v
 
-# Build
-build:
-	uv build
+test-cov: ## Run tests with coverage report
+	@echo "Running tests with coverage..."
+	pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=html
 
-# Clean
-clean:
+# Combined quality checks
+quality: lint type-check test ## Run full quality check (lint + type-check + test)
+
+# Build and clean
+clean: ## Clean build artifacts and cache files
+	@echo "Cleaning build artifacts..."
+	rm -rf build/
+	rm -rf dist/
+	rm -rf *.egg-info/
 	rm -rf .pytest_cache/
 	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
 	rm -rf htmlcov/
-	rm -rf dist/
-	rm -rf *.egg-info/
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
+	rm -rf .coverage
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+
+# Development utilities
+dev-setup: ## Complete setup for new development environment
+	@echo "Setting up development environment..."
+	@make install-dev
+	@echo "Development environment ready!"
+
+dev-check: ## Quick check before committing
+	@echo "Running pre-commit checks..."
+	@make format-check
+	@make lint
+	@make type-check
+	@make test-unit
+
+# Validation tests for CI
+validate-config: ## Run config validation tests
+	@echo "Running config validation tests..."
+	pytest tests/validation/test_config_validation.py -v
+
+validate-migrations: ## Run migration validation tests
+	@echo "Running migration validation tests..."
+	pytest tests/validation/test_migrations.py -v
+
+validate-collectors: ## Run collector validation tests
+	@echo "Running collector validation tests..."
+	pytest tests/validation/test_collectors.py -v
+
+validate-all: validate-config validate-migrations validate-collectors ## Run all validation tests
+	@echo "✓ All validation tests passed"

@@ -1,0 +1,12 @@
+name: openai-gpt-5.4-codex
+provider: openai
+provider_route: openai-main
+model_alias: gpt-5.4
+harness_profile: codex
+harness_env_overrides:
+  OPENAI_TIMEOUT: "120"
+benchmark_tags:
+  harness: codex
+  provider: openai
+  model: gpt-5.4
+  config: default

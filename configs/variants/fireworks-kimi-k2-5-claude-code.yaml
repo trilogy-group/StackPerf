@@ -1,0 +1,12 @@
+name: fireworks-kimi-k2-5-claude-code
+provider: fireworks
+provider_route: fireworks-main
+model_alias: kimi-k2-5
+harness_profile: claude-code
+harness_env_overrides:
+  CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS: "1"
+benchmark_tags:
+  harness: claude-code
+  provider: fireworks
+  model: kimi-k2-5
+  config: beta-off

@@ -1,0 +1,11 @@
+name: fireworks-glm-5-openhands
+provider: fireworks-openai
+provider_route: fireworks-main
+model_alias: glm-5
+harness_profile: openhands
+harness_env_overrides: {}
+benchmark_tags:
+  harness: openhands
+  provider: fireworks
+  model: glm-5
+  config: default

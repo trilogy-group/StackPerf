@@ -1,1 +1,1 @@
-"""Unit tests for StackPerf."""
+"""Unit tests."""

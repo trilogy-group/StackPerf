@@ -1,1 +1,1 @@
-"""Integration tests for StackPerf."""
+"""Integration tests."""

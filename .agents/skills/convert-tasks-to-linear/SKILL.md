@@ -1,3 +1,11 @@
+---
+name: convert-tasks-to-linear
+description: |
+  Use this skill when a repository contains a markdown implementation plan that
+  needs to become real Linear issues with correct parent/sub-issue relationships,
+  blockers, and Definition of Ready context.
+---
+
 # Convert Markdown Task Plans to Linear Parent Issues and Sub-Issues
 
 ## Purpose
@@ -16,6 +24,34 @@ Collect these inputs before creating issues:
 - repository root path
 - supporting docs referenced by the plan
 - labels, priority mapping, and naming conventions required by the team
+
+## Linear Project overview content
+
+Linear Projects support an **overview** field that serves as a guide and live dashboard for the project. This overview should contain high-level project information, especially regarding its implementation plan, and can include references to key issues, which will display with live status icons.
+
+### Purpose of the project overview
+
+- Provide a central landing page for the project with summary information
+- Explain the implementation plan
+- Act as a live dashboard where referenced issues show current status
+- Document project goals, scope, and key deliverables
+- Link to important resources (docs, repos, external references)
+
+### Content to include in the overview
+
+When creating or updating a Linear Project as part of task conversion:
+
+- **Project summary**: Brief description of what the project accomplishes
+- **Key milestones**: List of project milestones with brief descriptions
+- **Parent issue references**: Links to major parent issues (these render with live status)
+- **Definition of done**: Criteria for project completion
+- **Resources**: Links to relevant documentation, repositories, and external tools
+- **Timeline**: High-level schedule or sequence of phases
+
+### Live dashboard behavior
+
+Issue references in the overview field automatically display their current status. This means:
+Include references to the most important parent issues and milestones in the overview to maximize dashboard utility.
 
 ## Outputs required
 
@@ -44,6 +80,144 @@ A successful conversion produces:
 12. Never batch together dependent issue creations in the same concurrent block.
 13. Create dependency-free issues concurrently only when none of them reference each other by blocker, parent/sub-issue relationship, or inline related-issue text that must be resolved at creation time.
 14. Treat issue creation and blocker assignment as separate phases unless all referenced issue IDs are already known and verified.
+
+## Parent/Sub-Issue Work Boundaries
+
+When creating parent issues and sub-issues, establish clear work boundaries to prevent duplicate work and ambiguity:
+
+### Parent issue scope
+
+Parent issues should contain:
+- **High-level acceptance criteria** that define when the parent is complete
+- **References to all sub-issues** that must be completed
+- **Integration requirements** that can only be verified after sub-issues merge
+- **NO implementation details** that belong in sub-issues
+
+Parent issues should NOT contain:
+- Detailed implementation steps (belongs in sub-issues)
+- Code changes (work happens in sub-issue branches)
+- Unit tests for specific components (belongs in sub-issues)
+
+### Sub-issue scope
+
+Sub-issues should contain:
+- **Specific, implementable scope** with clear deliverables
+- **Acceptance criteria** that can be verified independently
+- **Test plan** for the specific component
+- **Definition of Done** that includes PR merge to main
+
+Sub-issues should NOT contain:
+- Dependencies on other sub-issues being merged first (use blockers)
+- Integration testing that requires parent completion
+- Vague references to "parent issue work" - be specific
+
+### Preventing duplicate work
+
+To avoid the anti-pattern where work is done in the parent issue while child issues remain open:
+
+1. **Parent issue acceptance criteria must reference sub-issue completion**
+   - Example: "All sub-issues (COE-263, COE-264, COE-267, COE-268, COE-270) are in Done state"
+   - Example: "Integration tests pass after all sub-issue PRs are merged"
+
+2. **Sub-issues must have independent Definition of Ready**
+   - Each sub-issue should be implementable without reading the parent issue body
+   - Cross-reference related sub-issues but don't duplicate their content
+
+3. **Parent issue state reflects sub-issue aggregate state**
+   - Parent stays in Todo until first sub-issue moves to In Progress
+   - Parent moves to In Progress when integration work begins
+   - Parent cannot move to Done until all sub-issues are Done
+
+4. **Orchestrator behavior with hierarchy**
+   - Parent issues are blocked from dispatch while any sub-issue is in non-terminal state
+   - Sub-issues are preferred over parent issues in dispatch ordering
+   - This ensures children complete before parent integration work begins
+
+### Avoiding circular dependencies
+
+**Critical**: Never create a blocker relationship between a parent and its own child. This creates a deadlock:
+
+```
+COE-268 (Parent)          COE-277 (Child)
+     │                          │
+     │◄──── blocked by ──────────┘
+     │                          │
+     └──── sub-issue ───────────►│
+```
+
+**The deadlock**:
+1. Parent can't dispatch because child is incomplete (hierarchy check)
+2. Child can't dispatch because it's blocked by parent (blocker check)
+3. Result: Neither can ever be dispatched
+
+**Correct patterns**:
+
+| Relationship | Meaning | Blocker Needed? |
+|--------------|---------|-----------------|
+| Parent → Child | Parent contains/aggregates child work | NO - hierarchy handles this |
+| Child A → Child B | Sibling dependency (A must complete before B) | YES - use blockers |
+| Issue → External | Depends on external issue | YES - use blockers |
+
+**Rule**: The parent-child relationship already implies "parent depends on child completion". Adding a blocker from child to parent creates a circular dependency.
+
+### Example: Correct parent/sub-issue split
+
+**Parent Issue (COE-254): Linear MCP tools for issue and project management**
+
+```markdown
+## Summary
+Implement Linear MCP tools for issue and project management operations.
+
+## Acceptance Criteria
+- [ ] All sub-issues are completed and merged:
+  - [COE-263](...) - Create issue tool
+  - [COE-264](...) - Update issue tool
+  - [COE-267](...) - Get project tool
+  - [COE-268](...) - Save project tool
+  - [COE-270](...) - List issues tool
+- [ ] Integration tests verify all tools work together
+- [ ] Documentation is updated with tool reference
+
+## Scope
+### In scope
+- Coordination of sub-issue implementation
+- Integration testing after sub-issues merge
+- Documentation updates
+
+### Out of scope
+- Individual tool implementation (in sub-issues)
+- Unit tests for specific tools (in sub-issues)
+```
+
+**Sub-Issue (COE-268): Implement linear_save_project tool**
+
+```markdown
+## Summary
+Implement the `linear_save_project` MCP tool for updating Linear project descriptions.
+
+## Acceptance Criteria
+- [ ] Tool accepts project ID and new description
+- [ ] Tool validates description length limits
+- [ ] Tool returns success/failure with error details
+- [ ] Unit tests cover validation logic
+- [ ] PR is merged to main
+
+## Scope
+### In scope
+- Tool implementation in opensymphony-linear-mcp crate
+- Input validation
+- Error handling
+- Unit tests
+
+### Out of scope
+- Other Linear tools (in sibling sub-issues)
+- Integration testing (in parent issue)
+- Documentation (in parent issue)
+
+## Context
+- Parent issue: [COE-254](...)
+- Related sub-issues: COE-267 (get project), COE-263 (create issue)
+```
 
 ## Recommended issue body structure
 
@@ -98,7 +272,8 @@ For each parent issue:
 
 - create one Linear issue at the correct project/team
 - use the parent issue title exactly unless the repo owner requested a naming tweak
-- add the summary, goal, labels, priority, docs, and repo areas
+- add the summary, goal, labels, docs, and repo areas
+- set priority to medium unless explicitly specified otherwise (see "Phasing vs prioritizing")
 - capture the created Linear issue ID and URL in a mapping table
 
 Suggested mapping table fields:
@@ -128,6 +303,7 @@ For each planned sub-issue:
 - copy the structured sections from the markdown task
 - include Definition of Ready context directly in the issue body
 - include repo file paths and docs paths needed for execution
+- set priority to medium unless explicitly specified otherwise (see "Phasing vs prioritizing")
 - capture the created Linear issue ID and URL in the mapping table
 
 Extend the mapping table with:
@@ -220,6 +396,107 @@ For each sub-issue blocker list:
 - do not rely on body text alone
 
 This means the issue graph in Linear must be queryable through Linear's dependency model, not only readable to humans.
+
+## Linear GraphQL API for Blocker Relationships
+
+Linear's REST API does not expose blocker relationships directly. Use the GraphQL API with `issueRelationCreate` mutation.
+
+### Authentication
+
+Read the Linear API key from:
+- Environment variable: `LINEAR_API_KEY`
+- Or file: `~/.config/opensymphony/secrets/linear-api-key.txt`
+
+```bash
+LINEAR_API_KEY=$(cat ~/.config/opensymphony/secrets/linear-api-key.txt 2>/dev/null || echo "$LINEAR_API_KEY")
+```
+
+### Create blocker relationship
+
+The `issueRelationCreate` mutation creates a "blocks" relationship:
+
+```graphql
+mutation CreateRelation($input: IssueRelationCreateInput!) {
+  issueRelationCreate(input: $input) {
+    success
+    issueRelation {
+      id
+      type
+      issue { identifier }
+      relatedIssue { identifier }
+    }
+  }
+}
+```
+
+Variables:
+```json
+{
+  "input": {
+    "issueId": "<blocker-issue-uuid>",
+    "type": "blocks",
+    "relatedIssueId": "<blocked-issue-uuid>"
+  }
+}
+```
+
+### Important: Direction matters
+
+The `blocks` type means: `issueId` **blocks** `relatedIssueId`.
+
+- **Correct**: If BENCH-002 is blocked by BENCH-001, then:
+  - `issueId` = BENCH-001's UUID (the blocker)
+  - `relatedIssueId` = BENCH-002's UUID (the blocked issue)
+  
+- **Wrong**: Setting `issueId` = BENCH-002 would mean BENCH-002 blocks BENCH-001
+
+### curl example
+
+```bash
+curl -s https://api.linear.app/graphql \
+  -H "Authorization: $LINEAR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation CreateRelation($input: IssueRelationCreateInput!) { issueRelationCreate(input: $input) { success } }", "variables": {"input": {"issueId": "9dd8e4d2-6c14-4438-9bdb-8f090293d948", "type": "blocks", "relatedIssueId": "af6927c8-3874-4f74-9fe5-55375fd019a3"}}}'
+```
+
+### Query existing blockers
+
+To verify blocker relationships after creation:
+
+```graphql
+query {
+  team(id: "<team-uuid>") {
+    issues(first: 100) {
+      nodes {
+        identifier
+        title
+        relations {
+          nodes {
+            type
+            relatedIssue { identifier }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Filter for `type: "blocks"` to see blocker relationships.
+
+### Batch applying blockers
+
+For efficiency, apply multiple blockers in sequence:
+
+```bash
+# Apply blockers for an issue with multiple dependencies
+for blocker in "uuid-1" "uuid-2" "uuid-3"; do
+  curl -s https://api.linear.app/graphql \
+    -H "Authorization: $LINEAR_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "{\"query\": \"mutation CreateRelation(\$input: IssueRelationCreateInput!) { issueRelationCreate(input: \$input) { success } }\", \"variables\": {\"input\": {\"issueId\": \"$blocker\", \"type\": \"blocks\", \"relatedIssueId\": \"<blocked-issue-uuid>\"}}}"
+done
+```
 
 ### Step 10: rewrite blocker text in issue bodies
 
@@ -433,12 +710,86 @@ If a creation wave fails partway through:
 
 Do not assume that failed calls mean nothing was created. Reconcile against real Linear state first.
 
+## Linear Milestones
+
+Linear uses **milestones** to represent different stages in a project's lifecycle. Unlike parent/sub-issues which capture hierarchy and encapsulation, milestones capture sequential phases of development.
+
+### Data model distinction
+
+- **Parent issues and sub-issues** represent hierarchical decomposition (what contains what)
+- **Milestones** represent sequential project phases (what happens when)
+- An issue can belong to both a parent issue hierarchy AND a milestone simultaneously
+
+### Handling milestone metadata in task conversion
+
+When processing a task plan that includes milestone-related metadata:
+
+1. **Preserve milestone assignments**: If the source plan assigns tasks to specific phases or milestones, maintain that association when creating issues in Linear
+2. **Create milestones as needed**: If the target Linear project does not yet have milestones corresponding to the phases in the plan, create them before or alongside issue creation
+3. **Assign issues to milestones**: When creating parent issues and sub-issues, associate them with the appropriate milestone based on their phase in the plan
+4. **Track milestone coverage**: Ensure all issues from a given phase are assigned to the corresponding milestone
+
+### Milestone vs parent issue semantics
+
+| Concept | Linear construct | Purpose |
+|---------|----------------|---------|
+| Hierarchical containment | Parent issue / sub-issue | Decomposition of work |
+| Sequential phase | Milestone | Time-based grouping |
+| Cross-cutting concern | Label | Categorization across hierarchy |
+
+A parent issue can have sub-issues that belong to different milestones. This is valid when a deliverable spans multiple project phases.
+
+## Phasing vs prioritizing
+
+Milestones and priority are independent axes in Linear. Use them for their distinct purposes:
+
+- **Milestones encode the temporal aspect**: Which phase of the project an issue belongs to
+- **Priority encodes urgency/importance**: How critical an issue is within its phase, or critical importance to the overall project.
+
+### Default priority policy
+
+- **Default all issues to medium priority** unless explicitly specified otherwise
+- Do not assign highest priority to initial tasks simply because they come first
+- Priority should reflect actual *importance*, not sequence
+
+### When to adjust priority
+
+Adjust priority up or down from the default (medium) only when:
+
+- **Pre-specified**: The source plan explicitly marks certain tasks as high/urgent or low priority
+- **Dynamically determined**: During conversion, identify issues that are genuinely critical path or have external deadlines, or that are optional.
+
+### Phasing through milestones
+
+Encode sequential dependencies through milestones rather than priority:
+
+- Phase 1 (Foundation): All issues in the first milestone
+- Phase 2 (Core): All issues in the second milestone
+- Phase 3 (Integration): All issues in the third milestone
+
+Within each phase/milestone, issues have independent priority levels. A Phase 2 issue can be high priority while a Phase 1 issue is medium or low priority, even though Phase 1 must complete first.
+
+### Priority and milestone interaction
+
+| Scenario | Milestone | Priority |
+|----------|-----------|----------|
+| Foundation work, normal urgency | Phase 1: Foundation | Medium (default) |
+| Foundation work, critical path | Phase 1: Foundation | High |
+| Polish work, can defer | Phase 3: Polish | Low |
+| Integration blocker | Phase 2: Core | Urgent |
+
+This separation allows the project to show:
+- **What comes first**: Milestone sequence
+- **What matters most**: Priority within each phase
+
 ## Final deliverable after conversion
 
 At the end of the conversion, produce a compact report containing:
 
 - created parent issues with IDs and URLs
 - created sub-issues with IDs, parent issues, and URLs
+- created milestones with IDs (if applicable)
+- milestone assignments for each issue (if applicable)
 - blocker mappings that were applied
 - any issues that required manual judgment during conversion
 - confirmation that the final validation checklist passed

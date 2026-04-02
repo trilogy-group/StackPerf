@@ -1,0 +1,10 @@
+name: opencode
+protocol_surface: openai_responses
+base_url_env: OPENAI_BASE_URL
+api_key_env: OPENAI_API_KEY
+model_env: OPENAI_MODEL
+extra_env: {}
+render_format: json
+launch_checks:
+  - base URL points to local LiteLLM
+  - session API key is present

@@ -1,1 +1,1 @@
-"""StackPerf test suite."""
+"""Test suite for LiteLLM Benchmark."""

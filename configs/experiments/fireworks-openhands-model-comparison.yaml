@@ -1,0 +1,5 @@
+name: fireworks-openhands-model-comparison
+description: Compare Fireworks models (Kimi K2.5 vs GLM-5) using the OpenHands harness
+variants:
+  - fireworks-kimi-k2-5-openhands
+  - fireworks-glm-5-openhands
