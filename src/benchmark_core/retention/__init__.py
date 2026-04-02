@@ -6,11 +6,11 @@ of benchmark data, ensuring compliance with data governance requirements.
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class DataType(str, Enum):
+class DataType(StrEnum):
     """Types of benchmark data with retention policies."""
 
     RAW_INGESTION = "raw_ingestion"

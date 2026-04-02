@@ -4,14 +4,14 @@ Tests verify that secrets are properly redacted and that
 the redaction layer protects against accidental secret leakage.
 """
 
-from src.benchmark_core.security import (
+from benchmark_core.security.redaction import (
     REDACTION_PATTERNS,
     RedactionConfig,
     redact_dict,
     redact_string,
     redact_value,
 )
-from src.benchmark_core.security.secrets import (
+from benchmark_core.security.secrets import (
     SecretDetector,
     detect_secrets,
     is_likely_secret,

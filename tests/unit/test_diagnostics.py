@@ -4,7 +4,7 @@ Tests verify that diagnostics point directly to the failing configuration
 or service (acceptance criterion).
 """
 
-from src.cli.diagnose import (
+from benchmark_core.services.health_service import (
     HealthCheckResult,
     HealthStatus,
 )

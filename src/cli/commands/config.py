@@ -14,9 +14,9 @@ from benchmark_core.db.models import (
     HarnessProfile,
     Provider,
     ProviderModel,
+    Variant,
 )
 from benchmark_core.db.models import TaskCard as DBTaskCard
-from benchmark_core.db.models import Variant
 from benchmark_core.db.session import get_db_session, init_db
 
 app = typer.Typer(help="Validate and manage benchmark configurations")

@@ -17,17 +17,19 @@ class HealthStatus(enum.StrEnum):
     HEALTHY = "healthy"
     UNHEALTHY = "unhealthy"
     DEGRADED = "degraded"
+    UNKNOWN = "unknown"
+    NOT_CONFIGURED = "not_configured"
 
 
 @dataclass
 class HealthCheckResult:
     """Result of a single health check."""
 
-    name: str
+    component: str
     status: HealthStatus
     message: str
     details: dict[str, Any] = field(default_factory=dict)
-    suggestion: str | None = None
+    action: str | None = None
 
 
 @dataclass
@@ -106,7 +108,7 @@ class HealthService:
             db_type = "PostgreSQL" if "postgresql" in database_url.lower() else "SQLite"
 
             return HealthCheckResult(
-                name="database",
+                component="database",
                 status=HealthStatus.HEALTHY,
                 message=f"{db_type} database connection successful",
                 details={"database_type": db_type, "url": self._mask_url(database_url)},
@@ -114,10 +116,10 @@ class HealthService:
 
         except Exception as e:
             return HealthCheckResult(
-                name="database",
+                component="database",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Database connection failed: {e}",
-                suggestion="Check DATABASE_URL environment variable and ensure database is running",
+                action="Check DATABASE_URL environment variable and ensure database is running",
             )
 
     def check_litellm_proxy(self) -> HealthCheckResult:
@@ -139,7 +141,7 @@ class HealthService:
                 )
 
                 return HealthCheckResult(
-                    name="litellm_proxy",
+                    component="litellm_proxy",
                     status=HealthStatus.HEALTHY,
                     message="LiteLLM proxy is healthy",
                     details={
@@ -150,33 +152,33 @@ class HealthService:
                 )
             else:
                 return HealthCheckResult(
-                    name="litellm_proxy",
+                    component="litellm_proxy",
                     status=HealthStatus.UNHEALTHY,
                     message=f"LiteLLM proxy returned status {response.status_code}",
                     details={"url": self._litellm_base_url, "status_code": response.status_code},
-                    suggestion="Check if LiteLLM container is running with 'docker ps'",
+                    action="Check if LiteLLM container is running with 'docker ps'",
                 )
 
         except httpx.ConnectError:
             return HealthCheckResult(
-                name="litellm_proxy",
+                component="litellm_proxy",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Cannot connect to LiteLLM proxy at {self._litellm_base_url}",
-                suggestion="Start LiteLLM proxy with 'docker-compose up -d litellm'",
+                action="Start LiteLLM proxy with 'docker-compose up -d litellm'",
             )
         except httpx.TimeoutException:
             return HealthCheckResult(
-                name="litellm_proxy",
+                component="litellm_proxy",
                 status=HealthStatus.UNHEALTHY,
                 message="LiteLLM proxy health check timed out",
-                suggestion="LiteLLM proxy may be overloaded or starting up",
+                action="LiteLLM proxy may be overloaded or starting up",
             )
         except Exception as e:
             return HealthCheckResult(
-                name="litellm_proxy",
+                component="litellm_proxy",
                 status=HealthStatus.UNHEALTHY,
                 message=f"LiteLLM proxy health check failed: {e}",
-                suggestion="Check LiteLLM logs with 'docker logs litellm'",
+                action="Check LiteLLM logs with 'docker logs litellm'",
             )
 
     def check_prometheus(self) -> HealthCheckResult:
@@ -192,40 +194,40 @@ class HealthService:
 
             if response.status_code == 200:
                 return HealthCheckResult(
-                    name="prometheus",
+                    component="prometheus",
                     status=HealthStatus.HEALTHY,
                     message="Prometheus is healthy",
                     details={"url": self._prometheus_url, "health_endpoint": health_url},
                 )
             else:
                 return HealthCheckResult(
-                    name="prometheus",
+                    component="prometheus",
                     status=HealthStatus.UNHEALTHY,
                     message=f"Prometheus returned status {response.status_code}",
                     details={"url": self._prometheus_url, "status_code": response.status_code},
-                    suggestion="Check Prometheus logs with 'docker logs litellm-prometheus'",
+                    action="Check Prometheus logs with 'docker logs litellm-prometheus'",
                 )
 
         except httpx.ConnectError:
             return HealthCheckResult(
-                name="prometheus",
+                component="prometheus",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Cannot connect to Prometheus at {self._prometheus_url}",
-                suggestion="Start Prometheus with 'docker-compose up -d prometheus'",
+                action="Start Prometheus with 'docker-compose up -d prometheus'",
             )
         except httpx.TimeoutException:
             return HealthCheckResult(
-                name="prometheus",
+                component="prometheus",
                 status=HealthStatus.UNHEALTHY,
                 message="Prometheus health check timed out",
-                suggestion="Prometheus may be overloaded",
+                action="Prometheus may be overloaded",
             )
         except Exception as e:
             return HealthCheckResult(
-                name="prometheus",
+                component="prometheus",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Prometheus health check failed: {e}",
-                suggestion="Check Prometheus logs with 'docker logs litellm-prometheus'",
+                action="Check Prometheus logs with 'docker logs litellm-prometheus'",
             )
 
     def check_configurations(self, configs_dir: str = "./configs") -> HealthCheckResult:
@@ -243,10 +245,10 @@ class HealthService:
 
         if not config_path.exists():
             return HealthCheckResult(
-                name="configurations",
+                component="configurations",
                 status=HealthStatus.UNHEALTHY,
                 message=f"Configuration directory not found: {configs_dir}",
-                suggestion=f"Create configuration directory at {configs_dir}",
+                action=f"Create configuration directory at {configs_dir}",
             )
 
         # Check for required subdirectories
@@ -269,34 +271,34 @@ class HealthService:
 
         if missing_dirs:
             return HealthCheckResult(
-                name="configurations",
+                component="configurations",
                 status=HealthStatus.DEGRADED,
                 message=f"Missing configuration directories: {', '.join(missing_dirs)}",
                 details=config_counts,
-                suggestion=f"Create missing directories under {configs_dir}",
+                action=f"Create missing directories under {configs_dir}",
             )
 
         # Check if we have at least one provider and one variant
         if config_counts.get("providers", 0) == 0:
             return HealthCheckResult(
-                name="configurations",
+                component="configurations",
                 status=HealthStatus.DEGRADED,
                 message="No provider configurations found",
                 details=config_counts,
-                suggestion="Add at least one provider configuration file in configs/providers/",
+                action="Add at least one provider configuration file in configs/providers/",
             )
 
         if config_counts.get("variants", 0) == 0:
             return HealthCheckResult(
-                name="configurations",
+                component="configurations",
                 status=HealthStatus.DEGRADED,
                 message="No variant configurations found",
                 details=config_counts,
-                suggestion="Add at least one variant configuration file in configs/variants/",
+                action="Add at least one variant configuration file in configs/variants/",
             )
 
         return HealthCheckResult(
-            name="configurations",
+            component="configurations",
             status=HealthStatus.HEALTHY,
             message="Configuration files found",
             details=config_counts,
@@ -324,10 +326,14 @@ class HealthService:
 
         if unhealthy:
             overall_status = HealthStatus.UNHEALTHY
-            summary = f"{len(unhealthy)} check(s) unhealthy: {', '.join(c.name for c in unhealthy)}"
+            summary = (
+                f"{len(unhealthy)} check(s) unhealthy: {', '.join(c.component for c in unhealthy)}"
+            )
         elif degraded:
             overall_status = HealthStatus.DEGRADED
-            summary = f"{len(degraded)} check(s) degraded: {', '.join(c.name for c in degraded)}"
+            summary = (
+                f"{len(degraded)} check(s) degraded: {', '.join(c.component for c in degraded)}"
+            )
         else:
             overall_status = HealthStatus.HEALTHY
             summary = "All checks healthy"

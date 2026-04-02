@@ -63,7 +63,7 @@ class TestHealthService:
 
         assert result.status == HealthStatus.UNHEALTHY
         assert "failed" in result.message.lower()
-        assert result.suggestion is not None
+        assert result.action is not None
 
     def test_check_litellm_proxy_success(self, health_service):
         """Test successful LiteLLM proxy check."""
@@ -91,7 +91,7 @@ class TestHealthService:
 
         assert result.status == HealthStatus.UNHEALTHY
         assert "Cannot connect" in result.message
-        assert result.suggestion is not None
+        assert result.action is not None
 
     def test_check_litellm_proxy_timeout(self, health_service):
         """Test LiteLLM proxy check with timeout."""
@@ -136,7 +136,7 @@ class TestHealthService:
 
         assert result.status == HealthStatus.UNHEALTHY
         assert "Cannot connect" in result.message
-        assert result.suggestion is not None
+        assert result.action is not None
 
     def test_check_configurations_success(self, health_service, temp_configs_dir):
         """Test successful configurations check."""
@@ -238,12 +238,12 @@ class TestHealthReport:
         from benchmark_core.services.health_service import HealthCheckResult
 
         healthy_check = HealthCheckResult(
-            name="test",
+            component="test",
             status=HealthStatus.HEALTHY,
             message="OK",
         )
         unhealthy_check = HealthCheckResult(
-            name="test2",
+            component="test2",
             status=HealthStatus.UNHEALTHY,
             message="Failed",
         )
@@ -267,12 +267,12 @@ class TestHealthReport:
         from benchmark_core.services.health_service import HealthCheckResult
 
         healthy_check = HealthCheckResult(
-            name="healthy",
+            component="healthy",
             status=HealthStatus.HEALTHY,
             message="OK",
         )
         unhealthy_check = HealthCheckResult(
-            name="unhealthy",
+            component="unhealthy",
             status=HealthStatus.UNHEALTHY,
             message="Failed",
         )
@@ -285,4 +285,4 @@ class TestHealthReport:
 
         unhealthy = report.get_unhealthy_checks()
         assert len(unhealthy) == 1
-        assert unhealthy[0].name == "unhealthy"
+        assert unhealthy[0].component == "unhealthy"
