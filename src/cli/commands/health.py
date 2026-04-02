@@ -56,11 +56,11 @@ def check(
             "summary": report.summary,
             "checks": [
                 {
-                    "name": check.name,
+                    "component": check.component,
                     "status": check.status.value,
                     "message": check.message,
                     "details": check.details,
-                    "suggestion": check.suggestion,
+                    "action": check.action,
                 }
                 for check in report.checks
             ],
@@ -72,7 +72,7 @@ def check(
         table.add_column("Component", style="cyan", no_wrap=True)
         table.add_column("Status", no_wrap=True)
         table.add_column("Message")
-        table.add_column("Suggestion", style="dim")
+        table.add_column("Action", style="dim")
 
         for check in report.checks:
             # Choose color and symbol based on status
@@ -84,10 +84,10 @@ def check(
                 status_str = "[red]✗ unhealthy[/red]"
 
             table.add_row(
-                check.name,
+                check.component,
                 status_str,
                 check.message,
-                check.suggestion or "",
+                check.action or "",
             )
 
         console.print(table)
