@@ -14,6 +14,9 @@ from benchmark_core.db.models import (
     Experiment as DBExperiment,
 )
 from benchmark_core.db.models import (
+    HarnessProfile as DBHarnessProfile,
+)
+from benchmark_core.db.models import (
     Session as DBSession,
 )
 from benchmark_core.db.models import (
@@ -501,8 +504,11 @@ class TestSessionEnvCommand:
         variant = DBVariant(
             name="env-test-var",
             provider="test",
+            provider_route="test-route",
             model_alias="gpt-4",
             harness_profile="default",
+            harness_env_overrides={},
+            benchmark_tags={"harness": "default", "model": "gpt-4", "provider": "test"},
         )
         task = DBTaskCard(
             name="env-test-task",
@@ -510,7 +516,18 @@ class TestSessionEnvCommand:
             starting_prompt="Test",
             stop_condition="Test",
         )
-        db_session.add_all([experiment, variant, task])
+        # Create harness profile for the session
+        harness_profile = DBHarnessProfile(
+            name="test-harness",
+            protocol_surface="openai_responses",
+            base_url_env="OPENAI_API_BASE",
+            api_key_env="OPENAI_API_KEY",
+            model_env="OPENAI_MODEL",
+            extra_env={},
+            render_format="shell",
+            launch_checks=["base URL points to local LiteLLM"],
+        )
+        db_session.add_all([experiment, variant, task, harness_profile])
         db_session.flush()
 
         session = DBSession(
