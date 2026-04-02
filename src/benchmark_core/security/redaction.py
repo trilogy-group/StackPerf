@@ -64,8 +64,10 @@ REDACTION_PATTERNS: Final[list[tuple[str, re.Pattern[str]]]] = [
         "aws_access_key",
         re.compile(r"(?:A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}"),
     ),
-    # Generic secret: long alphanumeric strings that look like keys
-    ("generic_secret", re.compile(r"\b[a-zA-Z0-9]{32,}\b")),
+    # Generic API key: hex-encoded secrets (32+ hex chars)
+    ("hex_secret", re.compile(r"\b[a-f0-9]{32,}\b", re.IGNORECASE)),
+    # Generic API key: base64-like strings with mixed case and digits
+    ("base64_like_secret", re.compile(r"\b[A-Za-z0-9+/]{32,}={0,2}\b")),
     # Connection strings with passwords
     (
         "connection_string",
@@ -214,7 +216,7 @@ def _is_key_patterned_secret(key: str, config: RedactionConfig) -> bool:
     # Check if key contains any secret patterns (like sk-, eyJ for JWT, etc.)
     for pattern_name, pattern in REDACTION_PATTERNS:
         # Skip overly generic patterns that would match normal identifiers
-        if pattern_name in ("generic_secret", "base64_secret"):
+        if pattern_name in ("hex_secret", "base64_like_secret", "base64_secret"):
             continue
         if pattern.search(key):
             return True

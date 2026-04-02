@@ -93,21 +93,30 @@ async def check_postgres_health(
 
     Args:
         database_url: Database connection URL (currently unused,
-            connection params are hardcoded for local dev).
+            connection params are read from environment with local defaults).
 
     Returns:
         Health check result.
     """
+    import os
+
     try:
         import asyncpg
 
-        # Simple check - try to connect with local defaults
+        # Read connection params from environment with local dev defaults
+        host = os.environ.get("POSTGRES_HOST", "localhost")
+        port = int(os.environ.get("POSTGRES_PORT", "5432"))
+        user = os.environ.get("POSTGRES_USER", "postgres")
+        password = os.environ.get("POSTGRES_PASSWORD", "postgres")
+        database = os.environ.get("POSTGRES_DB", "stackperf")
+
+        # Simple check - try to connect
         conn = await asyncpg.connect(
-            host="localhost",
-            port=5432,
-            user="postgres",
-            password="postgres",
-            database="stackperf",
+            host=host,
+            port=port,
+            user=user,
+            password=password,
+            database=database,
             timeout=5.0,
         )
         await conn.close()
@@ -116,7 +125,7 @@ async def check_postgres_health(
             component="PostgreSQL",
             status=HealthStatus.HEALTHY,
             message="Database connection successful",
-            details={"host": "localhost", "port": 5432, "database": "stackperf"},
+            details={"host": host, "port": port, "database": database},
         )
     except Exception as e:
         return HealthCheckResult(

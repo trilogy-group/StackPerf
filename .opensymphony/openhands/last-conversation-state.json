@@ -7,7 +7,7 @@
   "persistence_dir": "workspace/conversations/eb89411df8d94f228336ca25a3a2dced",
   "max_iterations": 500,
   "stuck_detection": true,
-  "execution_status": "finished",
+  "execution_status": "running",
   "confirmation_policy": {
     "kind": "NeverConfirm"
   },

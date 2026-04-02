@@ -18,10 +18,20 @@
   "http_auth_mode": "none",
   "websocket_auth_mode": "none",
   "persistence_dir": "/Users/magos/.opensymphony/workspaces/COE-299/.opensymphony/openhands",
-  "last_execution_status": "finished",
-  "last_event_id": "d32b7f2a-c01c-43c2-92ed-5e42200a4dc5",
-  "last_event_kind": "ConversationStateUpdateEvent",
-  "last_event_at": "2026-04-02T10:56:12.297151Z",
-  "last_event_summary": "status: finished",
-  "updated_at": "2026-04-02T15:56:19.704859Z"
+  "last_execution_status": "running",
+  "last_event_id": "9d423be6-fc3d-420a-b233-c9d2970b5b4e",
+  "last_event_kind": "ObservationEvent",
+  "last_event_at": "2026-04-02T11:01:19.241140Z",
+  "last_event_summary": "→ The file /Users/magos/.opensymphony/workspaces/COE-299/src/benchmark_core/securi",
+  "worker_outcome": {
+    "worker_id": "scheduler-worker-200",
+    "attempt": 34,
+    "outcome": "stalled",
+    "started_at": 1775145378974,
+    "finished_at": 1775145680987,
+    "turn_count": 1,
+    "summary": "runtime did not reach a terminal state before the stall timeout",
+    "error": "no terminal runtime state was observed within 300000 ms"
+  },
+  "updated_at": "2026-04-02T16:01:20.987039Z"
 }

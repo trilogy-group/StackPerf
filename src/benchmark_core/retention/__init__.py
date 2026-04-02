@@ -5,7 +5,7 @@ of benchmark data, ensuring compliance with data governance requirements.
 """
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Any
 
@@ -45,8 +45,13 @@ class RetentionPolicy:
         Returns:
             True if the data is past its retention period.
         """
+        # Ensure both datetimes are timezone-aware for comparison
         expiration = created_at + timedelta(days=self.retention_days)
-        return datetime.utcnow() > expiration
+        now = datetime.now(UTC)
+        if created_at.tzinfo is None:
+            # If created_at is naive, assume UTC
+            expiration = expiration.replace(tzinfo=UTC)
+        return now > expiration
 
     def get_expiration_date(self, created_at: datetime) -> datetime:
         """Get the expiration date for data with the given creation timestamp.
