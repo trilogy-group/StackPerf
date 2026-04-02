@@ -252,7 +252,7 @@ class SQLRequestRepository(SQLAlchemyRepository[RequestORM]):
         Returns:
             True if deleted, False if not found.
         """
-        return await super().delete(id)
+        return await super().delete(id)  # type: ignore[no-any-return]
 
     async def delete_by_session(self, session_id: UUID) -> int:
         """Delete all requests for a session.

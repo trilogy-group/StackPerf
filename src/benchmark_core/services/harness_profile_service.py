@@ -205,7 +205,7 @@ class HarnessProfileService:
         Returns:
             True if deleted, False if not found.
         """
-        return await self._harness_profile_repo.delete(profile_id)
+        return await self._harness_profile_repo.delete(profile_id)  # type: ignore[no-any-return]
 
     async def list_harness_profiles(
         self, limit: int = 100, offset: int = 0
@@ -219,7 +219,7 @@ class HarnessProfileService:
         Returns:
             List of harness profiles.
         """
-        return await self._harness_profile_repo.list_all(limit, offset)
+        return await self._harness_profile_repo.list_all(limit, offset)  # type: ignore[no-any-return]
 
     async def list_harness_profiles_by_protocol(
         self, protocol: str, limit: int = 100
@@ -233,7 +233,7 @@ class HarnessProfileService:
         Returns:
             List of harness profiles using the specified protocol.
         """
-        return await self._harness_profile_repo.list_by_protocol(protocol, limit)
+        return await self._harness_profile_repo.list_by_protocol(protocol, limit)  # type: ignore[no-any-return]
 
     async def render_env_snippet(
         self,
@@ -278,7 +278,7 @@ class HarnessProfileService:
         Returns:
             True if the profile exists.
         """
-        return await self._harness_profile_repo.exists(profile_id)
+        return await self._harness_profile_repo.exists(profile_id)  # type: ignore[no-any-return]
 
     async def get_harness_profile_config(self, profile_id: UUID) -> dict | None:
         """Get the full configuration for a harness profile.

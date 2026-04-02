@@ -368,7 +368,7 @@ class SessionService:
         Returns:
             List of sessions.
         """
-        return await self._session_repo.list_by_experiment(experiment_id, limit, offset)  # type: ignore[return-value]
+        return await self._session_repo.list_by_experiment(experiment_id, limit, offset)  # type: ignore[no-any-return]
 
     async def list_active_sessions(self, limit: int = 100) -> list[Session]:
         """List all active sessions.
@@ -379,7 +379,7 @@ class SessionService:
         Returns:
             List of active sessions.
         """
-        return await self._session_repo.list_active(limit)  # type: ignore[return-value]
+        return await self._session_repo.list_active(limit)  # type: ignore[no-any-return]
 
     async def validate_session_exists(self, session_id: UUID) -> bool:
         """Check if a session exists.
@@ -390,7 +390,7 @@ class SessionService:
         Returns:
             True if the session exists.
         """
-        return await self._session_repo.exists(session_id)
+        return await self._session_repo.exists(session_id)  # type: ignore[no-any-return]
 
     async def is_session_active(self, session_id: UUID) -> bool:
         """Check if a session is active (not finalized).
@@ -476,7 +476,7 @@ class CollectionJobService:
         self._collector = LiteLLMCollector(
             base_url=litellm_base_url,
             api_key=litellm_api_key,
-            repository=repository,  # type: ignore[arg-type]
+            repository=repository,
         )
         self._repository = repository
 

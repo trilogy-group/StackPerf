@@ -256,7 +256,7 @@ class SQLSessionRepository(SQLAlchemyRepository[SessionORM]):
         Returns:
             True if deleted, False if not found.
         """
-        return await super().delete(id)
+        return await super().delete(id)  # type: ignore[no-any-return]
 
     async def exists_by_harness_session_id(self, harness_session_id: str) -> bool:
         """Check if a session exists with the given harness session identifier.

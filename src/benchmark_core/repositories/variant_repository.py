@@ -94,7 +94,7 @@ class SQLVariantRepository(SQLAlchemyRepository[VariantORM]):
             ReferentialIntegrityError: If the variant is referenced by existing sessions.
         """
         try:
-            return await super().delete(id)
+            return await super().delete(id)  # type: ignore[no-any-return]
         except IntegrityError as e:
             self._session.rollback()
             if "FOREIGN KEY constraint failed" in str(e) or "sessions" in str(e):

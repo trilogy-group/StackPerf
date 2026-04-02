@@ -189,7 +189,7 @@ class ProviderService:
         from benchmark_core.repositories.base import ReferentialIntegrityError
 
         try:
-            return await self._provider_repo.delete(provider_id)
+            return await self._provider_repo.delete(provider_id)  # type: ignore[no-any-return]
         except ReferentialIntegrityError as e:
             raise ProviderServiceError(
                 "Cannot delete provider: referenced by existing variants"
@@ -205,7 +205,7 @@ class ProviderService:
         Returns:
             List of providers with models populated.
         """
-        return await self._provider_repo.list_all(limit, offset)
+        return await self._provider_repo.list_all(limit, offset)  # type: ignore[no-any-return]
 
     async def add_model_to_provider(
         self, provider_id: UUID, alias: str, upstream_model: str
@@ -262,6 +262,6 @@ class ProviderService:
 
         for model in provider.models:
             if model.alias == model_alias:
-                return model.upstream_model
+                return model.upstream_model  # type: ignore[no-any-return]
 
         return None

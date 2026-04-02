@@ -301,7 +301,7 @@ class ExportService:
             Duration in seconds, or None if not finalized.
         """
         if session.ended_at and session.started_at:
-            return (session.ended_at - session.started_at).total_seconds()
+            return (session.ended_at - session.started_at).total_seconds()  # type: ignore[no-any-return]
         return None
 
     def _calculate_session_summary(self, requests: list[Request]) -> dict[str, Any]:

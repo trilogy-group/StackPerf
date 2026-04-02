@@ -113,7 +113,7 @@ def render_env(
                 variant=variant,
                 credential=credential,
                 proxy_base_url=proxy_url,
-                format_override=output_format,  # type: ignore
+                format_override=output_format,
                 include_secrets=include_secrets,
             )
 

@@ -176,7 +176,7 @@ class TaskCardService:
             TaskCardServiceError: If the task card is referenced by sessions.
         """
         try:
-            return await self._task_card_repo.delete(task_card_id)
+            return await self._task_card_repo.delete(task_card_id)  # type: ignore[no-any-return]
         except ReferentialIntegrityError as e:
             raise TaskCardServiceError(
                 "Cannot delete task card: referenced by existing sessions"
@@ -192,7 +192,7 @@ class TaskCardService:
         Returns:
             List of task cards.
         """
-        return await self._task_card_repo.list_all(limit, offset)
+        return await self._task_card_repo.list_all(limit, offset)  # type: ignore[no-any-return]
 
     async def search_task_cards_by_goal(self, query: str, limit: int = 20) -> list[TaskCardORM]:
         """Search task cards by goal text.
@@ -204,7 +204,7 @@ class TaskCardService:
         Returns:
             List of matching task cards.
         """
-        return await self._task_card_repo.search_by_goal(query, limit)
+        return await self._task_card_repo.search_by_goal(query, limit)  # type: ignore[no-any-return]
 
     async def add_note_to_task_card(self, task_card_id: UUID, note: str) -> TaskCardORM | None:
         """Add a note to an existing task card.
@@ -238,4 +238,4 @@ class TaskCardService:
         Returns:
             True if the task card exists.
         """
-        return await self._task_card_repo.exists(task_card_id)
+        return await self._task_card_repo.exists(task_card_id)  # type: ignore[no-any-return]

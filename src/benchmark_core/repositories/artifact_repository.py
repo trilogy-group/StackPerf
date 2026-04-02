@@ -115,7 +115,7 @@ class SQLArtifactRepository(SQLAlchemyRepository[ArtifactORM]):
         Returns:
             True if deleted, False if not found.
         """
-        return await super().delete(id)
+        return await super().delete(id)  # type: ignore[no-any-return]
 
     async def list_by_session(
         self, session_id: UUID, limit: int = 100, offset: int = 0

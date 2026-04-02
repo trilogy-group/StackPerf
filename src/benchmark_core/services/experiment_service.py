@@ -161,7 +161,7 @@ class ExperimentService:
             ExperimentServiceError: If the experiment is referenced by sessions.
         """
         try:
-            return await self._experiment_repo.delete(experiment_id)
+            return await self._experiment_repo.delete(experiment_id)  # type: ignore[no-any-return]
         except ReferentialIntegrityError as e:
             raise ExperimentServiceError(
                 "Cannot delete experiment: referenced by existing sessions"
@@ -195,7 +195,7 @@ class ExperimentService:
         Returns:
             True if removed, False if the association did not exist.
         """
-        return await self._experiment_repo.remove_variant(experiment_id, variant_id)
+        return await self._experiment_repo.remove_variant(experiment_id, variant_id)  # type: ignore[no-any-return]
 
     async def list_experiments(self, limit: int = 100, offset: int = 0) -> list[ExperimentORM]:
         """List all experiments.
@@ -207,7 +207,7 @@ class ExperimentService:
         Returns:
             List of experiments with variants populated.
         """
-        return await self._experiment_repo.list_all(limit, offset)
+        return await self._experiment_repo.list_all(limit, offset)  # type: ignore[no-any-return]
 
     async def get_experiment_variant_ids(self, experiment_id: UUID) -> list[UUID]:
         """Get the list of variant IDs in an experiment.

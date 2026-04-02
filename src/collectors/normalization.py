@@ -61,7 +61,7 @@ class NormalizationJob:
                 requests.append(request)
 
         # Bulk insert with idempotency handling
-        return await self._repository.create_many(requests)  # type: ignore[attr-defined, no-any-return]
+        return await self._repository.create_many(requests)  # type: ignore[no-any-return]
 
     def _normalize(self, raw: dict[str, Any], session_id: UUID) -> Request | None:
         """Normalize a single raw request.
@@ -85,7 +85,7 @@ class NormalizationJob:
         Returns:
             True if content should be captured per policy.
         """
-        return should_capture_content(content_type, self._content_capture)
+        return should_capture_content(content_type, self._content_capture)  # type: ignore[no-any-return]
 
     def _redact_metadata(self, metadata: dict[str, Any]) -> dict[str, Any]:
         """Redact secrets from metadata before storage.
@@ -96,4 +96,4 @@ class NormalizationJob:
         Returns:
             Metadata with secrets redacted.
         """
-        return self._redaction_filter.redact_dict(metadata)
+        return self._redaction_filter.redact_dict(metadata)  # type: ignore[no-any-return]

@@ -93,7 +93,7 @@ class SQLTaskCardRepository(SQLAlchemyRepository[TaskCardORM]):
             ReferentialIntegrityError: If the task card is referenced by existing sessions.
         """
         try:
-            return await super().delete(id)
+            return await super().delete(id)  # type: ignore[no-any-return]
         except IntegrityError as e:
             self._session.rollback()
             if "FOREIGN KEY constraint failed" in str(e) or "sessions" in str(e):
@@ -112,7 +112,7 @@ class SQLTaskCardRepository(SQLAlchemyRepository[TaskCardORM]):
         Returns:
             List of task cards.
         """
-        return await super().list_all(limit, offset)
+        return await super().list_all(limit, offset)  # type: ignore[no-any-return]
 
     async def search_by_goal(self, query: str, limit: int = 20) -> list[TaskCardORM]:
         """Search task cards by goal text.

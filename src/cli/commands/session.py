@@ -49,7 +49,7 @@ def _resolve_experiment_id(db: SQLAlchemySession, experiment: str) -> UUID:
     exp = db.query(DBExperiment).filter_by(name=experiment).first()
     if exp is None:
         raise typer.BadParameter(f"Experiment not found: {experiment}")
-    return exp.id
+    return exp.id  # type: ignore[no-any-return]
 
 
 def _resolve_variant_id(db: SQLAlchemySession, variant: str) -> UUID:
@@ -64,7 +64,7 @@ def _resolve_variant_id(db: SQLAlchemySession, variant: str) -> UUID:
     var = db.query(DBVariant).filter_by(name=variant).first()
     if var is None:
         raise typer.BadParameter(f"Variant not found: {variant}")
-    return var.id
+    return var.id  # type: ignore[no-any-return]
 
 
 def _resolve_task_card_id(db: SQLAlchemySession, task_card: str) -> UUID:
@@ -79,7 +79,7 @@ def _resolve_task_card_id(db: SQLAlchemySession, task_card: str) -> UUID:
     task = db.query(DBTaskCard).filter_by(name=task_card).first()
     if task is None:
         raise typer.BadParameter(f"Task card not found: {task_card}")
-    return task.id
+    return task.id  # type: ignore[no-any-return]
 
 
 @app.command()

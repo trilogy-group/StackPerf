@@ -85,7 +85,7 @@ class SQLHarnessProfileRepository(SQLAlchemyRepository[HarnessProfileORM]):
         Returns:
             True if deleted, False if not found.
         """
-        return await super().delete(id)
+        return await super().delete(id)  # type: ignore[no-any-return]
 
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[HarnessProfileORM]:
         """List all harness profiles with pagination.
@@ -97,7 +97,7 @@ class SQLHarnessProfileRepository(SQLAlchemyRepository[HarnessProfileORM]):
         Returns:
             List of harness profiles.
         """
-        return await super().list_all(limit, offset)
+        return await super().list_all(limit, offset)  # type: ignore[no-any-return]
 
     async def list_by_protocol(self, protocol: str, limit: int = 100) -> list[HarnessProfileORM]:
         """List all harness profiles for a specific protocol surface.

@@ -176,7 +176,7 @@ class VariantService:
             VariantServiceError: If the variant is referenced by sessions.
         """
         try:
-            return await self._variant_repo.delete(variant_id)
+            return await self._variant_repo.delete(variant_id)  # type: ignore[no-any-return]
         except ReferentialIntegrityError as e:
             raise VariantServiceError(
                 "Cannot delete variant: referenced by existing sessions"
@@ -192,7 +192,7 @@ class VariantService:
         Returns:
             List of variants.
         """
-        return await self._variant_repo.list_all(limit, offset)
+        return await self._variant_repo.list_all(limit, offset)  # type: ignore[no-any-return]
 
     async def list_variants_by_provider(
         self, provider_name: str, limit: int = 100
@@ -206,7 +206,7 @@ class VariantService:
         Returns:
             List of variants for the provider.
         """
-        return await self._variant_repo.list_by_provider(provider_name, limit)
+        return await self._variant_repo.list_by_provider(provider_name, limit)  # type: ignore[no-any-return]
 
     async def list_variants_by_harness_profile(
         self, profile_name: str, limit: int = 100
@@ -220,7 +220,7 @@ class VariantService:
         Returns:
             List of variants using the harness profile.
         """
-        return await self._variant_repo.list_by_harness_profile(profile_name, limit)
+        return await self._variant_repo.list_by_harness_profile(profile_name, limit)  # type: ignore[no-any-return]
 
     async def get_variant_benchmark_tags(self, variant_id: UUID) -> dict | None:
         """Get the benchmark tags for a variant.

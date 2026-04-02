@@ -124,7 +124,7 @@ class SQLProviderRepository(SQLAlchemyRepository[ProviderORM]):
             True if deleted, False if not found.
         """
         # Cascading delete is handled by the ORM relationship
-        return await super().delete(id)
+        return await super().delete(id)  # type: ignore[no-any-return]
 
     async def list_all(self, limit: int = 100, offset: int = 0) -> list[ProviderORM]:
         """List all providers with their models loaded.
