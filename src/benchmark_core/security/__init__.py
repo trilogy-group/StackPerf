@@ -26,8 +26,7 @@ import sys
 from pathlib import Path
 
 _security_spec = importlib.util.spec_from_file_location(
-    "_legacy_security",
-    str(Path(__file__).parent.parent / "security.py")
+    "_legacy_security", str(Path(__file__).parent.parent / "security.py")
 )
 _legacy_security = importlib.util.module_from_spec(_security_spec)
 sys.modules["_legacy_security"] = _legacy_security

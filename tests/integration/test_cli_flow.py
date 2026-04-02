@@ -12,7 +12,9 @@ from pathlib import Path
 import pytest
 
 # Skip all tests in this module - session CLI not yet implemented
-pytestmark = pytest.mark.skip(reason="Session CLI commands not yet implemented - pending separate PR")
+pytestmark = pytest.mark.skip(
+    reason="Session CLI commands not yet implemented - pending separate PR"
+)
 
 
 class TestCLIFlow:
@@ -149,4 +151,8 @@ class TestEnvironmentValidation:
             content = gitignore.read_text()
             # .gitignore should include output directories for session artifacts
             # Note: COE-230 adds .session-artifacts/ and related entries
-            assert ".stackperf" in content or "session-env" in content or ".session-artifacts" in content
+            assert (
+                ".stackperf" in content
+                or "session-env" in content
+                or ".session-artifacts" in content
+            )

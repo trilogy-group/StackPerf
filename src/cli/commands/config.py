@@ -8,7 +8,13 @@ from rich.table import Table
 from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.config_loader import ConfigLoader, ConfigValidationError
-from benchmark_core.db.models import Experiment, ExperimentVariant, HarnessProfile, Provider, ProviderModel
+from benchmark_core.db.models import (
+    Experiment,
+    ExperimentVariant,
+    HarnessProfile,
+    Provider,
+    ProviderModel,
+)
 from benchmark_core.db.models import TaskCard as DBTaskCard
 from benchmark_core.db.models import Variant
 from benchmark_core.db.session import get_db_session, init_db
@@ -123,10 +129,14 @@ def _upsert_task_card(db: SQLAlchemySession, task_card_config) -> DBTaskCard:
     return task_card
 
 
-def _upsert_experiment(db: SQLAlchemySession, experiment_config, variant_map: dict[str, Variant]) -> Experiment:
+def _upsert_experiment(
+    db: SQLAlchemySession, experiment_config, variant_map: dict[str, Variant]
+) -> Experiment:
     experiment = db.query(Experiment).filter_by(name=experiment_config.name).one_or_none()
     if experiment is None:
-        experiment = Experiment(name=experiment_config.name, description=experiment_config.description)
+        experiment = Experiment(
+            name=experiment_config.name, description=experiment_config.description
+        )
         db.add(experiment)
 
     experiment.description = experiment_config.description
@@ -179,7 +189,9 @@ def validate(
 
 @app.command("list-providers")
 def list_providers(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available providers from config files."""
     loader = _load_registry(configs_dir)
@@ -188,7 +200,9 @@ def list_providers(
 
 @app.command("list-harnesses")
 def list_harnesses(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available harness profiles from config files."""
     loader = _load_registry(configs_dir)
@@ -197,7 +211,9 @@ def list_harnesses(
 
 @app.command("list-variants")
 def list_variants(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available variants from config files."""
     loader = _load_registry(configs_dir)
@@ -206,7 +222,9 @@ def list_variants(
 
 @app.command("list-experiments")
 def list_experiments(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available experiments from config files."""
     loader = _load_registry(configs_dir)
@@ -215,7 +233,9 @@ def list_experiments(
 
 @app.command("list-task-cards")
 def list_task_cards(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available task cards from config files."""
     loader = _load_registry(configs_dir)
@@ -224,8 +244,12 @@ def list_task_cards(
 
 @app.command("init-db")
 def initialize_database(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory"),
-    skip_sync: bool = typer.Option(False, "--skip-sync", help="Only create schema, do not sync configs into the database"),
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
+    skip_sync: bool = typer.Option(
+        False, "--skip-sync", help="Only create schema, do not sync configs into the database"
+    ),
 ) -> None:
     """Create the benchmark schema and sync configuration records into the database."""
     console.print("[bold blue]Initializing benchmark database...[/bold blue]")
@@ -269,7 +293,12 @@ def initialize_database(
 
 
 @app.command()
-def show_provider(name: str, configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")) -> None:
+def show_provider(
+    name: str,
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
+) -> None:
     """Show provider configuration."""
     loader = _load_registry(configs_dir)
     provider = loader.registry.providers.get(name)
@@ -280,7 +309,12 @@ def show_provider(name: str, configs_dir: Path = typer.Option(Path("configs"), "
 
 
 @app.command()
-def show_variant(name: str, configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")) -> None:
+def show_variant(
+    name: str,
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
+) -> None:
     """Show variant configuration."""
     loader = _load_registry(configs_dir)
     variant = loader.registry.variants.get(name)
@@ -291,7 +325,12 @@ def show_variant(name: str, configs_dir: Path = typer.Option(Path("configs"), "-
 
 
 @app.command()
-def show_experiment(name: str, configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")) -> None:
+def show_experiment(
+    name: str,
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
+) -> None:
     """Show experiment configuration."""
     loader = _load_registry(configs_dir)
     experiment = loader.registry.experiments.get(name)
