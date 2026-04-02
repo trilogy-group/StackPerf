@@ -8,7 +8,9 @@ from rich.table import Table
 
 from benchmark_core.security import RetentionSettings
 from collectors.retention_cleanup import (
+    CleanupDiagnostics,
     CredentialCleanupJob,
+    CredentialCleanupResult,
     RetentionCleanupJob,
 )
 
@@ -138,7 +140,7 @@ def run_retention_cleanup(
         console.print()
 
     # Run cleanup
-    async def _run_cleanup():
+    async def _run_cleanup() -> CleanupDiagnostics:
         job = RetentionCleanupJob(settings=settings)
         return await job.run_cleanup(data_types=data_types if data_type else None)
 
@@ -223,7 +225,7 @@ def cleanup_expired_credentials(
         console.print()
 
     # Run cleanup
-    async def _run_cleanup():
+    async def _run_cleanup() -> CredentialCleanupResult:
         job = CredentialCleanupJob()
         return await job.cleanup_expired_credentials()
 
