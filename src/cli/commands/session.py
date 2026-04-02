@@ -82,6 +82,22 @@ def _resolve_task_card_id(db: SQLAlchemySession, task_card: str) -> UUID:
     return task.id
 
 
+def _check_active_session_exists(
+    db: SQLAlchemySession, experiment_id: UUID, variant_id: UUID
+) -> bool:
+    """Check if there's an active session for the given experiment and variant."""
+    existing = (
+        db.query(DBSession)
+        .filter_by(
+            experiment_id=experiment_id,
+            variant_id=variant_id,
+            status="active",
+        )
+        .first()
+    )
+    return existing is not None
+
+
 @app.command()
 def create(
     experiment: str = typer.Option(..., "--experiment", "-e", help="Experiment ID or name"),
@@ -98,9 +114,22 @@ def create(
     repo_path: str | None = typer.Option(
         None, "--repo", "-r", help="Repository path (default: current directory)"
     ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Skip confirmation prompts (use with caution)",
+    ),
 ) -> None:
-    """Create a new benchmark session with git metadata capture and optional notes."""
+    """Create a new benchmark session with git metadata capture and optional notes.
+
+    This command creates a benchmark session and captures git metadata from the
+    active repository. It will warn if there are uncommitted changes and will
+    prompt for confirmation if an active session already exists for this
+    experiment and variant combination.
+    """
     console.print("[bold blue]Creating benchmark session...[/bold blue]")
+    console.print()
 
     # Capture git metadata from active repository
     git_metadata = get_git_metadata(repo_path)
@@ -111,7 +140,9 @@ def create(
         console.print(f"  Git branch: {git_metadata.branch}")
         console.print(f"  Git commit: {git_metadata.commit[:8]}")
         if git_metadata.dirty:
-            console.print("[yellow]  Working directory is dirty[/yellow]")
+            console.print("[yellow]  Working directory has uncommitted changes[/yellow]")
+
+    console.print()
 
     # Create session in database
     with get_db_session() as db:
@@ -120,6 +151,40 @@ def create(
             exp_id = _resolve_experiment_id(db, experiment)
             var_id = _resolve_variant_id(db, variant)
             task_id = _resolve_task_card_id(db, task_card)
+
+            # Get experiment and variant details for display
+            exp_record = db.query(DBExperiment).filter_by(id=exp_id).first()
+            var_record = db.query(DBVariant).filter_by(id=var_id).first()
+            task_record = db.query(DBTaskCard).filter_by(id=task_id).first()
+
+            # Display selected configuration
+            console.print("[bold]Configuration Summary:[/bold]")
+            console.print(f"  Experiment: {exp_record.name if exp_record else experiment}")
+            console.print(f"  Variant: {var_record.name if var_record else variant}")
+            if var_record and var_record.model_alias:
+                console.print(f"  Model: {var_record.model_alias}")
+            if var_record and var_record.provider:
+                console.print(f"  Provider: {var_record.provider}")
+            console.print(f"  Task Card: {task_record.name if task_record else task_card}")
+            console.print(f"  Harness Profile: {harness_profile}")
+            if label:
+                console.print(f"  Operator Label: {label}")
+            console.print()
+
+            # Check for existing active session
+            if _check_active_session_exists(db, exp_id, var_id):
+                console.print(
+                    "[yellow]Warning: An active session already exists for this experiment and variant.[/yellow]"
+                )
+                console.print("Creating a new session may affect benchmark comparisons.")
+                console.print()
+
+                if not force:
+                    confirmed = typer.confirm("Do you want to proceed with creating a new session?")
+                    if not confirmed:
+                        console.print("[yellow]Session creation cancelled.[/yellow]")
+                        raise typer.Exit(0)
+                    console.print()
 
             # Create repository and service
             repository = SQLSessionRepository(db)
@@ -142,13 +207,18 @@ def create(
             )
 
             console.print(f"[green]Session created successfully: {session.session_id}[/green]")
-            console.print(f"  Experiment: {experiment} ({exp_id})")
-            console.print(f"  Variant: {variant} ({var_id})")
-            console.print(f"  Task Card: {task_card} ({task_id})")
-            console.print(f"  Harness: {harness_profile}")
             console.print(f"  Status: {session.status}")
             if notes:
                 console.print(f"  Notes: {notes[:50]}...")
+            console.print()
+            console.print("Next steps:")
+            console.print(
+                f"  1. Run [bold]benchmark session env {session.session_id}[/bold] to get environment variables"
+            )
+            console.print("  2. Launch your harness with the provided environment")
+            console.print(
+                f"  3. Run [bold]benchmark session finalize {session.session_id}[/bold] when done"
+            )
 
         except typer.BadParameter:
             raise
