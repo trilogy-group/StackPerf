@@ -1,4 +1,4 @@
-.PHONY: help install install-dev sync lint format format-check type-check test test-unit test-integration test-cov clean quality dev-setup dev-check validate-config validate-migrations validate-collectors validate-all
+.PHONY: help install install-dev sync lint format format-check type-check test test-unit test-integration test-cov clean quality dev-setup dev-check validate-config validate-migrations validate-collectors validate-dashboards validate-all
 
 # Set PYTHONPATH for all targets (handle empty PYTHONPATH case)
 export PYTHONPATH := $(PWD)/src$(if $(PYTHONPATH),:$(PYTHONPATH),)
@@ -98,5 +98,9 @@ validate-collectors: ## Run collector validation tests
 	@echo "Running collector validation tests..."
 	pytest tests/validation/test_collectors.py -v
 
-validate-all: validate-config validate-migrations validate-collectors ## Run all validation tests
+validate-dashboards: ## Run dashboard assets validation tests
+	@echo "Running dashboard assets validation tests..."
+	pytest tests/validation/test_dashboard_assets.py -v
+
+validate-all: validate-config validate-migrations validate-collectors validate-dashboards ## Run all validation tests
 	@echo "✓ All validation tests passed"
