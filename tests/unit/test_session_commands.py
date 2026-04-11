@@ -14,6 +14,9 @@ from benchmark_core.db.models import (
     Experiment as DBExperiment,
 )
 from benchmark_core.db.models import (
+    HarnessProfile as DBHarnessProfile,
+)
+from benchmark_core.db.models import (
     Session as DBSession,
 )
 from benchmark_core.db.models import (
@@ -497,12 +500,23 @@ class TestSessionEnvCommand:
     def test_env_command(self, db_session, mock_env_db_url, runner):
         """Test rendering environment for a session."""
         # Create prerequisite records
+        harness = DBHarnessProfile(
+            name="test-harness",
+            protocol_surface="openai_responses",
+            base_url_env="OPENAI_API_BASE",
+            api_key_env="OPENAI_API_KEY",
+            model_env="OPENAI_MODEL",
+            extra_env={},
+            render_format="shell",
+            launch_checks=[],
+        )
         experiment = DBExperiment(name="env-test-exp", description="Test")
         variant = DBVariant(
             name="env-test-var",
             provider="test",
             model_alias="gpt-4",
             harness_profile="default",
+            benchmark_tags={"harness": "test-harness", "provider": "test", "model": "gpt-4"},
         )
         task = DBTaskCard(
             name="env-test-task",
@@ -510,7 +524,7 @@ class TestSessionEnvCommand:
             starting_prompt="Test",
             stop_condition="Test",
         )
-        db_session.add_all([experiment, variant, task])
+        db_session.add_all([harness, experiment, variant, task])
         db_session.flush()
 
         session = DBSession(
