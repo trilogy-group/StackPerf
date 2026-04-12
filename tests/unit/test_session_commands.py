@@ -515,7 +515,7 @@ class TestSessionEnvCommand:
             name="env-test-var",
             provider="test",
             model_alias="gpt-4",
-            harness_profile="default",
+            harness_profile="test-harness",
             benchmark_tags={"harness": "test-harness", "provider": "test", "model": "gpt-4"},
         )
         task = DBTaskCard(
