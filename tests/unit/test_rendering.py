@@ -583,6 +583,37 @@ class TestDotenvRendering:
         # Should quote the value
         assert 'TEST_VAR="value with spaces"' in snippet.content
 
+
+class TestTomlRendering:
+    """Tests for TOML format rendering."""
+
+    def test_codex_comment_escapes_single_quotes_in_api_key(
+        self,
+        rendering_service: EnvRenderingService,
+    ) -> None:
+        """Codex TOML rendering preserves shell-safe API key escaping in the export comment."""
+        profile = HarnessProfile(
+            name="codex",
+            protocol_surface="openai_responses",
+            base_url_env="OPENAI_BASE_URL",
+            api_key_env="OPENAI_API_KEY",
+            model_env="OPENAI_MODEL",
+            render_format="toml",
+        )
+
+        snippet = rendering_service.render_env_snippet(
+            harness_profile=profile,
+            model_alias="gpt-5.4",
+            credential="sk-test'quoted",
+            proxy_base_url="http://localhost:4000",
+            include_secrets=True,
+        )
+
+        assert (
+            "# Export before starting Codex: export OPENAI_API_KEY='sk-test'\\''quoted'"
+            in snippet.content
+        )
+
     def test_escapes_double_quotes(
         self,
         rendering_service: EnvRenderingService,

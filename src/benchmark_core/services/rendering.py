@@ -444,7 +444,7 @@ class EnvRenderingService:
         if profile_name != "codex":
             raise RenderingError(f"toml rendering is not supported for profile '{profile_name}'")
 
-        escaped_key = env_vars["OPENAI_API_KEY"].replace("'", "'\''")
+        escaped_key = env_vars["OPENAI_API_KEY"].replace("'", "'\\''")
         lines = [
             f"# Export before starting Codex: export OPENAI_API_KEY='{escaped_key}'",
             f'model = "{model_alias}"',

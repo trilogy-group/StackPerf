@@ -1,6 +1,7 @@
 """Session lifecycle commands."""
 
 import asyncio
+from typing import cast
 from uuid import UUID
 
 import typer
@@ -9,6 +10,7 @@ from rich.syntax import Syntax
 from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.config import HarnessProfile as HarnessProfileConfig
+from benchmark_core.config import ProtocolSurface, RenderFormat
 from benchmark_core.config import Variant as VariantConfig
 from benchmark_core.db.models import (
     Experiment as DBExperiment,
@@ -386,12 +388,12 @@ def env(session_id: str) -> None:
 
             profile = HarnessProfileConfig(
                 name=profile_row.name,
-                protocol_surface=profile_row.protocol_surface,
+                protocol_surface=cast(ProtocolSurface, profile_row.protocol_surface),
                 base_url_env=profile_row.base_url_env,
                 api_key_env=profile_row.api_key_env,
                 model_env=profile_row.model_env,
                 extra_env=profile_row.extra_env,
-                render_format=profile_row.render_format,
+                render_format=cast(RenderFormat, profile_row.render_format),
                 launch_checks=profile_row.launch_checks,
             )
             variant = VariantConfig(

@@ -7,10 +7,29 @@ from rich.console import Console
 from rich.table import Table
 from sqlalchemy.orm import Session as SQLAlchemySession
 
+from benchmark_core.config import (
+    Experiment as ExperimentConfig,
+)
+from benchmark_core.config import (
+    HarnessProfile as HarnessProfileConfig,
+)
+from benchmark_core.config import (
+    ProviderConfig,
+)
+from benchmark_core.config import (
+    TaskCard as TaskCardConfig,
+)
+from benchmark_core.config import (
+    Variant as VariantConfig,
+)
 from benchmark_core.config_loader import ConfigLoader, ConfigValidationError
-from benchmark_core.db.models import Experiment, ExperimentVariant, HarnessProfile, Provider, ProviderModel
+from benchmark_core.db.models import Experiment as DBExperiment
+from benchmark_core.db.models import ExperimentVariant
+from benchmark_core.db.models import HarnessProfile as DBHarnessProfile
+from benchmark_core.db.models import Provider as DBProvider
+from benchmark_core.db.models import ProviderModel as DBProviderModel
 from benchmark_core.db.models import TaskCard as DBTaskCard
-from benchmark_core.db.models import Variant
+from benchmark_core.db.models import Variant as DBVariant
 from benchmark_core.db.session import get_db_session, init_db
 
 app = typer.Typer(help="Validate and manage benchmark configurations")
@@ -35,10 +54,10 @@ def _print_name_table(title: str, names: list[str]) -> None:
     console.print(table)
 
 
-def _upsert_provider(db: SQLAlchemySession, provider_config) -> Provider:
-    provider = db.query(Provider).filter_by(name=provider_config.name).one_or_none()
+def _upsert_provider(db: SQLAlchemySession, provider_config: ProviderConfig) -> DBProvider:
+    provider = db.query(DBProvider).filter_by(name=provider_config.name).one_or_none()
     if provider is None:
-        provider = Provider(
+        provider = DBProvider(
             name=provider_config.name,
             protocol_surface=provider_config.protocol_surface,
             upstream_base_url_env=provider_config.upstream_base_url_env,
@@ -55,16 +74,18 @@ def _upsert_provider(db: SQLAlchemySession, provider_config) -> Provider:
     provider.models.clear()
     for model in provider_config.models:
         provider.models.append(
-            ProviderModel(alias=model.alias, upstream_model=model.upstream_model)
+            DBProviderModel(alias=model.alias, upstream_model=model.upstream_model)
         )
 
     return provider
 
 
-def _upsert_harness_profile(db: SQLAlchemySession, profile_config) -> HarnessProfile:
-    profile = db.query(HarnessProfile).filter_by(name=profile_config.name).one_or_none()
+def _upsert_harness_profile(
+    db: SQLAlchemySession, profile_config: HarnessProfileConfig
+) -> DBHarnessProfile:
+    profile = db.query(DBHarnessProfile).filter_by(name=profile_config.name).one_or_none()
     if profile is None:
-        profile = HarnessProfile(
+        profile = DBHarnessProfile(
             name=profile_config.name,
             protocol_surface=profile_config.protocol_surface,
             base_url_env=profile_config.base_url_env,
@@ -83,10 +104,10 @@ def _upsert_harness_profile(db: SQLAlchemySession, profile_config) -> HarnessPro
     return profile
 
 
-def _upsert_variant(db: SQLAlchemySession, variant_config) -> Variant:
-    variant = db.query(Variant).filter_by(name=variant_config.name).one_or_none()
+def _upsert_variant(db: SQLAlchemySession, variant_config: VariantConfig) -> DBVariant:
+    variant = db.query(DBVariant).filter_by(name=variant_config.name).one_or_none()
     if variant is None:
-        variant = Variant(
+        variant = DBVariant(
             name=variant_config.name,
             provider=variant_config.provider,
             model_alias=variant_config.model_alias,
@@ -103,7 +124,7 @@ def _upsert_variant(db: SQLAlchemySession, variant_config) -> Variant:
     return variant
 
 
-def _upsert_task_card(db: SQLAlchemySession, task_card_config) -> DBTaskCard:
+def _upsert_task_card(db: SQLAlchemySession, task_card_config: TaskCardConfig) -> DBTaskCard:
     task_card = db.query(DBTaskCard).filter_by(name=task_card_config.name).one_or_none()
     if task_card is None:
         task_card = DBTaskCard(
@@ -123,10 +144,16 @@ def _upsert_task_card(db: SQLAlchemySession, task_card_config) -> DBTaskCard:
     return task_card
 
 
-def _upsert_experiment(db: SQLAlchemySession, experiment_config, variant_map: dict[str, Variant]) -> Experiment:
-    experiment = db.query(Experiment).filter_by(name=experiment_config.name).one_or_none()
+def _upsert_experiment(
+    db: SQLAlchemySession,
+    experiment_config: ExperimentConfig,
+    variant_map: dict[str, DBVariant],
+) -> DBExperiment:
+    experiment = db.query(DBExperiment).filter_by(name=experiment_config.name).one_or_none()
     if experiment is None:
-        experiment = Experiment(name=experiment_config.name, description=experiment_config.description)
+        experiment = DBExperiment(
+            name=experiment_config.name, description=experiment_config.description
+        )
         db.add(experiment)
 
     experiment.description = experiment_config.description
@@ -179,7 +206,9 @@ def validate(
 
 @app.command("list-providers")
 def list_providers(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available providers from config files."""
     loader = _load_registry(configs_dir)
@@ -188,7 +217,9 @@ def list_providers(
 
 @app.command("list-harnesses")
 def list_harnesses(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available harness profiles from config files."""
     loader = _load_registry(configs_dir)
@@ -197,7 +228,9 @@ def list_harnesses(
 
 @app.command("list-variants")
 def list_variants(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available variants from config files."""
     loader = _load_registry(configs_dir)
@@ -206,7 +239,9 @@ def list_variants(
 
 @app.command("list-experiments")
 def list_experiments(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available experiments from config files."""
     loader = _load_registry(configs_dir)
@@ -215,7 +250,9 @@ def list_experiments(
 
 @app.command("list-task-cards")
 def list_task_cards(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
 ) -> None:
     """List available task cards from config files."""
     loader = _load_registry(configs_dir)
@@ -224,8 +261,12 @@ def list_task_cards(
 
 @app.command("init-db")
 def initialize_database(
-    configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory"),
-    skip_sync: bool = typer.Option(False, "--skip-sync", help="Only create schema, do not sync configs into the database"),
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
+    skip_sync: bool = typer.Option(
+        False, "--skip-sync", help="Only create schema, do not sync configs into the database"
+    ),
 ) -> None:
     """Create the benchmark schema and sync configuration records into the database."""
     console.print("[bold blue]Initializing benchmark database...[/bold blue]")
@@ -250,7 +291,7 @@ def initialize_database(
         for harness in loader.registry.harness_profiles.values():
             _upsert_harness_profile(db, harness)
 
-        variant_map: dict[str, Variant] = {}
+        variant_map: dict[str, DBVariant] = {}
         for variant in loader.registry.variants.values():
             variant_map[variant.name] = _upsert_variant(db, variant)
 
@@ -269,7 +310,12 @@ def initialize_database(
 
 
 @app.command()
-def show_provider(name: str, configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")) -> None:
+def show_provider(
+    name: str,
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
+) -> None:
     """Show provider configuration."""
     loader = _load_registry(configs_dir)
     provider = loader.registry.providers.get(name)
@@ -280,7 +326,12 @@ def show_provider(name: str, configs_dir: Path = typer.Option(Path("configs"), "
 
 
 @app.command()
-def show_variant(name: str, configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")) -> None:
+def show_variant(
+    name: str,
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
+) -> None:
     """Show variant configuration."""
     loader = _load_registry(configs_dir)
     variant = loader.registry.variants.get(name)
@@ -291,7 +342,12 @@ def show_variant(name: str, configs_dir: Path = typer.Option(Path("configs"), "-
 
 
 @app.command()
-def show_experiment(name: str, configs_dir: Path = typer.Option(Path("configs"), "--configs-dir", help="Configuration directory")) -> None:
+def show_experiment(
+    name: str,
+    configs_dir: Path = typer.Option(
+        Path("configs"), "--configs-dir", help="Configuration directory"
+    ),
+) -> None:
     """Show experiment configuration."""
     loader = _load_registry(configs_dir)
     experiment = loader.registry.experiments.get(name)
