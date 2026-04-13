@@ -26,7 +26,7 @@ workspace:
 
 hooks:
   after_create: |
-    git clone --depth 1 https://github.com/trilogy-group/StackPerf.git .
+    git clone --depth 1 'git@github.com:trilogy-group/StackPerf.git' .
   before_run: |
     git status --short
   after_run: |
@@ -53,19 +53,9 @@ openhands:
     # runtime can honor workflow-owned local-server disablement instead of still
     # deciding launch behavior from the localhost base URL plus pinned tooling.
     enabled: true
-    # Omit `command` to use the pinned launcher chosen by the runtime-owned tooling layer.
-    # Explicit launcher overrides are rejected until the runtime can honor workflow-owned commands.
-    # Explicit startup-timeout overrides are rejected until the runtime
-    # supervisor creation path consumes workflow-owned timeout settings.
-    # Explicit readiness-probe-path overrides are rejected until the runtime
-    # supervisor launch path consumes workflow-owned probe settings end-to-end.
-    # Explicit launcher env overrides are rejected until the runtime
-    # supervisor creation path forwards workflow-owned environment variables.
 
   conversation:
     # Defaults to the current runtime-owned per-issue conversation reuse behavior.
-    # Non-default reuse-policy overrides are rejected until the orchestrator/runtime
-    # path can actually honor them end-to-end.
     # This path stays relative to the per-issue workspace; parent traversal is rejected.
     persistence_dir_relative: ".opensymphony/openhands"
     max_iterations: 500
@@ -81,15 +71,6 @@ openhands:
         # Provider-specific auth/base-url overrides and extra LLM option keys are
         # rejected until the current conversation-create adapter can forward them.
         model: ${LLM_MODEL}
-      # Workflow-owned agent extras such as `log_completions` are rejected until
-      # the current conversation-create payload can actually forward them.
-
-  mcp:
-    stdio_servers:
-      - name: linear
-        command:
-          - opensymphony
-          - linear-mcp
 ---
 
 You are working on a Linear ticket `{{ issue.identifier }}`
@@ -125,9 +106,12 @@ Instructions:
 
 Work only in the provided repository copy. Do not touch any other path.
 
-## Prerequisite: Linear MCP or `linear_graphql` tool is available
+## Prerequisite: `LINEAR_API_KEY` is available
 
-The agent should be able to talk to Linear, either via a configured Linear MCP server or injected `linear_graphql` tool. If none are present, stop and ask the user to configure Linear.
+The agent must be able to talk to Linear through direct GraphQL using
+`LINEAR_API_KEY` plus the repo-local `linear` skill assets. If the key is not
+present, treat that as a real blocker and follow the blocked path in this
+workflow.
 
 ## Default posture
 
@@ -278,7 +262,7 @@ Use this only when completion is blocked by missing required tools or missing au
     - Document these temporary proof steps and outcomes in the workpad `Validation`/`Notes` sections so reviewers can follow the evidence.
 6.  Re-check all acceptance criteria and close any gaps.
 7.  Before every `git push` attempt, run the required validation for your scope and confirm it passes; if it fails, address issues and rerun until green, then commit and push changes.
-8.  Attach PR URL to the Linear issue as a link resource using `linear_save_issue(links=[{url, title}])`. This is REQUIRED - do not rely on mentioning the PR URL in comments alone. The PR must appear in the issue's Links/Attachments section.
+8.  Attach the PR URL to the Linear issue through the repo-local `linear` skill using `attachmentLinkGitHubPR` (preferred) or `attachmentLinkURL` when the target is not a GitHub PR. This is REQUIRED - do not rely on mentioning the PR URL in comments alone. The PR must appear in the issue's Links/Attachments section.
     - Ensure the GitHub PR has label `symphony` (add it if missing).
     - Add the `review-this` label to trigger automated AI PR review.
 9.  Merge latest `origin/main` into branch, resolve conflicts, and rerun checks.
@@ -311,22 +295,26 @@ Use this only when completion is blocked by missing required tools or missing au
    - inline PR review comments (`gh api repos/<owner>/<repo>/pulls/<pr>/comments`)
    - PR review summaries/states (`gh pr view --json reviews,reviewDecision`)
    - PR check state (`gh pr view --json statusCheckRollup`)
-3. Treat all human feedback channels as authoritative, not just inline review comments:
+3. Poll silently by default while the issue remains in `Human Review`.
+   - Do not add a new Linear comment.
+   - Do not rewrite the workpad comment just because a poll happened, the retry counter increased, or the PR is still waiting on the same human decision.
+   - Only update the single workpad comment when something materially changes: new actionable feedback arrives, approval/review/check/mergeability state changes, the ticket leaves `Human Review`, or you need a one-time escalation after an unusually long stall.
+4. Treat all human feedback channels as authoritative, not just inline review comments:
    - a new Linear issue comment from the operator is actionable feedback
    - a new top-level PR comment is actionable feedback
    - a failing required PR check is actionable feedback even if no human comment was left
-4. If any actionable feedback or failing required check is present, move the issue to `Rework` and follow the rework flow.
+5. If any actionable feedback or failing required check is present, move the issue to `Rework` and follow the rework flow.
    - Do not wait for an inline review comment when a Linear comment, top-level PR comment, or failing check already requires action.
-4. If approved, human moves the issue to `Merging`.
-5. When the issue is in `Merging`, first inspect the attached PR state.
+6. If approved, human moves the issue to `Merging`.
+7. When the issue is in `Merging`, first inspect the attached PR state.
    - If the PR is already `MERGED`, update the workpad/dashboard and move the issue directly to `Done`.
    - If the PR is still open, re-run the PR feedback sweep protocol one final time. Do not proceed if:
    - Any critical/major feedback remains unaddressed (no code change or pushback reply)
    - Required checks are failing
    - Required validation items from the ticket are incomplete
    Wait for the human to move the issue to `Merging` only when genuinely ready.
-6. If the PR is still open, open and follow `.agents/skills/land/SKILL.md` to perform the repo-specific final merge-readiness checks and handoff. Do not call `gh pr merge` directly.
-7. Continue polling while the issue remains in `Merging`. As soon as the attached PR is observed in `MERGED` state, move the issue to `Done`.
+8. If the PR is still open, open and follow `.agents/skills/land/SKILL.md` to perform the repo-specific final merge-readiness checks and handoff. Do not call `gh pr merge` directly.
+9. Continue polling while the issue remains in `Merging`. As soon as the attached PR is observed in `MERGED` state, move the issue to `Done`.
 
 ## Step 4: Rework handling
 
@@ -395,7 +383,7 @@ For major rework:
 - If issue state is `Backlog`, do not modify it; wait for human to move it to `Todo`.
 - Do not edit the issue body/description for planning or progress tracking.
 - Use exactly one persistent workpad comment (`## Agent Harness Workpad`) per issue.
-- If comment editing is unavailable in-session, use the update script. Only report blocked if both MCP editing and script-based editing are unavailable.
+- If comment editing fails, use the repo-local `linear` helper with `queries/comment_update.graphql` before reporting a blocker.
 - Temporary proof edits are allowed only for local verification and must be reverted before commit.
 - If out-of-scope improvements are found, create a separate Backlog issue rather
   than expanding current scope, and include a clear
@@ -425,7 +413,8 @@ Update the priority table in the Linear project overview whenever:
 
 ### How to update the dashboard
 
-1. Use the `linear_get_project` tool to fetch the current project description
+1. Use the repo-local Linear helper with `queries/project_by_slug.graphql` to
+   fetch the current project description
 2. Locate the `## Dependency Blockers & PR Review Priority` section
    - If it does not exist, create it at the very top of the project description.
    - If the top of the description contains a stale narrative overview or milestone dump, replace that top section with the live dashboard and keep any still-useful static planning notes below it.
@@ -438,7 +427,9 @@ Update the priority table in the Linear project overview whenever:
    - **P1 (🟡 Epic):** Parent issues of active milestones that need review
    - **P2 (🟢 Ready):** Issues unblocked but with lower downstream impact
    - **P3 (⚪ Waiting):** Issues currently blocked by dependencies
-5. Use `linear_save_project` to update the description with the new table
+5. Use the repo-local Linear helper with
+   `queries/project_update_content.graphql` to update the description with the
+   new table
 6. Do not append ad hoc prose summaries above the dashboard. Keep the dashboard concise, current, and reviewer-focused.
 
 ### Priority calculation guidelines
@@ -447,7 +438,7 @@ For each issue with a pending PR, score it by:
 1. **Is it unblocked?** (no open blockers in non-terminal states) → Higher priority
 2. **How many issues does it block?** (count blocks relationships) → More = higher priority
 3. **Is it a parent issue?** (has child issues grouped under it) → These should generally be P1 minimum
-4. **Is it in the critical path?** (e.g., COE-266 → COE-268 → COE-269 chain) → P0
+4. **Is it in the critical path?** (e.g., issue chain A → B → C) → P0
 
 ### Table format
 
@@ -458,7 +449,7 @@ Use this exact markdown structure (no Status column - Linear issue refs automati
 
 | Priority | Issue | PR | Blocked By | Blocks | Impact |
 |:--------:|:------|:--:|:-----------|:-------|:-------|
-| 🔴 **P0** | [COE-XXX](<https://linear.app/trilogy-ai-coe/issue/COE-XXX>) | [#N](<https://github.com/kumanday/OpenSymphony/pull/N>) | Blockers | Count | Brief description |
+| 🔴 **P0** | [XXX](<https://linear.app/your-team/issue/XXX>) | [#N](<https://github.com/your-org/your-repo/pull/N>) | Blockers | Count | Brief description |
 | 🟡 **P1** | ... | ... | ... | ... | ... |
 | 🟢 **P2** | ... | ... | ... | ... | ... |
 | ⚪ **P3** | ... | ... | ... | ... | ... |
