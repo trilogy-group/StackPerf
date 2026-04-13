@@ -13,10 +13,10 @@ from playwright.sync_api import sync_playwright
 def capture_grafana_screenshots():
     """Capture screenshots of the main Grafana dashboards."""
     
-    # Configuration
-    grafana_url = "http://localhost:3000"
-    username = "admin"
-    password = "admin"
+    # Configuration - use environment variables with secure defaults
+    grafana_url = os.environ.get("GRAFANA_URL", "http://localhost:3000")
+    username = os.environ.get("GRAFANA_USERNAME", "admin")
+    password = os.environ.get("GRAFANA_PASSWORD", "admin")
     
     # Create output directory
     output_dir = Path(__file__).parent.parent / "docs" / "assets"
@@ -76,7 +76,7 @@ def capture_grafana_screenshots():
                     if skip_button.count() > 0:
                         skip_button.click()
                         page.wait_for_load_state("networkidle", timeout=5000)
-                except:
+                except Exception:
                     pass
             
             # Capture each dashboard
