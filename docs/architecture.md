@@ -85,41 +85,38 @@ The benchmark application does not execute harness-specific business logic in th
 
 ## Architecture diagram
 
-```text
-+----------------------------+
-| Benchmark CLI / API        |
-| - config validation        |
-| - experiment registry      |
-| - session manager          |
-| - exports                  |
-+-------------+--------------+
-              |
-              v
-+-------------+-------------------------------------------------+
-| Benchmark application                                            |
-| - session credential issuance                                   |
-| - harness env rendering                                         |
-| - LiteLLM collection and normalization                          |
-| - Prometheus collection and rollups                             |
-| - comparison services                                           |
-+-------------+-------------------------------+-------------------+
-              |                               |
-              v                               v
-+-------------+-------------+      +----------+----------+
-| LiteLLM proxy             |      | Prometheus          |
-| - provider routing        |----->| scrape /metrics     |
-| - request logs / IDs      |      +----------+----------+
-| - usage and cost fields   |                 |
-+-------------+-------------+                 v
-              |                      +---------+---------+
-              v                      | Grafana           |
-+-------------+-------------+        | live dashboards   |
-| Upstream providers        |        +-------------------+
-+---------------------------+
-
-External harnesses connect to LiteLLM with session-specific credentials.
-Canonical benchmark records are stored in PostgreSQL.
+```mermaid
+flowchart TD
+    CLI[Benchmark CLI/API<br/>• config validation<br/>• experiment registry<br/>• session manager<br/>• exports]
+    CLI --> APP
+    
+    APP[Benchmark Application<br/>• session credential issuance<br/>• harness env rendering<br/>• LiteLLM collection and normalization<br/>• Prometheus collection and rollups<br/>• comparison services]
+    
+    APP --> PROXY
+    APP --> PROM
+    
+    PROXY[LiteLLM Proxy<br/>• provider routing<br/>• request logs / IDs<br/>• usage and cost fields]
+    PROM[Prometheus<br/>• scrape /metrics]
+    
+    PROXY --> PROM
+    PROXY --> UPSTREAM
+    
+    UPSTREAM[Upstream Providers]
+    
+    PROM --> GRAFANA
+    
+    GRAFANA[Grafana<br/>• live dashboards]
+    
+    DB[(PostgreSQL<br/>Canonical benchmark records)]
+    HARNESS[External Harnesses<br/>Connect to LiteLLM with<br/>session-specific credentials]
+    
+    HARNESS -.-> PROXY
+    APP -.-> DB
 ```
+
+**Notes:**
+- External harnesses connect to LiteLLM with session-specific credentials.
+- Canonical benchmark records are stored in PostgreSQL.
 
 ## Session-centric data flow
 
