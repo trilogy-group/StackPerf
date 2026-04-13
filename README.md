@@ -40,6 +40,14 @@ Open Grafana first and inspect the `Benchmark` folder:
 - `Live Error Rate`
 - `Experiment Summary`
 
+![Live Request Latency Dashboard](docs/assets/grafana-live-request-latency.png)
+
+![Live TTFT Metrics Dashboard](docs/assets/grafana-live-ttft-metrics.png)
+
+![Live Error Rate Dashboard](docs/assets/grafana-live-error-rate.png)
+
+![Experiment Summary Dashboard](docs/assets/grafana-experiment-summary.png)
+
 Use Grafana for dashboards and Prometheus for raw metric/debug queries.
 
 ## What This Helps Answer
