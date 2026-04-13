@@ -13,10 +13,16 @@ from playwright.sync_api import sync_playwright
 def capture_grafana_screenshots():
     """Capture screenshots of the main Grafana dashboards."""
     
-    # Configuration - use environment variables with secure defaults
-    grafana_url = os.environ.get("GRAFANA_URL", "http://localhost:3000")
-    username = os.environ.get("GRAFANA_USERNAME", "admin")
-    password = os.environ.get("GRAFANA_PASSWORD", "admin")
+    # Configuration - require environment variables (no hardcoded defaults per AGENTS.md)
+    grafana_url = os.environ.get("GRAFANA_URL")
+    username = os.environ.get("GRAFANA_USERNAME")
+    password = os.environ.get("GRAFANA_PASSWORD")
+    
+    if not all([grafana_url, username, password]):
+        raise ValueError(
+            "GRAFANA_URL, GRAFANA_USERNAME, and GRAFANA_PASSWORD environment variables must be set. "
+            "See AGENTS.md: Secrets must never be committed, logged, or copied into artifacts."
+        )
     
     # Create output directory
     output_dir = Path(__file__).parent.parent / "docs" / "assets"
