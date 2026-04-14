@@ -1,0 +1,13 @@
+query IssueComments($id: String!) {
+  issue(id: $id) {
+    comments {
+      nodes {
+        id
+        body
+        createdAt
+        resolvedAt
+        url
+      }
+    }
+  }
+}
