@@ -2,6 +2,20 @@
 """
 Capture screenshots of Grafana dashboards for README documentation.
 Uses Playwright to navigate and capture live dashboard views.
+
+Prerequisites:
+    1. Install playwright Python package: uv add --dev playwright
+    2. Install Chromium browser binary: playwright install chromium
+    3. Set environment variables:
+       - GRAFANA_URL (e.g., http://localhost:3000)
+       - GRAFANA_USERNAME (e.g., admin)
+       - GRAFANA_PASSWORD (e.g., admin)
+
+Usage:
+    export GRAFANA_URL="http://localhost:3000"
+    export GRAFANA_USERNAME="admin"
+    export GRAFANA_PASSWORD="admin"
+    python scripts/capture_grafana_screenshots.py
 """
 
 import os
@@ -124,6 +138,11 @@ def capture_grafana_screenshots():
                         page.wait_for_selector('div.panel-content', timeout=10000)
                         # Additional wait for charts to render
                         time.sleep(3)
+                        
+                        # Verify panels have data (not "No data" messages)
+                        no_data_elements = page.locator('text=/No data/i, text=/No datapoints/i')
+                        if no_data_elements.count() > 0:
+                            print(f"  Warning: {no_data_elements.count()} panels show 'No data'")
                     except Exception:
                         print(f"  Warning: Timeout waiting for panel content")
                     
