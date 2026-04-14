@@ -29,26 +29,31 @@ def capture_grafana_screenshots():
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Dashboards to capture (based on README references)
+    # Note: experiment-summary uses $experiment variable - set to seeded experiment name
     dashboards = [
         {
             "name": "Live Request Latency",
             "uid": "live-latency",
-            "output": "grafana-live-request-latency.png"
+            "output": "grafana-live-request-latency.png",
+            "params": {}
         },
         {
             "name": "Live TTFT Metrics",
             "uid": "live-ttft",
-            "output": "grafana-live-ttft-metrics.png"
+            "output": "grafana-live-ttft-metrics.png",
+            "params": {}
         },
         {
             "name": "Live Error Rate",
             "uid": "live-error-rate",
-            "output": "grafana-live-error-rate.png"
+            "output": "grafana-live-error-rate.png",
+            "params": {}
         },
         {
             "name": "Experiment Summary",
             "uid": "experiment-summary",
-            "output": "grafana-experiment-summary.png"
+            "output": "grafana-experiment-summary.png",
+            "params": {"var-experiment": "demo-grafana-validation"}
         }
     ]
     
@@ -89,15 +94,38 @@ def capture_grafana_screenshots():
             for dashboard in dashboards:
                 print(f"\nCapturing dashboard: {dashboard['name']}")
                 
-                # Navigate to dashboard
+                # Build URL with query parameters
                 dashboard_url = f"{grafana_url}/d/{dashboard['uid']}"
+                if dashboard['params']:
+                    query_string = "&".join(f"{k}={v}" for k, v in dashboard['params'].items())
+                    dashboard_url = f"{dashboard_url}?{query_string}"
+                
                 print(f"  URL: {dashboard_url}")
                 
                 try:
+                    # Create a new page for each dashboard to avoid caching issues
+                    page = context.new_page()
+                    
+                    # Navigate to the specific dashboard
                     page.goto(dashboard_url, wait_until="networkidle", timeout=30000)
                     
                     # Wait for dashboard to fully render
-                    time.sleep(3)
+                    print(f"  Waiting for dashboard to render...")
+                    time.sleep(5)
+                    
+                    # Verify we're on the correct dashboard by checking URL
+                    current_url = page.url
+                    if dashboard['uid'] not in current_url:
+                        print(f"  Warning: URL mismatch. Expected uid {dashboard['uid']}, got {current_url}")
+                    
+                    # Wait for panels to show content (check for canvas elements)
+                    try:
+                        # Wait for at least one panel to render with data
+                        page.wait_for_selector('div.panel-content', timeout=10000)
+                        # Additional wait for charts to render
+                        time.sleep(3)
+                    except Exception:
+                        print(f"  Warning: Timeout waiting for panel content")
                     
                     # Set time range to last 1 hour for consistent view
                     try:
@@ -110,7 +138,7 @@ def capture_grafana_screenshots():
                             last_1h = page.locator('text=/Last 1 hour/i')
                             if last_1h.count() > 0:
                                 last_1h.first.click()
-                                page.wait_for_timeout(1000)
+                                page.wait_for_timeout(2000)
                     except Exception as e:
                         print(f"  Warning: Could not set time range: {e}")
                     
@@ -125,8 +153,15 @@ def capture_grafana_screenshots():
                         "filename": dashboard['output']
                     })
                     
+                    # Close the page to ensure fresh state for next dashboard
+                    page.close()
+                    
                 except Exception as e:
                     print(f"  ✗ Failed to capture {dashboard['name']}: {e}")
+                    try:
+                        page.close()
+                    except Exception:
+                        pass
                     
         except Exception as e:
             print(f"Error accessing Grafana: {e}")
