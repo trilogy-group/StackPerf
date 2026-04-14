@@ -80,29 +80,34 @@ def capture_grafana_screenshots():
             viewport={"width": 1400, "height": 900},
             device_scale_factor=2  # Higher resolution for better quality
         )
-        page = context.new_page()
+        
+        # Create login page and authenticate
+        login_page = context.new_page()
         
         try:
             # Navigate to Grafana
             print(f"Navigating to Grafana at {grafana_url}")
-            page.goto(grafana_url, wait_until="networkidle", timeout=30000)
+            login_page.goto(grafana_url, wait_until="networkidle", timeout=30000)
             
             # Handle login if presented
-            if page.locator('input[name="user"]').count() > 0:
-                print("Logging in with default credentials")
-                page.locator('input[name="user"]').fill(username)
-                page.locator('input[name="password"]').fill(password)
-                page.locator('button[type="submit"]').click()
-                page.wait_for_load_state("networkidle", timeout=10000)
+            if login_page.locator('input[name="user"]').count() > 0:
+                print("Logging in")
+                login_page.locator('input[name="user"]').fill(username)
+                login_page.locator('input[name="password"]').fill(password)
+                login_page.locator('button[type="submit"]').click()
+                login_page.wait_for_load_state("networkidle", timeout=10000)
                 
                 # Skip password change prompt if presented
                 try:
-                    skip_button = page.locator('button:has-text("Skip")')
+                    skip_button = login_page.locator('button:has-text("Skip")')
                     if skip_button.count() > 0:
                         skip_button.click()
-                        page.wait_for_load_state("networkidle", timeout=5000)
+                        login_page.wait_for_load_state("networkidle", timeout=5000)
                 except Exception:
                     pass
+            
+            # Close login page to avoid resource leak
+            login_page.close()
             
             # Capture each dashboard
             for dashboard in dashboards:
@@ -143,6 +148,12 @@ def capture_grafana_screenshots():
                         no_data_elements = page.locator('text=/No data/i, text=/No datapoints/i')
                         if no_data_elements.count() > 0:
                             print(f"  Warning: {no_data_elements.count()} panels show 'No data'")
+                            # Skip capture if all panels are empty
+                            panel_count = page.locator('div.panel-content').count()
+                            if panel_count > 0 and no_data_elements.count() >= panel_count:
+                                print(f"  ✗ All panels empty, skipping screenshot")
+                                page.close()
+                                continue
                     except Exception:
                         print(f"  Warning: Timeout waiting for panel content")
                     
