@@ -71,6 +71,7 @@ class TestSpendLogFixtures:
             "streaming_request.json",
             "cached_request.json",
             "sparse_request.json",
+            "non_streaming_with_completion_start.json",
         ],
     )
     def test_fixture_loads_as_valid_json(self, filename: str) -> None:
@@ -128,6 +129,23 @@ class TestSpendLogFixtures:
         assert data["time_to_first_token"] is None
         assert data["completion_start_time"] is None
 
+    def test_non_streaming_completion_start_shape(self, load_fixture) -> None:
+        """Non-streaming fixture with completion_start_time exercises the gap-list
+        derivation path: ttft_ms = (completion_start_time - startTime) * 1000."""
+        data = load_fixture("non_streaming_with_completion_start.json")
+        assert data["request_id"] == "req-nostream-timestamp-001"
+        assert data["stream"] is False
+        assert data["ttft"] is None
+        assert data["time_to_first_token"] is None
+        assert data["completion_start_time"] is not None
+        # Derive ttft_ms from the two timestamps
+        from datetime import datetime
+
+        start = datetime.fromisoformat(data["startTime"].replace("Z", "+00:00"))
+        comp = datetime.fromisoformat(data["completion_start_time"].replace("Z", "+00:00"))
+        derived_ms = int((comp - start).total_seconds() * 1000)
+        assert derived_ms == 1500, f"expected derived ttft_ms 1500, got {derived_ms}"
+
     def test_sparse_request_absent_best_effort_fields(self, load_fixture) -> None:
         """Sparse fixture omits ALL best-effort fields that LiteLLM may not expose.
 
@@ -156,6 +174,7 @@ class TestSpendLogFixtures:
             "streaming_request.json",
             "cached_request.json",
             "sparse_request.json",
+            "non_streaming_with_completion_start.json",
         ]:
             data = load_fixture(name)
             api_key = data.get("api_key", "")
@@ -174,6 +193,7 @@ class TestSpendLogFixtures:
             "streaming_request.json",
             "cached_request.json",
             "sparse_request.json",
+            "non_streaming_with_completion_start.json",
         ]:
             data = load_fixture(name)
             missing = [f for f in STABLE_FIELDS if f not in data]
