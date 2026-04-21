@@ -30,7 +30,7 @@ Usage mode does not weaken benchmark invariants. Benchmark mode still requires s
 | **Proxy key ID** | The stable surrogate identifier in the benchmark registry for a proxy key (auto-increment or UUID, e.g., `pk-550e8400-e29b-41d4-a716-446655440000`). This is non-secret and is the canonical foreign key for usage rows. |
 | **LiteLLM virtual key ID** | The LiteLLM-internal identifier for a virtual key (e.g., `sk-...`). This is a secret and must not be persisted in the benchmark database. |
 | **Usage request** | One normalized LLM call observed through LiteLLM, stored in `usage_requests`. |
-| **Usage rollup** | A derived summary of usage requests grouped by one or more dimensions (e.g., key alias, model, time bucket). |
+| **Usage rollup** | A derived summary of usage requests grouped by one or more dimensions (e.g., proxy_key_id, key_alias, model, time bucket). |
 | **Owner** | The entity responsible for a proxy key (e.g., a person, service account, or team). |
 | **Team** | An organizational grouping that owns one or more proxy keys. |
 | **Customer** | An external billing or cost-center label attached to a proxy key for charge-back. |
@@ -361,6 +361,7 @@ bench key list
 bench key revoke --alias <alias>
 bench usage collect
 bench usage rollup --by proxy_key_id --by key_alias --by model --by day
+bench usage report --proxy-key-id <id> --from <date> --to <date>
 bench usage report --key-alias <alias> --from <date> --to <date>
 bench usage export --format <csv|json|parquet>
 ```
