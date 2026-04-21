@@ -2,7 +2,12 @@
 
 ## System goal
 
-Provide a single local benchmarking platform that multiple interactive agent harnesses can use through one LiteLLM proxy. The platform must capture comparable request-, session-, variant-, and experiment-level data without embedding harness-specific runtime logic into the benchmark application.
+Provide a single local platform that supports two complementary operating modes:
+
+- **Benchmark mode**: interactive harness comparisons across experiments, variants, providers, and task cards. Every benchmark session is created before harness traffic starts.
+- **Usage mode**: long-running API-key and model accounting for request volume, token usage, spend, latency, TTFT, errors, and cache behavior—without requiring an experiment, variant, task card, or session.
+
+Both modes route traffic through one LiteLLM proxy. The platform captures comparable request-, session-, variant-, and experiment-level data in benchmark mode, and captures attributable usage records in usage mode, without embedding harness-specific runtime logic into the benchmark application.
 
 ## Component model
 
@@ -16,7 +21,7 @@ Responsibilities:
 - route traffic to configured providers and models
 - emit request logs, request IDs, and usage data
 - expose Prometheus metrics
-- manage session-scoped proxy credentials and aliases
+- manage session-scoped and usage-mode proxy credentials and aliases
 
 ### 2. PostgreSQL
 
@@ -26,7 +31,9 @@ Responsibilities:
 
 - benchmark metadata
 - session lifecycle state
-- normalized requests
+- normalized benchmark requests
+- usage requests and rollups
+- proxy key registry (non-secret metadata)
 - derived rollups
 - artifact index
 - comparison query tables and views
@@ -55,7 +62,7 @@ Responsibilities:
 
 ### 5. Benchmark application
 
-The benchmark application owns benchmark-specific logic.
+The benchmark application owns benchmark-specific logic and usage-mode observability.
 
 Responsibilities:
 
@@ -64,9 +71,10 @@ Responsibilities:
 - task-card registry
 - session creation and finalization
 - session-scoped proxy credential issuance
+- usage-mode proxy key registry and issuance
 - harness environment rendering
-- collection and normalization jobs
-- rollup jobs
+- collection and normalization jobs (benchmark and usage)
+- rollup jobs (benchmark and usage)
 - query API
 - exports
 
@@ -115,10 +123,11 @@ flowchart TD
 ```
 
 **Notes:**
-- External harnesses connect to LiteLLM with session-specific credentials.
-- Canonical benchmark records are stored in PostgreSQL.
+- External harnesses connect to LiteLLM with session-specific or usage-mode credentials.
+- Canonical benchmark records and usage records are stored in PostgreSQL.
+- `usage_requests` may optionally carry a `benchmark_session_id` when traffic includes session metadata.
 
-## Session-centric data flow
+## Benchmark mode data flow
 
 1. Operator selects an experiment, variant, task card, and harness profile.
 2. Benchmark application creates a `session` record.
@@ -127,9 +136,25 @@ flowchart TD
 5. Operator launches the harness manually and works on the task interactively.
 6. Harness sends LLM traffic through LiteLLM.
 7. LiteLLM emits request data and Prometheus metrics.
-8. Collectors ingest raw proxy records and normalize them into canonical request rows.
+8. Collectors ingest raw proxy records and normalize them into canonical `requests` rows.
 9. Rollup jobs compute request, session, variant, and experiment summaries.
 10. Reports and dashboards expose comparisons.
+
+**Invariant**: benchmark mode still requires session creation before harness traffic. Any shortcut that allows harness traffic before session registration breaks comparability.
+
+## Usage mode data flow
+
+1. Operator creates a usage-mode proxy key through the CLI or API, supplying `key_alias`, `owner`, `team`, `customer`, and optional metadata.
+2. Benchmark application registers the key in the `proxy_keys` table (non-secret metadata only).
+3. Operator configures any client or harness to use the proxy base URL and the usage-mode key.
+4. Traffic flows through LiteLLM.
+5. Collectors ingest LiteLLM spend logs and normalize them into `usage_requests` rows.
+6. `usage_requests` rows store `key_alias`, `owner`, `team`, `customer`, `model`, `provider`, timing, tokens, errors, and cache counters.
+7. If LiteLLM tags contain a benchmark `session_id`, the collector stores it as `benchmark_session_id` on the usage row for optional cross-mode joins.
+8. Usage rollup jobs compute summaries by key alias, model, provider, owner, team, customer, and time bucket.
+9. Usage dashboards and exports expose key-level and model-level summaries.
+
+**Invariant**: usage mode works without experiment, variant, task card, or session. Session metadata is optional usage metadata, not a prerequisite.
 
 ## Why the system is harness-agnostic
 

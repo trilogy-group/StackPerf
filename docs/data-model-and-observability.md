@@ -133,6 +133,69 @@ Core fields:
 - `window_start`
 - `window_end`
 
+### Proxy key
+
+Represents a non-secret registry entry for a LiteLLM virtual key.
+
+Core fields:
+
+- `key_alias` — primary key, human-readable, unique, non-secret
+- `owner`
+- `team`
+- `customer`
+- `description`
+- `budget_duration`
+- `budget_amount`
+- `created_at`
+- `revoked_at`
+- `expires_at`
+- `metadata`
+
+### Usage request
+
+Represents one normalized LLM call in usage mode, stored in `usage_requests`.
+
+Core fields:
+
+- `usage_request_id`
+- `key_alias` — FK → `proxy_keys.key_alias` (nullable if key not in registry)
+- `owner` — denormalized from `proxy_keys` at ingestion time
+- `team` — denormalized from `proxy_keys` at ingestion time
+- `customer` — denormalized from `proxy_keys` at ingestion time
+- `benchmark_session_id` — optional FK → `sessions.session_id` when traffic carries session metadata
+- `provider_id`
+- `provider_route`
+- `model`
+- `litellm_call_id`
+- `provider_request_id`
+- `started_at`
+- `finished_at`
+- `latency_ms`
+- `ttft_ms`
+- `proxy_overhead_ms`
+- `provider_latency_ms`
+- `input_tokens`
+- `output_tokens`
+- `cached_input_tokens`
+- `cache_write_tokens`
+- `status`
+- `error_code`
+
+### Usage rollup
+
+Represents derived summaries for usage mode.
+
+Core fields:
+
+- `usage_rollup_id`
+- `scope_type` with values `key_alias`, `owner`, `team`, `customer`, `model`, `provider`, `day`, `hour`
+- `scope_id`
+- `metric_name`
+- `metric_value`
+- `computed_at`
+- `window_start`
+- `window_end`
+
 ### Artifact
 
 Represents exported bundles.
@@ -147,7 +210,7 @@ Core fields:
 
 ## Observability sources
 
-### LiteLLM request data
+### LiteLLM request data (benchmark mode)
 
 Use LiteLLM request rows, structured logs, callbacks, or equivalent exported records to capture:
 
@@ -156,6 +219,20 @@ Use LiteLLM request rows, structured logs, callbacks, or equivalent exported rec
 - request IDs
 - model and provider routing fields
 - error states
+- benchmark session metadata from virtual key tags
+
+### LiteLLM request data (usage mode)
+
+Use LiteLLM spend logs or structured logs to capture:
+
+- request timing
+- cost or usage fields when exposed
+- request IDs
+- model and provider routing fields
+- error states
+- virtual key ID (replaced with `key_alias` from `proxy_keys` registry before persistence)
+
+Collectors must match the LiteLLM virtual key ID to the `proxy_keys` registry by alias, then drop the raw key ID before writing `usage_requests` rows. If no registry entry exists, the collector stores `key_alias = null` and logs a warning.
 
 ### Prometheus
 
@@ -210,9 +287,24 @@ Use the session registry for:
 - median session TTFT
 - variance statistics across repeated sessions
 
+### Usage level
+
+- request count by key alias, owner, team, customer, model, provider, and time bucket
+- success count and error count by the same dimensions
+- median latency by key alias and model
+- p95 latency by key alias and model
+- median TTFT by key alias and model
+- total input tokens by key alias and model
+- total output tokens by key alias and model
+- total cost/spend when available from LiteLLM logs
+- cache hit ratio by request count
+- error rate by key alias and model
+
 ## Minimal schema expectations
 
 The benchmark database should include at least:
+
+### Benchmark tables
 
 - `providers`
 - `harness_profiles`
@@ -224,15 +316,45 @@ The benchmark database should include at least:
 - `metric_rollups`
 - `artifacts`
 
+### Usage-mode tables
+
+- `proxy_keys` — non-secret registry for LiteLLM virtual key metadata
+- `usage_requests` — normalized usage records with optional benchmark session linkage
+- `usage_rollups` — derived summaries by key alias, model, provider, owner, team, customer, and time bucket
+
 ## Join strategy
 
-Preferred joins:
+### Benchmark joins
 
 - `requests.session_id -> sessions.session_id`
 - `sessions.variant_id -> variants.variant_id`
 - `sessions.experiment_id -> experiments.experiment_id`
 - `sessions.task_card_id -> task_cards.task_card_id`
 - `variants.harness_profile_id -> harness_profiles.harness_profile_id`
+
+### Usage joins
+
+- `usage_requests.key_alias -> proxy_keys.key_alias`
+- `usage_requests.benchmark_session_id -> sessions.session_id` (optional, nullable)
+- `usage_requests.litellm_call_id -> LiteLLM spend_log.call_id` (source audit)
+- `usage_requests.provider_id -> providers.provider_id`
+
+### Cross-mode joins
+
+When a usage request carries benchmark session metadata:
+
+- `usage_requests.benchmark_session_id -> sessions.session_id`
+- `sessions.experiment_id -> experiments.experiment_id`
+- `sessions.variant_id -> variants.variant_id`
+
+This lets operators query usage traffic that was generated during a benchmark session, or query all usage traffic (including sessionless traffic) through `usage_requests` alone.
+
+### LiteLLM log joins
+
+The collector joins LiteLLM spend logs to `proxy_keys` by matching the LiteLLM virtual key ID to the `key_alias` in the registry. After ingestion, the raw key ID is dropped. The stable joins are:
+
+- `usage_requests.key_alias -> proxy_keys.key_alias`
+- `usage_requests.litellm_call_id -> LiteLLM log.call_id` (for audit and debugging)
 
 Preserve raw source keys alongside benchmark keys so raw ingestion can be audited.
 
@@ -252,6 +374,8 @@ Default ingestion stores:
 
 ## Query patterns to support
 
+### Benchmark queries
+
 The schema must make these queries cheap and obvious:
 
 - compare median latency across variants in one experiment
@@ -260,3 +384,16 @@ The schema must make these queries cheap and obvious:
 - find failed sessions for one harness profile
 - compare cache behavior across routing settings
 - export session summaries and request-level rows for external analysis
+
+### Usage queries
+
+The schema must make these queries cheap and obvious:
+
+- total requests, tokens, and cost by key alias for a time window
+- error rate by key alias and model for a time window
+- median latency and p95 latency by key alias and model for a time window
+- total usage by team or customer for a time window
+- compare usage across models for one key alias
+- find unattributed traffic (key_alias is null)
+- export usage summaries and request-level rows for external analysis
+- cross-mode query: all traffic (benchmark + usage) for a given model and time window
