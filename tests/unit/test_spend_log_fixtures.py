@@ -117,7 +117,9 @@ class TestSpendLogFixtures:
             "metadata",
         ]
         for field in best_effort_fields:
-            assert field not in data, f"sparse fixture unexpectedly contains best-effort field '{field}'"
+            assert field not in data, (
+                f"sparse fixture unexpectedly contains best-effort field '{field}'"
+            )
 
         # Stable fields are still present
         assert data["model"] == "gpt-4o-mini"
