@@ -354,7 +354,7 @@ This lets operators query usage traffic that was generated during a benchmark se
 
 ### LiteLLM log joins
 
-The collector resolves the LiteLLM virtual key ID (`sk-...`) to a stable `proxy_key_id` and `key_alias` through a configured mapping mechanism (see `docs/decisions/adr-002-api-key-attribution-and-redaction.md`). The raw key ID is never stored in the benchmark database. After ingestion, the stable joins are:
+The collector resolves the LiteLLM virtual key ID (the internal LiteLLM identifier, distinct from the bearer token `sk-...`) to a stable `proxy_key_id` and `key_alias` through a configured mapping mechanism (see `docs/decisions/adr-002-api-key-attribution-and-redaction.md`). The raw key ID is never stored in the benchmark database. After ingestion, the stable joins are:
 
 - `usage_requests.proxy_key_id -> proxy_keys.proxy_key_id`
 - `usage_requests.key_alias -> proxy_keys.key_alias` (denormalized, for query convenience)
