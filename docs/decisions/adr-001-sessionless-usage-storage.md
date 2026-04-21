@@ -43,7 +43,7 @@ Pros:
 - Provides a clean migration path: once both shapes are proven, a future iteration can consolidate if desired.
 
 Cons:
-- Two tables require two ingestion code paths (though shared normalization helpers can keep them aligned).
+- Two tables require two ingestion code paths. To prevent semantic drift, shared normalization helpers must be the single source of field extraction logic, with only the destination table varying. Any divergence in how fields are parsed, typed, or validated between the two paths should be treated as a bug.
 - Queries that need both benchmark and usage traffic must union or join across tables.
 
 ## Decision

@@ -86,8 +86,7 @@ Core fields:
 - `git_branch`
 - `git_commit_sha`
 - `git_dirty`
-- `proxy_key_alias`
-- `proxy_virtual_key_id` when available
+- `proxy_key_alias` — non-secret alias for the session-scoped proxy key (never the raw virtual key secret)
 
 ### Request
 
@@ -139,7 +138,8 @@ Represents a non-secret registry entry for a LiteLLM virtual key.
 
 Core fields:
 
-- `key_alias` — primary key, human-readable, unique, non-secret
+- `proxy_key_id` — stable surrogate primary key (UUID or auto-increment), non-secret
+- `key_alias` — human-readable, unique, non-secret
 - `owner`
 - `team`
 - `customer`
@@ -158,7 +158,8 @@ Represents one normalized LLM call in usage mode, stored in `usage_requests`.
 Core fields:
 
 - `usage_request_id`
-- `key_alias` — FK → `proxy_keys.key_alias` (nullable if key not in registry)
+- `proxy_key_id` — FK → `proxy_keys.proxy_key_id` (nullable if key not in registry)
+- `key_alias` — denormalized from `proxy_keys` at ingestion time
 - `owner` — denormalized from `proxy_keys` at ingestion time
 - `team` — denormalized from `proxy_keys` at ingestion time
 - `customer` — denormalized from `proxy_keys` at ingestion time
@@ -180,6 +181,7 @@ Core fields:
 - `cache_write_tokens`
 - `status`
 - `error_code`
+- `cost` — total spend from LiteLLM spend logs, nullable when unavailable
 
 ### Usage rollup
 
@@ -351,9 +353,10 @@ This lets operators query usage traffic that was generated during a benchmark se
 
 ### LiteLLM log joins
 
-The collector joins LiteLLM spend logs to `proxy_keys` by matching the LiteLLM virtual key ID to the `key_alias` in the registry. After ingestion, the raw key ID is dropped. The stable joins are:
+The collector resolves the LiteLLM virtual key ID (`sk-...`) to a stable `proxy_key_id` and `key_alias` through a configured mapping mechanism (see `docs/decisions/adr-002-api-key-attribution-and-redaction.md`). The raw key ID is never stored in the benchmark database. After ingestion, the stable joins are:
 
-- `usage_requests.key_alias -> proxy_keys.key_alias`
+- `usage_requests.proxy_key_id -> proxy_keys.proxy_key_id`
+- `usage_requests.key_alias -> proxy_keys.key_alias` (denormalized, for query convenience)
 - `usage_requests.litellm_call_id -> LiteLLM log.call_id` (for audit and debugging)
 
 Preserve raw source keys alongside benchmark keys so raw ingestion can be audited.
