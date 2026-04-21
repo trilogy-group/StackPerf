@@ -396,4 +396,139 @@ The schema must make these queries cheap and obvious:
 - compare usage across models for one key alias
 - find unattributed traffic (key_alias is null)
 - export usage summaries and request-level rows for external analysis
-- cross-mode query: all traffic (benchmark + usage) for a given model and time window
+- cross-mode query: all traffic (benchmark + usage) for a given model and a time window
+
+## LiteLLM spend-log field inventory
+
+The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_request` schema. Fields are classified as **stable** (present on every successful/failed record) or **best-effort** (availability depends on LiteLLM version, provider, or request type).
+
+### Field mapping table
+
+| LiteLLM field | Canonical target | Presence | Notes |
+|:--------------|:-----------------|:---------|:------|
+| `request_id` | `litellm_call_id` | **Stable** | Top-level identifier; fallback from `id` or `call_id` if missing |
+| `call_id` | `litellm_call_id` | **Stable** | Same as `request_id` on most records; used for source audit joins |
+| `api_key` | — (dropped at ingest) | **Stable** | Hashed LiteLLM virtual key. Replaced by `key_alias` from `proxy_keys` registry |
+| `api_key_alias` | `key_alias` | **Best-effort** | Human-readable alias. May be missing on older LiteLLM versions or when key is not in registry |
+| `user` | `owner` (denormalized) | **Best-effort** | Often the same as `api_key_alias`, but not guaranteed |
+| `customer_identifier` | `customer` (denormalized) | **Best-effort** | May mirror `user`; not always present |
+| `startTime` | `started_at` | **Stable** | ISO 8601 string; fallback from `timestamp` or `created_at` |
+| `endTime` | `finished_at` | **Best-effort** | Null on streaming requests that time out or on some error paths |
+| `model` | `model` | **Stable** | Resolved upstream model name (e.g. `gpt-4o`) |
+| `model_id` | `model` | **Stable** | Alias for `model` on most records |
+| `requested_model` | — (metadata) | **Stable** | Model alias sent by the client; useful for audit |
+| `provider` | `provider_id` | **Stable** | Short provider slug (e.g. `openai`, `fireworks`) |
+| `custom_llm_provider` | `provider_route` | **Best-effort** | Full provider string; may differ from `provider` |
+| `spend` | `cost_usd` (planned) | **Best-effort** | Cost in USD. May be `0.0` for failed requests or when provider pricing is not configured |
+| `total_tokens` | `input_tokens + output_tokens` | **Stable** | Sum of prompt + completion tokens |
+| `prompt_tokens` | `input_tokens` | **Stable** | Input side token count |
+| `completion_tokens` | `output_tokens` | **Stable** | Output side token count |
+| `cache_hit` | `cached_input_tokens` indicator | **Best-effort** | Boolean flag; may be absent on providers that do not support caching |
+| `cached_input_tokens` | `cached_input_tokens` | **Best-effort** | Actual cached token count when cache is enabled and hit |
+| `cache_write_tokens` | `cache_write_tokens` | **Best-effort** | Tokens written to cache; rarely exposed by providers |
+| `stream` | — (metadata) | **Stable** | Boolean; `true` for streaming requests |
+| `completion_start_time` | `finished_at` (partial) | **Best-effort** | First token arrival; useful for TTFT validation |
+| `latency` | `latency_ms` | **Stable** | Total request latency in seconds; multiplied by 1000 on ingest |
+| `ttft` | `ttft_ms` | **Best-effort** | Time-to-first-token in seconds; null on errors or non-streaming requests |
+| `total_latency` | `latency_ms` | **Stable** | Alias for `latency`; same value |
+| `time_to_first_token` | `ttft_ms` | **Best-effort** | Alias for `ttft` |
+| `status` | `status` | **Stable** | String: `"success"`, `"failure"`, or `"pending"` |
+| `error` | `error_code` (mapped) | **Best-effort** | Error message string on failures; null on successes |
+| `error_code` | `error_code` | **Best-effort** | HTTP-style code (e.g. `429`); may be absent when LiteLLM cannot map the error |
+| `metadata` | Various (denormalized) | **Best-effort** | JSON blob with session correlation keys. Field names vary by LiteLLM version and callback config |
+
+### Redaction and sensitivity
+
+The following fields are **never** stored in committed fixtures or ingested rows by default:
+
+- Prompt and response text (redacted by `redact_messages_in_logs: true`)
+- Raw upstream API keys (only LiteLLM virtual key hashes transit, and are dropped at ingest)
+- Request/response bodies beyond routing and timing metadata
+
+### Gap list — fields LiteLLM does not expose reliably
+
+| Desired field | Why it matters | Current LiteLLM limitation | Workaround |
+|:--------------|:---------------|:---------------------------|:-----------|
+| **Per-request cost accuracy** | Budget enforcement, chargeback | `spend` is best-effort; provider pricing tables may lag | Use provider invoices for billing of record; use `spend` for trending only |
+| **Cache write tokens** | Cache cost attribution | Not exposed by most providers via LiteLLM | Aggregate `cache_hit` ratio as proxy |
+| **TTFT on non-streaming requests** | Latency breakdown | `ttft` is null when `stream: false` | Use `completion_start_time` minus `startTime` when available |
+| **Provider request ID** | Cross-referencing provider logs | Not in `/spend/logs`; only in callbacks | Use `call_id` as primary audit key |
+| **Key alias on every record** | Human-readable attribution | `api_key_alias` missing when key not in `proxy_keys` registry | Store `key_alias = null` and warn; match retroactively |
+| **Prompt token breakdown (system vs user)** | Usage optimization | Not exposed in spend logs | Not available without custom callbacks |
+| **Finish reason** | Detect truncation / stop conditions | Not in spend logs; only in response body | Not available without content logging |
+
+## Prometheus label inventory
+
+LiteLLM exposes Prometheus metrics at `/metrics`. The following labels are present on the counters and histograms relevant to usage attribution.
+
+### Labels available on `litellm_proxy_total_requests_metric_total`
+
+| Label | Example values | Cardinality | API-key attribution? |
+|:------|:---------------|:------------|:---------------------|
+| `requested_model` | `gpt-4o`, `kimi-k2-5` | Low (model aliases) | Yes — by model |
+| `model` | `gpt-4o`, `accounts/fireworks/models/kimi-k2p5` | Medium (resolved names) | Yes — by model |
+| `user` | hashed virtual key or alias | Medium–High (one per key) | **Partial** — hashed key, not human-readable alias |
+| `api_key` | `hashed_api_key=sk...abc` | High (one per virtual key) | **Partial** — hashed, requires reverse lookup |
+| `status_code` | `200`, `429`, `500` | Low | Yes — by status |
+| `end_user` | `bench-user-alpha` | Medium | Yes — by end-user tag |
+| `key_alias` | — | — | **Not exposed** |
+
+### Labels available on `litellm_request_total_latency_metric_bucket`
+
+| Label | Example values | Cardinality | API-key attribution? |
+|:------|:---------------|:------------|:---------------------|
+| `requested_model` | `gpt-4o`, `kimi-k2-5` | Low | Yes — by model |
+| `model` | resolved model string | Medium | Yes — by model |
+| `user` | hashed key or alias | Medium–High | Partial |
+| `api_key` | hashed key | High | Partial |
+| `status_code` | `200`, `429` | Low | Yes — by status |
+
+### Labels **not** available on Prometheus metrics
+
+| Desired label | Why it's missing | Impact |
+|:--------------|:-----------------|:-------|
+| `key_alias` | LiteLLM Prometheus exporter does not emit human-readable aliases | Cannot build live dashboards filtered by key alias |
+| `session_id` | Not in Prometheus labels; only in `metadata` callback | Cannot correlate live metrics with benchmark sessions via Prometheus alone |
+| `experiment` | Only in callback `metadata` | Cannot break down live metrics by experiment |
+| `variant` | Only in callback `metadata` | Cannot break down live metrics by variant |
+| `provider` (slug) | `custom_llm_provider` may differ | Minor — `model` usually encodes provider |
+
+### Prometheus cardinality warning
+
+Filtering Prometheus metrics by `api_key` or `user` label at high cardinality (hundreds or thousands of virtual keys) can cause:
+
+- **Memory pressure** in Prometheus for series storage
+- **Slow query evaluation** for high-cardinality aggregations
+- **Label explosion** if keys are short-lived (e.g. per-session keys)
+
+### Recommendation: API-key-level live dashboards
+
+**Can we build live Prometheus dashboards broken down by API key alias?**
+
+**No — not directly from Prometheus labels.**
+
+| Dashboard type | Data source | Feasibility |
+|:---------------|:------------|:------------|
+| Model-level latency / error rate / throughput | Prometheus (live) | **Fully possible** — `requested_model` and `status_code` labels are stable and low-cardinality |
+| Status-level breakdown | Prometheus (live) | **Fully possible** — `status_code` label is reliable |
+| End-user-level breakdown | Prometheus (live) | **Possible with caveats** — `end_user` label exists but cardinality depends on tagging discipline |
+| **API-key-alias-level breakdown** | Prometheus (live) | **Not possible** — `key_alias` is not a Prometheus label |
+| API-key-alias-level breakdown | Postgres (`/spend/logs`) | **Fully possible** — `api_key_alias` is in spend log rows; requires periodic ETL or direct query |
+| Session-level correlation | Postgres + registry join | **Fully possible** — join `usage_requests` to `proxy_keys` by `key_alias` |
+
+**Operational implication:**
+
+- Use **Prometheus** for live operational dashboards (model-level, status-level, aggregate latency)
+- Use **Postgres spend logs** (or the benchmark `usage_requests` table) for API-key-alias-level reporting, cost attribution, and session correlation
+- If live key-alias dashboards are required, consider a **hybrid approach**: Prometheus for real-time aggregates, with a lightweight Postgres query or materialized view for key-level drill-down
+
+## Sanitized fixtures
+
+Representative `/spend/logs` records are committed under `tests/fixtures/litellm_spend_logs/`:
+
+- `successful_request.json` — non-streaming, cache miss, full metadata
+- `failed_request.json` — rate-limit error, zero tokens/spend, null TTFT
+- `streaming_request.json` — streaming flag, large completion, low TTFT
+- `cached_request.json` — cache hit, low latency/spend, cached token count
+
+These fixtures are synthetic and contain no real API keys or prompt/response content.
