@@ -158,12 +158,12 @@ Represents one normalized LLM call in usage mode, stored in `usage_requests`.
 Core fields:
 
 - `usage_request_id`
-- `proxy_key_id` — FK → `proxy_keys.proxy_key_id` (nullable if key not in registry)
+- `proxy_key_id` — FK -> `proxy_keys.proxy_key_id` (nullable if key not in registry)
 - `key_alias` — denormalized from `proxy_keys` at ingestion time
 - `owner` — denormalized from `proxy_keys` at ingestion time
 - `team` — denormalized from `proxy_keys` at ingestion time
 - `customer` — denormalized from `proxy_keys` at ingestion time
-- `benchmark_session_id` — optional FK → `sessions.session_id` when traffic carries session metadata
+- `benchmark_session_id` — optional FK -> `sessions.session_id` when traffic carries session metadata
 - `provider_id`
 - `provider_route`
 - `model`
@@ -291,16 +291,16 @@ Use the session registry for:
 
 ### Usage level
 
-- request count by key alias, owner, team, customer, model, provider, and time bucket
+- request count by proxy_key_id, key_alias, owner, team, customer, model, provider, and time bucket
 - success count and error count by the same dimensions
-- median latency by key alias and model
-- p95 latency by key alias and model
-- median TTFT by key alias and model
-- total input tokens by key alias and model
-- total output tokens by key alias and model
+- median latency by proxy_key_id and model
+- p95 latency by proxy_key_id and model
+- median TTFT by proxy_key_id and model
+- total input tokens by proxy_key_id and model
+- total output tokens by proxy_key_id and model
 - total cost/spend when available from LiteLLM logs
 - cache hit ratio by request count
-- error rate by key alias and model
+- error rate by proxy_key_id and model
 
 ## Minimal schema expectations
 
@@ -322,7 +322,7 @@ The benchmark database should include at least:
 
 - `proxy_keys` — non-secret registry for LiteLLM virtual key metadata
 - `usage_requests` — normalized usage records with optional benchmark session linkage
-- `usage_rollups` — derived summaries by key alias, model, provider, owner, team, customer, and time bucket
+- `usage_rollups` — derived summaries by proxy_key_id, key_alias, model, provider, owner, team, customer, and time bucket
 
 ## Join strategy
 
@@ -393,11 +393,11 @@ The schema must make these queries cheap and obvious:
 
 The schema must make these queries cheap and obvious:
 
-- total requests, tokens, and cost by key alias for a time window
-- error rate by key alias and model for a time window
-- median latency and p95 latency by key alias and model for a time window
+- total requests, tokens, and cost by proxy_key_id and key_alias for a time window
+- error rate by proxy_key_id and model for a time window
+- median latency and p95 latency by proxy_key_id and model for a time window
 - total usage by team or customer for a time window
-- compare usage across models for one key alias
+- compare usage across models for one proxy_key_id
 - find unattributed traffic (proxy_key_id is null)
 - export usage summaries and request-level rows for external analysis
 - cross-mode query: all traffic (benchmark + usage) for a given model and time window

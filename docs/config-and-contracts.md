@@ -304,6 +304,7 @@ bench key create \
 
 The command must produce:
 
+- a `proxy_key_id` — stable surrogate primary key, non-secret
 - a `key_alias` (human-readable, unique, non-secret)
 - a LiteLLM virtual key secret (displayed once to the operator, never stored in the benchmark database)
 - a registry entry in `proxy_keys` containing only non-secret metadata
@@ -359,7 +360,7 @@ bench key create --alias <alias> --owner <owner> --team <team> --customer <custo
 bench key list
 bench key revoke --alias <alias>
 bench usage collect
-bench usage rollup --by key_alias --by model --by day
+bench usage rollup --by proxy_key_id --by key_alias --by model --by day
 bench usage report --key-alias <alias> --from <date> --to <date>
 bench usage export --format <csv|json|parquet>
 ```

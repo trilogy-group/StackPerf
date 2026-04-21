@@ -151,7 +151,7 @@ flowchart TD
 5. Collectors ingest LiteLLM spend logs and normalize them into `usage_requests` rows.
 6. `usage_requests` rows store `proxy_key_id`, `key_alias`, `owner`, `team`, `customer`, `model`, `provider`, timing, tokens, errors, cache counters, and `cost` when available from LiteLLM spend logs.
 7. If LiteLLM tags contain a benchmark `session_id`, the collector stores it as `benchmark_session_id` on the usage row for optional cross-mode joins.
-8. Usage rollup jobs compute summaries by key alias, model, provider, owner, team, customer, and time bucket.
+8. Usage rollup jobs compute summaries by proxy_key_id, key_alias, model, provider, owner, team, customer, and time bucket.
 9. Usage dashboards and exports expose key-level and model-level summaries.
 
 **Invariant**: usage mode works without experiment, variant, task card, or session. Session metadata is optional usage metadata, not a prerequisite.
