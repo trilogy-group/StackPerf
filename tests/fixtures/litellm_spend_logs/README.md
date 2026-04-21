@@ -6,10 +6,11 @@ Sanitized, representative `/spend/logs` records for unit testing and documentati
 
 | File | Scenario | Key Characteristics |
 |:-----|:---------|:--------------------|
-| `successful_request.json` | Standard success | Non-streaming, no cache, full tokens |
+| `successful_request.json` | Standard success | Non-streaming, no cache, full tokens; `ttft` null |
 | `failed_request.json` | Rate-limit failure | Error code 429, zero tokens/spend |
 | `streaming_request.json` | Streaming success | `stream: true`, large completion, low TTFT |
-| `cached_request.json` | Cache hit | `cache_hit: true`, low latency/spend |
+| `cached_request.json` | Cache hit | `cache_hit: true`, low latency/spend; `ttft` null |
+| `sparse_request.json` | Partial record | Best-effort fields omitted entirely (not just null) |
 
 ## Sanitization Rules
 

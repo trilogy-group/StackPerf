@@ -429,7 +429,7 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 | `stream` | — (metadata) | **Stable** | Boolean; `true` for streaming requests |
 | `completion_start_time` | `finished_at` (partial) | **Best-effort** | First token arrival; useful for TTFT validation |
 | `latency` | `latency_ms` | **Stable** | Total request latency in seconds; multiplied by 1000 on ingest |
-| `ttft` | `ttft_ms` | **Best-effort** | Time-to-first-token in seconds; null on errors or non-streaming requests |
+| `ttft` | `ttft_ms` | **Best-effort** | Time-to-first-token in seconds; typically null or absent on non-streaming requests and errors |
 | `total_latency` | `latency_ms` | **Stable** | Alias for `latency`; same value |
 | `time_to_first_token` | `ttft_ms` | **Best-effort** | Alias for `ttft` |
 | `status` | `status` | **Stable** | String: `"success"`, `"failure"`, or `"pending"` |
@@ -451,7 +451,7 @@ The following fields are **never** stored in committed fixtures or ingested rows
 |:--------------|:---------------|:---------------------------|:-----------|
 | **Per-request cost accuracy** | Budget enforcement, chargeback | `spend` is best-effort; provider pricing tables may lag | Use provider invoices for billing of record; use `spend` for trending only |
 | **Cache write tokens** | Cache cost attribution | Not exposed by most providers via LiteLLM | Aggregate `cache_hit` ratio as proxy |
-| **TTFT on non-streaming requests** | Latency breakdown | `ttft` is null when `stream: false` | Use `completion_start_time` minus `startTime` when available |
+| **TTFT on non-streaming requests** | Latency breakdown | `ttft` is typically null or absent when `stream: false` | Use `completion_start_time` minus `startTime` when available |
 | **Provider request ID** | Cross-referencing provider logs | Not in `/spend/logs`; only in callbacks | Use `call_id` as primary audit key |
 | **Key alias on every record** | Human-readable attribution | `api_key_alias` missing when key not in `proxy_keys` registry | Store `key_alias = null` and warn; match retroactively |
 | **Prompt token breakdown (system vs user)** | Usage optimization | Not exposed in spend logs | Not available without custom callbacks |

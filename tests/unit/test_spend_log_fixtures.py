@@ -30,6 +30,7 @@ class TestSpendLogFixtures:
             "failed_request.json",
             "streaming_request.json",
             "cached_request.json",
+            "sparse_request.json",
         ],
     )
     def test_fixture_loads_as_valid_json(self, filename: str) -> None:
@@ -82,6 +83,29 @@ class TestSpendLogFixtures:
         assert data["cached_input_tokens"] > 0
         assert data["latency"] < 1.0  # Fast due to cache
         assert data["spend"] < 0.001  # Cheap due to cache
+        # Non-streaming: ttft fields should be null
+        assert data["ttft"] is None
+        assert data["time_to_first_token"] is None
+        assert data["completion_start_time"] is None
+
+    def test_sparse_request_absent_best_effort_fields(self, load_fixture) -> None:
+        """Sparse fixture omits best-effort fields that LiteLLM may not expose."""
+        data = load_fixture("sparse_request.json")
+        assert data["request_id"] == "req-sparse-001"
+        assert data["status"] == "success"
+        assert data["stream"] is False
+        # These best-effort fields are *absent*, not just null
+        assert "ttft" not in data
+        assert "time_to_first_token" not in data
+        assert "completion_start_time" not in data
+        assert "endTime" not in data
+        assert "error" not in data
+        assert "error_code" not in data
+        assert "cache_write_tokens" not in data
+        assert "cached_input_tokens" not in data
+        # Stable fields are still present
+        assert data["model"] == "gpt-4o-mini"
+        assert data["latency"] == 1.2
 
     def test_no_real_secrets_in_fixtures(self, load_fixture) -> None:
         """Verify fixtures use synthetic/redacted values only."""
@@ -90,6 +114,7 @@ class TestSpendLogFixtures:
             "failed_request.json",
             "streaming_request.json",
             "cached_request.json",
+            "sparse_request.json",
         ]:
             data = load_fixture(name)
             api_key = data.get("api_key", "")
@@ -108,7 +133,6 @@ class TestSpendLogFixtures:
             "api_key",
             "api_key_alias",
             "startTime",
-            "endTime",
             "model",
             "requested_model",
             "provider",
@@ -126,6 +150,7 @@ class TestSpendLogFixtures:
             "failed_request.json",
             "streaming_request.json",
             "cached_request.json",
+            "sparse_request.json",
         ]:
             data = load_fixture(name)
             missing = [f for f in required_fields if f not in data]

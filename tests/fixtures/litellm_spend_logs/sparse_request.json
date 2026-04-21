@@ -1,0 +1,29 @@
+{
+  "request_id": "req-sparse-001",
+  "call_id": "call-sparse-001",
+  "api_key": "sk-litellm-hash-e5f6g7h8i9j0",
+  "api_key_alias": "bench-session-epsilon",
+  "user": "bench-user-epsilon",
+  "customer_identifier": "bench-session-epsilon",
+  "startTime": "2025-04-21T10:20:00.000Z",
+  "model": "gpt-4o-mini",
+  "model_id": "gpt-4o-mini",
+  "requested_model": "gpt-4o-mini",
+  "provider": "openai",
+  "custom_llm_provider": "openai",
+  "spend": 0.00045,
+  "total_tokens": 45,
+  "prompt_tokens": 30,
+  "completion_tokens": 15,
+  "cache_hit": false,
+  "stream": false,
+  "latency": 1.2,
+  "status": "success",
+  "metadata": {
+    "session_id": "session-epsilon-001",
+    "experiment": "model-comparison-q2",
+    "variant": "openai-gpt4o-mini",
+    "harness": "openhands",
+    "task_card": "repo-auth-analysis"
+  }
+}
