@@ -251,6 +251,13 @@ class RedactionPolicy(BaseModel):
         description="Number of days to retain usage records before cleanup",
     )
 
+    @field_validator("policy_name")
+    @classmethod
+    def validate_policy_name_not_empty(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("policy_name must not be empty or whitespace")
+        return v
+
     @field_validator("retention_days")
     @classmethod
     def validate_retention_positive(cls, v: int | None) -> int | None:

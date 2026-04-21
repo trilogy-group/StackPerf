@@ -47,6 +47,13 @@ class TestRedactionPolicy:
         assert "retention_days" in str(exc_info.value)
         assert "positive" in str(exc_info.value)
 
+    def test_empty_policy_name_raises(self) -> None:
+        """Test that empty policy_name raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            RedactionPolicy(policy_name="")
+        assert "policy_name" in str(exc_info.value)
+        assert "empty" in str(exc_info.value)
+
 
 class TestUsagePolicyProfile:
     """Tests for UsagePolicyProfile."""
