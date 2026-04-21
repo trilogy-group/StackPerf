@@ -427,7 +427,7 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 | `cached_input_tokens` | `cached_input_tokens` | **Best-effort** | Actual cached token count when cache is enabled and hit |
 | `cache_write_tokens` | `cache_write_tokens` | **Best-effort** | Tokens written to cache; rarely exposed by providers |
 | `stream` | — (metadata) | **Stable** | Boolean; `true` for streaming requests |
-| `completion_start_time` | `ttft_ms` (derived) | **Best-effort** | First token arrival; subtract `startTime` to derive `ttft_ms` |
+| `completion_start_time` | `ttft_ms` (source timestamp) | **Best-effort** | ISO 8601 timestamp of first token arrival; subtract `startTime` to derive `ttft_ms` |
 | `latency` | `latency_ms` | **Stable** | Total request latency in seconds; multiplied by 1000 on ingest |
 | `ttft` | `ttft_ms` | **Best-effort** | Time-to-first-token in seconds; typically null or absent on non-streaming requests and errors |
 | `total_latency` | `latency_ms` | **Stable** | Alias for `latency`; same value |

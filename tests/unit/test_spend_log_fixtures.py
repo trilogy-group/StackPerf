@@ -7,6 +7,26 @@ import pytest
 
 FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "litellm_spend_logs"
 
+# Stable fields per docs/data-model-and-observability.md field-mapping table.
+# These are present on every successful/failed record.
+STABLE_FIELDS = [
+    "request_id",
+    "call_id",
+    "api_key",
+    "startTime",
+    "model",
+    "model_id",
+    "requested_model",
+    "provider",
+    "total_tokens",
+    "prompt_tokens",
+    "completion_tokens",
+    "stream",
+    "latency",
+    "total_latency",
+    "status",
+]
+
 # Best-effort fields per docs/data-model-and-observability.md field-mapping table.
 # These may be absent depending on LiteLLM version, provider, or request type.
 BEST_EFFORT_FIELDS = [
@@ -148,23 +168,6 @@ class TestSpendLogFixtures:
 
     def test_all_fixtures_have_stable_fields(self, load_fixture) -> None:
         """Every fixture has the stable fields we depend on."""
-        stable_fields = [
-            "request_id",
-            "call_id",
-            "api_key",
-            "startTime",
-            "model",
-            "model_id",
-            "requested_model",
-            "provider",
-            "total_tokens",
-            "prompt_tokens",
-            "completion_tokens",
-            "stream",
-            "latency",
-            "total_latency",
-            "status",
-        ]
         for name in [
             "successful_request.json",
             "failed_request.json",
@@ -173,7 +176,7 @@ class TestSpendLogFixtures:
             "sparse_request.json",
         ]:
             data = load_fixture(name)
-            missing = [f for f in stable_fields if f not in data]
+            missing = [f for f in STABLE_FIELDS if f not in data]
             assert not missing, f"{name}: missing stable fields {missing}"
 
     def test_best_effort_fields_per_fixture_type(self, load_fixture) -> None:
