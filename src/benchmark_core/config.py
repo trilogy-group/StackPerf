@@ -283,7 +283,7 @@ class UsagePolicyProfile(BaseModel):
     )
     budget_duration: str | None = Field(
         default=None,
-        description="Budget interval (e.g., 1d, 30d, 12h, 5m). Must match /^[0-9]+[dhm]$/.",
+        description="Budget interval (e.g., 1d, 30d, 12h, 5m). Must match /^[1-9][0-9]*[dhm]$/.",
     )
     budget_amount: float | None = Field(
         default=None,
