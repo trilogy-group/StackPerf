@@ -423,7 +423,7 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 | `total_tokens` | `input_tokens + output_tokens` | **Stable** | Sum of prompt + completion tokens |
 | `prompt_tokens` | `input_tokens` | **Stable** | Input side token count |
 | `completion_tokens` | `output_tokens` | **Stable** | Output side token count |
-| `cache_hit` | `cached_input_tokens` indicator | **Best-effort** | Boolean flag; may be absent on providers that do not support caching |
+| `cache_hit` | `cache_hit` | **Best-effort** | Boolean flag; may be absent on providers that do not support caching |
 | `cached_input_tokens` | `cached_input_tokens` | **Best-effort** | Actual cached token count when cache is enabled and hit |
 | `cache_write_tokens` | `cache_write_tokens` | **Best-effort** | Tokens written to cache; rarely exposed by providers |
 | `stream` | — (metadata) | **Stable** | Boolean; `true` for streaming requests |
