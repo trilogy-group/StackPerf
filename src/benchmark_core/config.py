@@ -378,6 +378,13 @@ class UsagePolicyProfile(BaseModel):
             )
         return v
 
+    @field_validator("owner", "team", "customer")
+    @classmethod
+    def validate_non_empty_when_present(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("must not be empty or whitespace when provided")
+        return v
+
 
 class UsagePolicyConfig(BaseModel):
     """Top-level usage policy configuration file.

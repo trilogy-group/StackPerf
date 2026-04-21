@@ -118,6 +118,27 @@ class TestUsagePolicyProfile:
         assert "allowed_models" in str(exc_info.value)
         assert "duplicate" in str(exc_info.value)
 
+    def test_empty_owner_raises(self) -> None:
+        """Test that empty owner string raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            UsagePolicyProfile(name="test", owner="")
+        assert "owner" in str(exc_info.value)
+        assert "empty" in str(exc_info.value)
+
+    def test_empty_team_raises(self) -> None:
+        """Test that empty team string raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            UsagePolicyProfile(name="test", team="")
+        assert "team" in str(exc_info.value)
+        assert "empty" in str(exc_info.value)
+
+    def test_empty_customer_raises(self) -> None:
+        """Test that empty customer string raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            UsagePolicyProfile(name="test", customer="")
+        assert "customer" in str(exc_info.value)
+        assert "empty" in str(exc_info.value)
+
     def test_negative_budget_raises(self) -> None:
         """Test that negative budget_amount raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
