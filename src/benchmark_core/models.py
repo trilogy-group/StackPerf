@@ -95,6 +95,38 @@ class ProxyCredential(BaseModel):
         return f"{key_value[:4]}...{key_value[-4:]}"
 
 
+class ProxyKey(BaseModel):
+    """Non-secret registry entry for a LiteLLM virtual key.
+
+    Stores metadata and reference information. The actual secret key
+    is managed by LiteLLM and is never stored in the benchmark database.
+    """
+
+    proxy_key_id: UUID = Field(default_factory=uuid4)
+    key_alias: str = Field(..., description="Human-readable unique key alias")
+    litellm_key_id: str | None = Field(
+        default=None,
+        description="LiteLLM internal key ID for correlation",
+    )
+    owner: str | None = Field(default=None, description="Key owner label")
+    team: str | None = Field(default=None, description="Team metadata")
+    customer: str | None = Field(default=None, description="Customer metadata")
+    purpose: str | None = Field(default=None, description="Key purpose/description")
+    allowed_models: list[str] = Field(default_factory=list, description="Allowed model aliases")
+    budget_duration: str | None = Field(default=None, description="Budget duration (e.g., daily, monthly)")
+    budget_amount: float | None = Field(default=None, description="Budget amount")
+    budget_currency: str = Field(default="USD", description="Budget currency")
+    status: str = Field(default="active", description="Key status: active, revoked, expired")
+    key_metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    proxy_credential_id: UUID | None = Field(
+        default=None,
+        description="Optional link to session-scoped proxy credential",
+    )
+    created_at: datetime = Field(default_factory=_utc_now)
+    revoked_at: datetime | None = Field(default=None)
+    expires_at: datetime | None = Field(default=None)
+
+
 class Request(BaseModel):
     """One normalized LLM call observed through LiteLLM."""
 
