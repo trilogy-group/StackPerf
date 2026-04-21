@@ -232,9 +232,9 @@ Use LiteLLM spend logs or structured logs to capture:
 - request IDs
 - model and provider routing fields
 - error states
-- virtual key ID (replaced with `key_alias` from `proxy_keys` registry before persistence)
+- virtual key ID (resolved to `proxy_key_id` from `proxy_keys` registry before persistence; `key_alias` is denormalized at ingestion)
 
-Collectors must match the LiteLLM virtual key ID to the `proxy_keys` registry by alias, then drop the raw key ID before writing `usage_requests` rows. If no registry entry exists, the collector stores `key_alias = null` and logs a warning.
+Collectors must resolve the LiteLLM virtual key ID to the stable `proxy_key_id` (and denormalized `key_alias`) from the `proxy_keys` registry through the configured collector mapping mechanism, then drop the raw key ID before writing `usage_requests` rows. If no registry entry exists, the collector stores `proxy_key_id = null` and `key_alias = null`, and logs a warning.
 
 ### Prometheus
 
@@ -336,7 +336,8 @@ The benchmark database should include at least:
 
 ### Usage joins
 
-- `usage_requests.key_alias -> proxy_keys.key_alias`
+- `usage_requests.proxy_key_id -> proxy_keys.proxy_key_id` (canonical FK)
+- `usage_requests.key_alias -> proxy_keys.key_alias` (denormalized, for query convenience)
 - `usage_requests.benchmark_session_id -> sessions.session_id` (optional, nullable)
 - `usage_requests.litellm_call_id -> LiteLLM spend_log.call_id` (source audit)
 - `usage_requests.provider_id -> providers.provider_id`
@@ -397,6 +398,6 @@ The schema must make these queries cheap and obvious:
 - median latency and p95 latency by key alias and model for a time window
 - total usage by team or customer for a time window
 - compare usage across models for one key alias
-- find unattributed traffic (key_alias is null)
+- find unattributed traffic (proxy_key_id is null)
 - export usage summaries and request-level rows for external analysis
 - cross-mode query: all traffic (benchmark + usage) for a given model and time window
