@@ -145,7 +145,7 @@ class TestSpendLogFixtures:
         # Derive ttft_ms from the two timestamps
         start = datetime.fromisoformat(data["startTime"].replace("Z", "+00:00"))
         comp = datetime.fromisoformat(data["completion_start_time"].replace("Z", "+00:00"))
-        derived_ms = int((comp - start).total_seconds() * 1000)
+        derived_ms = round((comp - start).total_seconds() * 1000)
         assert derived_ms == 1500, f"expected derived ttft_ms 1500, got {derived_ms}"
 
     def test_sparse_request_absent_best_effort_fields(self, load_fixture) -> None:
