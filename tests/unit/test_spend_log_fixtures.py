@@ -1,6 +1,7 @@
 """Smoke tests for LiteLLM spend-log fixture loading."""
 
 import json
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -142,8 +143,6 @@ class TestSpendLogFixtures:
         assert data["time_to_first_token"] is None
         assert data["completion_start_time"] is not None
         # Derive ttft_ms from the two timestamps
-        from datetime import datetime
-
         start = datetime.fromisoformat(data["startTime"].replace("Z", "+00:00"))
         comp = datetime.fromisoformat(data["completion_start_time"].replace("Z", "+00:00"))
         derived_ms = int((comp - start).total_seconds() * 1000)
