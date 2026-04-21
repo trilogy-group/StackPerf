@@ -89,20 +89,36 @@ class TestSpendLogFixtures:
         assert data["completion_start_time"] is None
 
     def test_sparse_request_absent_best_effort_fields(self, load_fixture) -> None:
-        """Sparse fixture omits best-effort fields that LiteLLM may not expose."""
+        """Sparse fixture omits ALL best-effort fields that LiteLLM may not expose.
+
+        This matches the docs classification so implementers know exactly which
+        fields normalization code must handle as optional.
+        """
         data = load_fixture("sparse_request.json")
         assert data["request_id"] == "req-sparse-001"
         assert data["status"] == "success"
         assert data["stream"] is False
-        # These best-effort fields are *absent*, not just null
-        assert "ttft" not in data
-        assert "time_to_first_token" not in data
-        assert "completion_start_time" not in data
-        assert "endTime" not in data
-        assert "error" not in data
-        assert "error_code" not in data
-        assert "cache_write_tokens" not in data
-        assert "cached_input_tokens" not in data
+
+        best_effort_fields = [
+            "api_key_alias",
+            "user",
+            "customer_identifier",
+            "endTime",
+            "custom_llm_provider",
+            "spend",
+            "cache_hit",
+            "cached_input_tokens",
+            "cache_write_tokens",
+            "completion_start_time",
+            "ttft",
+            "time_to_first_token",
+            "error",
+            "error_code",
+            "metadata",
+        ]
+        for field in best_effort_fields:
+            assert field not in data, f"sparse fixture unexpectedly contains best-effort field '{field}'"
+
         # Stable fields are still present
         assert data["model"] == "gpt-4o-mini"
         assert data["latency"] == 1.2
