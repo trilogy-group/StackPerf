@@ -355,7 +355,7 @@ class UsagePolicyProfile(BaseModel):
     @field_validator("budget_duration")
     @classmethod
     def validate_budget_duration_format(cls, v: str | None) -> str | None:
-        if v is not None and not re.match(r"^[0-9]+[dhm]$", v):
+        if v is not None and not re.match(r"^[1-9][0-9]*[dhm]$", v):
             raise ValueError(
                 "budget_duration must match a duration format such as '1d', '30d', '12h', '5m'"
             )

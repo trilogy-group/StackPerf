@@ -131,6 +131,13 @@ class TestUsagePolicyProfile:
             profile = UsagePolicyProfile(name="test", budget_duration=duration)
             assert profile.budget_duration == duration
 
+    def test_zero_budget_duration_raises(self) -> None:
+        """Test that zero budget_duration (e.g. 0d) raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            UsagePolicyProfile(name="test", budget_duration="0d")
+        assert "budget_duration" in str(exc_info.value)
+        assert "duration format" in str(exc_info.value)
+
     def test_zero_ttl_raises(self) -> None:
         """Test that zero ttl_seconds raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
