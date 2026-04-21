@@ -7,6 +7,26 @@ import pytest
 
 FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "litellm_spend_logs"
 
+# Best-effort fields per docs/data-model-and-observability.md field-mapping table.
+# These may be absent depending on LiteLLM version, provider, or request type.
+BEST_EFFORT_FIELDS = [
+    "api_key_alias",
+    "user",
+    "customer_identifier",
+    "endTime",
+    "custom_llm_provider",
+    "spend",
+    "cache_hit",
+    "cached_input_tokens",
+    "cache_write_tokens",
+    "completion_start_time",
+    "ttft",
+    "time_to_first_token",
+    "error",
+    "error_code",
+    "metadata",
+]
+
 
 @pytest.fixture
 def load_fixture():
@@ -99,24 +119,7 @@ class TestSpendLogFixtures:
         assert data["status"] == "success"
         assert data["stream"] is False
 
-        best_effort_fields = [
-            "api_key_alias",
-            "user",
-            "customer_identifier",
-            "endTime",
-            "custom_llm_provider",
-            "spend",
-            "cache_hit",
-            "cached_input_tokens",
-            "cache_write_tokens",
-            "completion_start_time",
-            "ttft",
-            "time_to_first_token",
-            "error",
-            "error_code",
-            "metadata",
-        ]
-        for field in best_effort_fields:
+        for field in BEST_EFFORT_FIELDS:
             assert field not in data, (
                 f"sparse fixture unexpectedly contains best-effort field '{field}'"
             )
@@ -173,35 +176,49 @@ class TestSpendLogFixtures:
             missing = [f for f in stable_fields if f not in data]
             assert not missing, f"{name}: missing stable fields {missing}"
 
-    def test_best_effort_fields_present_in_full_fixtures(self, load_fixture) -> None:
-        """Full fixtures carry the key best-effort fields we use for attribution."""
-        best_effort_fields = [
-            "api_key_alias",
-            "user",
-            "customer_identifier",
-            "custom_llm_provider",
-            "spend",
-            "cache_hit",
-            "cached_input_tokens",
-            "cache_write_tokens",
-            "completion_start_time",
-            "ttft",
-            "time_to_first_token",
-            "error",
-            "error_code",
-            "metadata",
-        ]
-        full_fixtures = [
-            "successful_request.json",
-            "failed_request.json",
-            "streaming_request.json",
-            "cached_request.json",
-        ]
-        for name in full_fixtures:
+    def test_best_effort_fields_per_fixture_type(self, load_fixture) -> None:
+        """Each full fixture carries the specific best-effort fields expected
+        for its request type, proving the fixture is not a sparse record."""
+        expectations = {
+            "successful_request.json": [
+                "api_key_alias",
+                "user",
+                "customer_identifier",
+                "endTime",
+                "custom_llm_provider",
+                "spend",
+                "cache_hit",
+                "completion_start_time",
+                "metadata",
+            ],
+            "failed_request.json": [
+                "api_key_alias",
+                "endTime",
+                "spend",
+                "error",
+                "error_code",
+                "metadata",
+            ],
+            "streaming_request.json": [
+                "api_key_alias",
+                "endTime",
+                "spend",
+                "completion_start_time",
+                "ttft",
+                "time_to_first_token",
+                "metadata",
+            ],
+            "cached_request.json": [
+                "api_key_alias",
+                "endTime",
+                "spend",
+                "cache_hit",
+                "cached_input_tokens",
+                "completion_start_time",
+                "metadata",
+            ],
+        }
+        for name, expected in expectations.items():
             data = load_fixture(name)
-            # Not every best-effort field is guaranteed on every record type
-            # (e.g., error fields on success, ttft on non-streaming).
-            # We only assert the record has at least one of them to prove
-            # the fixture is not a sparse record.
-            present = [f for f in best_effort_fields if f in data]
-            assert present, f"{name}: expected at least one best-effort field to be present"
+            missing = [f for f in expected if f not in data]
+            assert not missing, f"{name}: missing expected best-effort fields {missing}"
