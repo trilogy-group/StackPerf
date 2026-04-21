@@ -451,7 +451,7 @@ The following fields are **never** stored in committed fixtures or ingested rows
 |:--------------|:---------------|:---------------------------|:-----------|
 | **Per-request cost accuracy** | Budget enforcement, chargeback | `spend` is best-effort; provider pricing tables may lag | Use provider invoices for billing of record; use `spend` for trending only |
 | **Cache write tokens** | Cache cost attribution | Not exposed by most providers via LiteLLM | Aggregate `cache_hit` ratio as proxy |
-| **TTFT on non-streaming requests** | Latency breakdown | `ttft` is typically null or absent when `stream: false` | Derive `ttft_ms = (completion_start_time − startTime) × 1000` when both fields present |
+| **TTFT on non-streaming requests** | Latency breakdown | `ttft` is typically null or absent when `stream: false` | Derive `ttft_ms = round((completion_start_time − startTime) × 1000)` when both fields present |
 | **Provider request ID** | Cross-referencing provider logs | Not in `/spend/logs`; only in callbacks | Use `call_id` as primary audit key |
 | **Key alias on every record** | Human-readable attribution | `api_key_alias` missing when key not in `proxy_keys` registry | Store `key_alias = null` and warn; match retroactively |
 | **Prompt token breakdown (system vs user)** | Usage optimization | Not exposed in spend logs | Not available without custom callbacks |
