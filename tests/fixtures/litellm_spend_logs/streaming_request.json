@@ -12,7 +12,7 @@
   "requested_model": "claude-opus-4-6",
   "provider": "anthropic",
   "custom_llm_provider": "anthropic",
-  "spend": 0.01230,
+  "spend": 0.0123,
   "total_tokens": 410,
   "prompt_tokens": 10,
   "completion_tokens": 400,

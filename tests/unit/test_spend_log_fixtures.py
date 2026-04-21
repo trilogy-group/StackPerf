@@ -106,7 +106,7 @@ class TestSpendLogFixtures:
         assert data["request_id"] == "req-failed-001"
         assert data["status"] == "failure"
         assert data["error"] == "Rate limit exceeded"
-        assert data["error_code"] == "429"
+        assert data["error_code"] == 429
         assert data["spend"] == 0.0
         assert data["prompt_tokens"] == 0
         assert data["completion_tokens"] == 0

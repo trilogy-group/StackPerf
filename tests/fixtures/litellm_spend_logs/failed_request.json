@@ -27,7 +27,7 @@
   "time_to_first_token": null,
   "status": "failure",
   "error": "Rate limit exceeded",
-  "error_code": "429",
+  "error_code": 429,
   "metadata": {
     "session_id": "session-beta-001",
     "experiment": "model-comparison-q2",
