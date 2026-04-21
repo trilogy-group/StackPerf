@@ -321,6 +321,23 @@ class UsagePolicyProfile(BaseModel):
             raise ValueError("must not be empty or whitespace")
         return v
 
+    @field_validator("allowed_models")
+    @classmethod
+    def validate_allowed_models(cls, v: list[str]) -> list[str]:
+        for item in v:
+            if not item or not item.strip():
+                raise ValueError(
+                    "allowed_models items must not be empty or whitespace"
+                )
+        seen = set()
+        for item in v:
+            if item in seen:
+                raise ValueError(
+                    f"allowed_models contains duplicate: {item!r}"
+                )
+            seen.add(item)
+        return v
+
     @model_validator(mode="after")
     def reject_secret_values(self) -> "UsagePolicyProfile":
         """Reject fields that appear to contain raw API key secrets."""

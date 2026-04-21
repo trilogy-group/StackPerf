@@ -104,6 +104,20 @@ class TestUsagePolicyProfile:
             UsagePolicyProfile(name="")
         assert "must not be empty or whitespace" in str(exc_info.value)
 
+    def test_empty_allowed_model_raises(self) -> None:
+        """Test that empty/whitespace allowed_models item raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            UsagePolicyProfile(name="test", allowed_models=[""])
+        assert "allowed_models" in str(exc_info.value)
+        assert "empty" in str(exc_info.value)
+
+    def test_duplicate_allowed_model_raises(self) -> None:
+        """Test that duplicate allowed_models items raise ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            UsagePolicyProfile(name="test", allowed_models=["gpt-4o", "gpt-4o"])
+        assert "allowed_models" in str(exc_info.value)
+        assert "duplicate" in str(exc_info.value)
+
     def test_negative_budget_raises(self) -> None:
         """Test that negative budget_amount raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
