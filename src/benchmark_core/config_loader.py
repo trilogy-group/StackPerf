@@ -77,6 +77,12 @@ class ConfigRegistry:
     def validate_references(self) -> list[str]:
         """Validate all cross-references between configs.
 
+        UsagePolicyProfile.allowed_models are intentionally not cross-referenced
+        here because the list is a consumer-facing filter that may reference
+        models not yet loaded or intended for future provider configs. Provider
+        model aliases are still evolving; cross-validation will be added when
+        the alias registry is stable.
+
         Returns:
             List of validation error messages (empty if all valid).
         """
