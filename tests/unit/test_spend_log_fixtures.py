@@ -135,12 +135,12 @@ class TestSpendLogFixtures:
             "model",
             "requested_model",
             "provider",
-            "spend",
             "total_tokens",
             "prompt_tokens",
             "completion_tokens",
             "stream",
             "latency",
+            "total_latency",
             "status",
         ]
         for name in [
@@ -159,6 +159,7 @@ class TestSpendLogFixtures:
         best_effort_fields = [
             "api_key_alias",
             "cache_hit",
+            "spend",
         ]
         full_fixtures = [
             "successful_request.json",

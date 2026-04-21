@@ -18,6 +18,7 @@
   "cache_hit": false,
   "stream": false,
   "latency": 1.2,
+  "total_latency": 1.2,
   "status": "success",
   "metadata": {
     "session_id": "session-epsilon-001",
