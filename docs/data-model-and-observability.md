@@ -86,8 +86,7 @@ Core fields:
 - `git_branch`
 - `git_commit_sha`
 - `git_dirty`
-- `proxy_key_alias`
-- `proxy_virtual_key_id` when available
+- `proxy_key_alias` — non-secret alias for the session-scoped proxy key (never the raw virtual key secret)
 
 ### Request
 
@@ -139,7 +138,8 @@ Represents a non-secret registry entry for a LiteLLM virtual key.
 
 Core fields:
 
-- `key_alias` — primary key, human-readable, unique, non-secret
+- `proxy_key_id` — stable surrogate primary key (UUID or auto-increment), non-secret
+- `key_alias` — human-readable, unique, non-secret
 - `owner`
 - `team`
 - `customer`
@@ -158,11 +158,12 @@ Represents one normalized LLM call in usage mode, stored in `usage_requests`.
 Core fields:
 
 - `usage_request_id`
-- `key_alias` — FK → `proxy_keys.key_alias` (nullable if key not in registry)
+- `proxy_key_id` — FK -> `proxy_keys.proxy_key_id` (nullable if key not in registry)
+- `key_alias` — denormalized from `proxy_keys` at ingestion time
 - `owner` — denormalized from `proxy_keys` at ingestion time
 - `team` — denormalized from `proxy_keys` at ingestion time
 - `customer` — denormalized from `proxy_keys` at ingestion time
-- `benchmark_session_id` — optional FK → `sessions.session_id` when traffic carries session metadata
+- `benchmark_session_id` — optional FK -> `sessions.session_id` when traffic carries session metadata
 - `provider_id`
 - `provider_route`
 - `model`
@@ -180,6 +181,7 @@ Core fields:
 - `cache_write_tokens`
 - `status`
 - `error_code`
+- `cost` — total spend from LiteLLM spend logs, nullable when unavailable
 
 ### Usage rollup
 
@@ -188,7 +190,7 @@ Represents derived summaries for usage mode.
 Core fields:
 
 - `usage_rollup_id`
-- `scope_type` with values `key_alias`, `owner`, `team`, `customer`, `model`, `provider`, `day`, `hour`
+- `scope_type` with values `proxy_key_id`, `key_alias`, `owner`, `team`, `customer`, `model`, `provider`, `day`, `hour`
 - `scope_id`
 - `metric_name`
 - `metric_value`
@@ -230,9 +232,9 @@ Use LiteLLM spend logs or structured logs to capture:
 - request IDs
 - model and provider routing fields
 - error states
-- virtual key ID (replaced with `key_alias` from `proxy_keys` registry before persistence)
+- virtual key ID (resolved to `proxy_key_id` from `proxy_keys` registry before persistence; `key_alias` is denormalized at ingestion)
 
-Collectors must match the LiteLLM virtual key ID to the `proxy_keys` registry by alias, then drop the raw key ID before writing `usage_requests` rows. If no registry entry exists, the collector stores `key_alias = null` and logs a warning.
+Collectors must resolve the LiteLLM virtual key ID to the stable `proxy_key_id` (and denormalized `key_alias`) from the `proxy_keys` registry through the configured collector mapping mechanism, then drop the raw key ID before writing `usage_requests` rows. If no registry entry exists, the collector stores `proxy_key_id = null` and `key_alias = null`, and logs a warning.
 
 ### Prometheus
 
@@ -289,16 +291,16 @@ Use the session registry for:
 
 ### Usage level
 
-- request count by key alias, owner, team, customer, model, provider, and time bucket
+- request count by proxy_key_id, key_alias, owner, team, customer, model, provider, and time bucket
 - success count and error count by the same dimensions
-- median latency by key alias and model
-- p95 latency by key alias and model
-- median TTFT by key alias and model
-- total input tokens by key alias and model
-- total output tokens by key alias and model
+- median latency by proxy_key_id and model
+- p95 latency by proxy_key_id and model
+- median TTFT by proxy_key_id and model
+- total input tokens by proxy_key_id and model
+- total output tokens by proxy_key_id and model
 - total cost/spend when available from LiteLLM logs
 - cache hit ratio by request count
-- error rate by key alias and model
+- error rate by proxy_key_id and model
 
 ## Minimal schema expectations
 
@@ -320,7 +322,7 @@ The benchmark database should include at least:
 
 - `proxy_keys` — non-secret registry for LiteLLM virtual key metadata
 - `usage_requests` — normalized usage records with optional benchmark session linkage
-- `usage_rollups` — derived summaries by key alias, model, provider, owner, team, customer, and time bucket
+- `usage_rollups` — derived summaries by proxy_key_id, key_alias, model, provider, owner, team, customer, and time bucket
 
 ## Join strategy
 
@@ -334,7 +336,8 @@ The benchmark database should include at least:
 
 ### Usage joins
 
-- `usage_requests.key_alias -> proxy_keys.key_alias`
+- `usage_requests.proxy_key_id -> proxy_keys.proxy_key_id` (canonical FK)
+- `usage_requests.key_alias -> proxy_keys.key_alias` (denormalized, for query convenience)
 - `usage_requests.benchmark_session_id -> sessions.session_id` (optional, nullable)
 - `usage_requests.litellm_call_id -> LiteLLM spend_log.call_id` (source audit)
 - `usage_requests.provider_id -> providers.provider_id`
@@ -351,12 +354,13 @@ This lets operators query usage traffic that was generated during a benchmark se
 
 ### LiteLLM log joins
 
-The collector joins LiteLLM spend logs to `proxy_keys` by matching the LiteLLM virtual key ID to the `key_alias` in the registry. After ingestion, the raw key ID is dropped. The stable joins are:
+The collector resolves the LiteLLM virtual key ID (the same `sk-...` value used as the bearer token in LiteLLM) to a stable `proxy_key_id` and `key_alias` through a configured mapping mechanism (see `docs/decisions/adr-002-api-key-attribution-and-redaction.md`). The raw key ID is never stored in the benchmark database. After ingestion, the stable joins are:
 
-- `usage_requests.key_alias -> proxy_keys.key_alias`
+- `usage_requests.proxy_key_id -> proxy_keys.proxy_key_id`
+- `usage_requests.key_alias -> proxy_keys.key_alias` (denormalized, for query convenience)
 - `usage_requests.litellm_call_id -> LiteLLM log.call_id` (for audit and debugging)
 
-Preserve raw source keys alongside benchmark keys so raw ingestion can be audited.
+LiteLLM call IDs and other non-secret routing metadata are preserved for audit; raw virtual key secrets are dropped per the redaction boundary above.
 
 ## Redaction boundary
 
@@ -389,11 +393,11 @@ The schema must make these queries cheap and obvious:
 
 The schema must make these queries cheap and obvious:
 
-- total requests, tokens, and cost by key alias for a time window
-- error rate by key alias and model for a time window
-- median latency and p95 latency by key alias and model for a time window
+- total requests, tokens, and cost by proxy_key_id and key_alias for a time window
+- error rate by proxy_key_id and model for a time window
+- median latency and p95 latency by proxy_key_id and model for a time window
 - total usage by team or customer for a time window
-- compare usage across models for one key alias
-- find unattributed traffic (key_alias is null)
+- compare usage across models for one proxy_key_id
+- find unattributed traffic (proxy_key_id is null)
 - export usage summaries and request-level rows for external analysis
 - cross-mode query: all traffic (benchmark + usage) for a given model and time window

@@ -25,11 +25,12 @@ Usage mode does not weaken benchmark invariants. Benchmark mode still requires s
 
 | Term | Definition |
 |------|------------|
-| **Proxy key** | A LiteLLM virtual key (the actual secret string) issued by the LiteLLM proxy. |
-| **Key alias** | A human-readable identifier assigned to a proxy key at creation time (e.g., `team-alpha-gpt4o`). Aliases are non-secret and stored in the benchmark registry. |
-| **Proxy key ID** | The LiteLLM-internal identifier for a virtual key (e.g., `sk-...`). This is a secret and must not be persisted in the benchmark database. |
+| **Proxy key** | A LiteLLM virtual key (the actual secret string) issued by the LiteLLM proxy. Example: `sk-litellm-abc123def456` (secret, never stored in the benchmark database). |
+| **Key alias** | A human-readable identifier assigned to a proxy key at creation time (e.g., `team-alpha-gpt4o`). Aliases are non-secret, unique, and stored in the benchmark registry. |
+| **Proxy key ID** | The stable surrogate identifier in the benchmark registry for a proxy key (auto-increment or UUID, e.g., `pk-550e8400-e29b-41d4-a716-446655440000`). This is non-secret and is the canonical foreign key for usage rows. |
+| **LiteLLM virtual key ID** | The LiteLLM-internal identifier for a virtual key (e.g., `sk-litellm-abc123def456`). In LiteLLM's implementation this is the same value as the **Proxy key** (the bearer token). This is a secret and must not be persisted in the benchmark database. |
 | **Usage request** | One normalized LLM call observed through LiteLLM, stored in `usage_requests`. |
-| **Usage rollup** | A derived summary of usage requests grouped by one or more dimensions (e.g., key alias, model, time bucket). |
+| **Usage rollup** | A derived summary of usage requests grouped by one or more dimensions (e.g., proxy_key_id, key_alias, model, time bucket). |
 | **Owner** | The entity responsible for a proxy key (e.g., a person, service account, or team). |
 | **Team** | An organizational grouping that owns one or more proxy keys. |
 | **Customer** | An external billing or cost-center label attached to a proxy key for charge-back. |
@@ -303,6 +304,7 @@ bench key create \
 
 The command must produce:
 
+- a `proxy_key_id` — stable surrogate primary key, non-secret
 - a `key_alias` (human-readable, unique, non-secret)
 - a LiteLLM virtual key secret (displayed once to the operator, never stored in the benchmark database)
 - a registry entry in `proxy_keys` containing only non-secret metadata
@@ -311,7 +313,8 @@ The command must produce:
 
 Stored fields (all non-secret):
 
-- `key_alias` — primary key, human-readable identifier
+- `proxy_key_id` — stable surrogate primary key (UUID or auto-increment), non-secret
+- `key_alias` — human-readable identifier, unique, non-secret
 - `owner` — attribution owner
 - `team` — team grouping
 - `customer` — customer or cost-center
@@ -327,9 +330,10 @@ Stored fields (all non-secret):
 
 1. The benchmark database **never** stores raw LiteLLM virtual key secrets (`sk-...`).
 2. The benchmark database **never** stores upstream provider API key secrets.
-3. Collectors must replace raw virtual key IDs in LiteLLM logs with the corresponding `key_alias` from the `proxy_keys` registry before writing `usage_requests` rows.
-4. Exports and API responses must include only `key_alias`, never the raw key ID.
-5. Application logs must log the alias, never the secret.
+3. Collectors must resolve raw LiteLLM virtual key IDs in LiteLLM logs to the stable `proxy_key_id` (and denormalized `key_alias`) from the `proxy_keys` registry before writing `usage_requests` rows. The raw `sk-...` value is never stored.
+4. Exports and API responses must include only `proxy_key_id` and `key_alias`, never the raw LiteLLM virtual key ID.
+5. Application logs must log `proxy_key_id` or `key_alias`, never the secret.
+6. Benchmark-mode sessions follow the same redaction rules: `proxy_key_alias` is the non-secret alias stored on the `sessions` record; the raw session virtual key secret is never stored, logged, or exported.
 
 ## CLI contract
 
@@ -356,7 +360,8 @@ bench key create --alias <alias> --owner <owner> --team <team> --customer <custo
 bench key list
 bench key revoke --alias <alias>
 bench usage collect
-bench usage rollup --by key_alias --by model --by day
+bench usage rollup --by proxy_key_id --by key_alias --by model --by day
+bench usage report --proxy-key-id <id> --from <date> --to <date>
 bench usage report --key-alias <alias> --from <date> --to <date>
 bench usage export --format <csv|json|parquet>
 ```
