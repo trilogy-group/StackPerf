@@ -11,6 +11,8 @@ from benchmark_core.config import (
     ProviderModel,
     RoutingDefaults,
     TaskCard,
+    UsagePolicyConfig,
+    UsagePolicyProfile,
     Variant,
 )
 
@@ -35,6 +37,7 @@ class ConfigRegistry:
         self.variants: dict[str, Variant] = {}
         self.experiments: dict[str, Experiment] = {}
         self.task_cards: dict[str, TaskCard] = {}
+        self.usage_policies: dict[str, UsagePolicyProfile] = {}
 
     def _validate_no_duplicates(self, name: str, config_type: str, existing: dict) -> None:
         """Validate no duplicate names within the same config type."""
@@ -66,8 +69,19 @@ class ConfigRegistry:
         self._validate_no_duplicates(config.name, "task card", self.task_cards)
         self.task_cards[config.name] = config
 
+    def register_usage_policy(self, config: UsagePolicyProfile) -> None:
+        """Register a usage policy profile."""
+        self._validate_no_duplicates(config.name, "usage policy", self.usage_policies)
+        self.usage_policies[config.name] = config
+
     def validate_references(self) -> list[str]:
         """Validate all cross-references between configs.
+
+        UsagePolicyProfile.allowed_models are intentionally not cross-referenced
+        here because the list is a consumer-facing filter that may reference
+        models not yet loaded or intended for future provider configs. Provider
+        model aliases are still evolving; cross-validation will be added when
+        the alias registry is stable.
 
         Returns:
             List of validation error messages (empty if all valid).
@@ -291,11 +305,39 @@ class ConfigLoader:
 
         return self.registry.task_cards
 
+    def load_usage_policies(self) -> dict[str, UsagePolicyProfile]:
+        """Load all usage policy configs from configs/usage-policies/*.yaml.
+
+        Usage policy config is optional and does not block benchmark workflows.
+        Each file may contain one or more named profiles.
+
+        Returns:
+            Dictionary of loaded usage policy profiles keyed by name.
+        """
+        usage_policies_dir = self._resolve_path("usage-policies")
+        if not usage_policies_dir.exists():
+            return {}
+
+        for yaml_file in sorted(usage_policies_dir.glob("*.yaml")):
+            data = self._load_yaml_file(yaml_file)
+            if not data:
+                continue
+
+            # Each file is a UsagePolicyConfig with a list of profiles
+            usage_config = UsagePolicyConfig(**data)
+            for profile in usage_config.profiles:
+                self.registry.register_usage_policy(profile)
+
+        return self.registry.usage_policies
+
     def load_all(self) -> ConfigRegistry:
         """Load all config types and validate.
 
         Loads in dependency order: providers, harnesses, variants,
-        experiments, task-cards.
+        experiments, task-cards, usage-policies.
+
+        Usage policies are optional and loaded after benchmark configs
+        so that current benchmark workflows do not require migration.
 
         Returns:
             ConfigRegistry with all loaded and validated configs.
@@ -309,6 +351,9 @@ class ConfigLoader:
         self.load_variants()
         self.load_experiments()
         self.load_task_cards()
+
+        # Usage policies are optional and loaded last
+        self.load_usage_policies()
 
         # Validate cross-references
         self.registry.validate_all()
