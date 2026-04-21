@@ -85,6 +85,9 @@ class TestSpendLogFixtures:
         """Successful request fixture has required fields."""
         data = load_fixture("successful_request.json")
         assert data["request_id"] == "req-success-001"
+        assert data["call_id"] == data["request_id"], (
+            "Fixture demonstrates identical request_id/call_id"
+        )
         assert data["status"] == "success"
         assert data["error"] is None
         assert data["error_code"] is None
@@ -237,6 +240,16 @@ class TestSpendLogFixtures:
                 "spend",
                 "cache_hit",
                 "cached_input_tokens",
+                "completion_start_time",
+                "metadata",
+            ],
+            "non_streaming_with_completion_start.json": [
+                "api_key_alias",
+                "user",
+                "customer_identifier",
+                "endTime",
+                "custom_llm_provider",
+                "spend",
                 "completion_start_time",
                 "metadata",
             ],

@@ -11,6 +11,7 @@ Sanitized, representative `/spend/logs` records for unit testing and documentati
 | `streaming_request.json` | Streaming success | `stream: true`, large completion, low TTFT |
 | `cached_request.json` | Cache hit | `cache_hit: true`, low latency/spend; `ttft` null |
 | `sparse_request.json` | Partial record | Best-effort fields omitted entirely (not just null) |
+| `non_streaming_with_completion_start.json` | TTFT derivation gap-fill | Non-streaming; provides `completion_start_time` so `ttft_ms` can be derived |
 
 ## Sanitization Rules
 

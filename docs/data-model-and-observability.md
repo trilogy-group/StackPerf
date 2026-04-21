@@ -407,7 +407,7 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 | LiteLLM field | Canonical target | Presence | Notes |
 |:--------------|:-----------------|:---------|:------|
 | `request_id` | `litellm_call_id` | **Stable** | Primary source; ingest `request_id`. If absent, fall back to `call_id` or `id` |
-| `call_id` | `litellm_call_id` | **Stable** | Often identical to `request_id`, but may differ in some callback configurations; ignored at ingest when `request_id` is present |
+| `call_id` | `litellm_call_id` | **Stable** | Commonly distinct from `request_id` in callback payloads (see fixtures); ignored at ingest when `request_id` is present |
 | `api_key` | — (dropped at ingest) | **Stable** | Hashed LiteLLM virtual key. Replaced by `key_alias` from `proxy_keys` registry |
 | `api_key_alias` | `key_alias` | **Best-effort** | Human-readable alias. May be missing on older LiteLLM versions or when key is not in registry |
 | `user` | `owner` (denormalized) | **Best-effort** | Often the same as `api_key_alias`, but not guaranteed |
@@ -427,7 +427,7 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 | `cached_input_tokens` | `cached_input_tokens` | **Best-effort** | Actual cached token count when cache is enabled and hit |
 | `cache_write_tokens` | `cache_write_tokens` | **Best-effort** | Tokens written to cache; rarely exposed by providers |
 | `stream` | — (metadata) | **Stable** | Boolean; `true` for streaming requests |
-| `completion_start_time` | `→ ttft_ms (derived)` | **Best-effort** | Not stored directly. When `ttft` is absent, compute `ttft_ms = (completion_start_time − startTime) × 1000` |
+| `completion_start_time` | *source* → derive `ttft_ms` | **Best-effort** | Not stored directly. When `ttft` is absent, `ttft_ms = (completion_start_time − startTime) × 1000` |
 | `latency` | `latency_ms` | **Stable** | Total request latency in seconds; multiplied by 1000 on ingest |
 | `ttft` | `ttft_ms` | **Best-effort** | Time-to-first-token in seconds; typically null or absent on non-streaming requests and errors |
 | `total_latency` | `latency_ms` | **Stable** | Alias for `latency`; same value |
