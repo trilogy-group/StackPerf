@@ -73,6 +73,7 @@ class TestSpendLogFixtures:
             "cached_request.json",
             "sparse_request.json",
             "non_streaming_with_completion_start.json",
+            "fallback_to_call_id.json",
         ],
     )
     def test_fixture_loads_as_valid_json(self, filename: str) -> None:
@@ -177,6 +178,7 @@ class TestSpendLogFixtures:
             "cached_request.json",
             "sparse_request.json",
             "non_streaming_with_completion_start.json",
+            "fallback_to_call_id.json",
         ]:
             data = load_fixture(name)
             api_key = data.get("api_key", "")
@@ -187,8 +189,23 @@ class TestSpendLogFixtures:
             assert "messages" not in data, f"{name}: contains prompt content"
             assert "choices" not in data, f"{name}: contains response content"
 
+    def test_fallback_to_call_id_shape(self, load_fixture) -> None:
+        """Fallback fixture has call_id but no request_id, exercising the
+        `litellm_call_id` fallback path documented in the field mapping table."""
+        data = load_fixture("fallback_to_call_id.json")
+        assert "request_id" not in data, (
+            "fallback fixture must omit request_id to exercise fallback"
+        )
+        assert data["call_id"] == "call-fallback-001"
+        assert data["status"] == "success"
+        # call_id serves as litellm_call_id when request_id is absent
+        assert data["call_id"] is not None
+
     def test_all_fixtures_have_stable_fields(self, load_fixture) -> None:
-        """Every fixture has the stable fields we depend on."""
+        """Every fixture has the stable fields we depend on.
+
+        The `fallback_to_call_id.json` fixture intentionally omits
+        `request_id` to demonstrate the fallback to `call_id`."""
         for name in [
             "successful_request.json",
             "failed_request.json",
@@ -196,9 +213,15 @@ class TestSpendLogFixtures:
             "cached_request.json",
             "sparse_request.json",
             "non_streaming_with_completion_start.json",
+            "fallback_to_call_id.json",
         ]:
             data = load_fixture(name)
-            missing = [f for f in STABLE_FIELDS if f not in data]
+            if name == "fallback_to_call_id.json":
+                # request_id is intentionally absent; call_id is the fallback
+                expected = [f for f in STABLE_FIELDS if f != "request_id"]
+            else:
+                expected = STABLE_FIELDS
+            missing = [f for f in expected if f not in data]
             assert not missing, f"{name}: missing stable fields {missing}"
 
     def test_best_effort_fields_per_fixture_type(self, load_fixture) -> None:

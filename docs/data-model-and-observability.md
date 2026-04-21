@@ -427,7 +427,7 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 | `cached_input_tokens` | `cached_input_tokens` | **Best-effort** | Actual cached token count when cache is enabled and hit |
 | `cache_write_tokens` | `cache_write_tokens` | **Best-effort** | Tokens written to cache; rarely exposed by providers |
 | `stream` | — (metadata) | **Stable** | Boolean; `true` for streaming requests |
-| `completion_start_time` | `ttft_ms` (derived) | **Best-effort** | Not stored directly. Derive `ttft_ms = (completion_start_time − startTime) × 1000` when `ttft` is absent |
+| `completion_start_time` | `ttft_ms` | **Best-effort** | Source ISO timestamp used to derive `ttft_ms` when `ttft` is absent: `ttft_ms = round((completion_start_time - startTime) * 1000)` |
 | `latency` | `latency_ms` | **Stable** | Total request latency in seconds; multiplied by 1000 on ingest |
 | `ttft` | `ttft_ms` | **Best-effort** | Time-to-first-token in seconds; typically null or absent on non-streaming requests and errors |
 | `total_latency` | `latency_ms` | **Stable** | Alias for `latency`; same value |
@@ -531,6 +531,7 @@ Representative `/spend/logs` records are committed under `tests/fixtures/litellm
 - `streaming_request.json` — streaming flag, large completion, low TTFT
 - `cached_request.json` — cache hit, low latency/spend, cached token count
 - `sparse_request.json` — best-effort fields (e.g., `ttft`, `cache_write_tokens`, `endTime`) omitted entirely, demonstrating the common real-world partial record
-- `non_streaming_with_completion_start.json` — non-streaming request where `ttft` is null but `completion_start_time` is present; demonstrates the gap-list derivation path `ttft_ms = (completion_start_time − startTime) × 1000`
+- `non_streaming_with_completion_start.json` — non-streaming request where `ttft` is null but `completion_start_time` is present; demonstrates the gap-list derivation path `ttft_ms = round((completion_start_time − startTime) × 1000)`
+- `fallback_to_call_id.json` — request where `request_id` is absent and only `call_id` is present; demonstrates the fallback path for `litellm_call_id`
 
 These fixtures are synthetic and contain no real API keys or prompt/response content.
