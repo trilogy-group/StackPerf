@@ -12,17 +12,9 @@ To attribute usage to owners, teams, and customers, the system needs a non-secre
 
 ## Canonical Terms
 
-| Term | Definition |
-|------|------------|
-| **Proxy key** | A LiteLLM virtual key (the actual secret string) issued by the LiteLLM proxy. |
-| **Key alias** | A human-readable identifier assigned to a proxy key at creation time (e.g., `team-alpha-gpt4o`). Aliases are non-secret and stored in the benchmark registry. |
-| **Proxy key ID** | The LiteLLM-internal identifier for a virtual key (e.g., `sk-...`). This is a secret and must not be persisted. |
-| **Usage request** | One normalized LLM call observed through LiteLLM, stored in `usage_requests`. |
-| **Usage rollup** | A derived summary of usage requests grouped by one or more dimensions (e.g., key alias, model, time bucket). |
-| **Owner** | The entity responsible for a proxy key (e.g., a person, service account, or team). |
-| **Team** | An organizational grouping that owns one or more proxy keys. |
-| **Customer** | An external billing or cost-center label attached to a proxy key for charge-back. |
-| **Time bucket** | A fixed time interval (e.g., hour, day) used to aggregate usage rollups. |
+See `docs/config-and-contracts.md` for the canonical glossary. This ADR uses the same terms without duplication.
+
+> **Proxy key ID vs Proxy key**: The `Proxy key ID` is the LiteLLM-internal identifier (a UUID or opaque string assigned by LiteLLM when the key is created). The `Proxy key` is the actual secret string (e.g., `sk-...`) that the client sends in the `Authorization` header. These are different values: the ID is used for lookup and logging, while the secret is used for authentication. Only the Proxy key ID (not the secret) may appear in LiteLLM logs, and even the ID must be redacted before persistence in the benchmark database.
 
 ## Attribution Contract
 
@@ -62,7 +54,8 @@ LiteLLM spend logs and request logs contain the virtual key ID. The benchmark co
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `key_alias` | string, PK | Human-readable, unique, non-secret |
+| `proxy_key_id` | UUID or auto-increment, PK | Stable surrogate key; survives alias renames and reissues |
+| `key_alias` | string, unique | Human-readable, non-secret identifier (e.g., `team-alpha-gpt4o`) |
 | `owner` | string, nullable | Attribution owner |
 | `team` | string, nullable | Team grouping |
 | `customer` | string, nullable | Customer or cost-center |
@@ -80,7 +73,8 @@ Attribution fields:
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `key_alias` | string, FK → `proxy_keys.key_alias` | Null if key not in registry |
+| `proxy_key_id` | FK -> `proxy_keys.proxy_key_id` | Null if key not in registry; collector resolves via ephemeral mapping |
+| `key_alias` | string, nullable | Denormalized from registry at ingestion time; retains alias at time of request |
 | `owner` | string, nullable | Denormalized from registry at ingestion time |
 | `team` | string, nullable | Denormalized from registry at ingestion time |
 | `customer` | string, nullable | Denormalized from registry at ingestion time |
@@ -92,8 +86,9 @@ Denormalized fields are populated at ingestion so that rollups and queries do no
 - Raw key secrets are never in the benchmark database.
 - Attribution queries are fast because `owner`, `team`, and `customer` are stored on `usage_requests`.
 - Operators can update key metadata without rewriting historical usage rows.
-- Missing registry entries are visible through null `key_alias` counts and collector warnings.
+- Missing registry entries are visible through null `proxy_key_id` counts and collector warnings.
 - The system can support multiple keys per owner/team/customer without losing granularity.
+- Alias renames and reissues are supported because `key_alias` is not the primary key.
 
 ## Related
 

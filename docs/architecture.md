@@ -116,7 +116,7 @@ flowchart TD
     GRAFANA[Grafana<br/>• live dashboards]
     
     DB[(PostgreSQL<br/>Canonical benchmark records)]
-    HARNESS[External Harnesses<br/>Connect to LiteLLM with<br/>session-specific credentials]
+    HARNESS[External Harnesses<br/>Connect to LiteLLM with<br/>session-specific or usage-mode credentials]
     
     HARNESS -.-> PROXY
     APP -.-> DB

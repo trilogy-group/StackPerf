@@ -25,9 +25,9 @@ Usage mode does not weaken benchmark invariants. Benchmark mode still requires s
 
 | Term | Definition |
 |------|------------|
-| **Proxy key** | A LiteLLM virtual key (the actual secret string) issued by the LiteLLM proxy. |
+| **Proxy key** | A LiteLLM virtual key (the actual secret string, e.g., `sk-...`) that the client sends in the `Authorization` header. |
 | **Key alias** | A human-readable identifier assigned to a proxy key at creation time (e.g., `team-alpha-gpt4o`). Aliases are non-secret and stored in the benchmark registry. |
-| **Proxy key ID** | The LiteLLM-internal identifier for a virtual key (e.g., `sk-...`). This is a secret and must not be persisted in the benchmark database. |
+| **Proxy key ID** | The LiteLLM-internal identifier for a virtual key (a UUID or opaque string assigned by LiteLLM, not the secret string). This appears in LiteLLM logs and must be redacted before persistence in the benchmark database. |
 | **Usage request** | One normalized LLM call observed through LiteLLM, stored in `usage_requests`. |
 | **Usage rollup** | A derived summary of usage requests grouped by one or more dimensions (e.g., key alias, model, time bucket). |
 | **Owner** | The entity responsible for a proxy key (e.g., a person, service account, or team). |

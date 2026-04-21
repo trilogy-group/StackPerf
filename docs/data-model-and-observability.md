@@ -139,7 +139,8 @@ Represents a non-secret registry entry for a LiteLLM virtual key.
 
 Core fields:
 
-- `key_alias` — primary key, human-readable, unique, non-secret
+- `proxy_key_id` -- surrogate primary key (UUID or auto-increment), stable across renames and reissues
+- `key_alias` -- human-readable, unique, non-secret identifier (e.g., `team-alpha-gpt4o`)
 - `owner`
 - `team`
 - `customer`
@@ -158,11 +159,12 @@ Represents one normalized LLM call in usage mode, stored in `usage_requests`.
 Core fields:
 
 - `usage_request_id`
-- `key_alias` — FK → `proxy_keys.key_alias` (nullable if key not in registry)
-- `owner` — denormalized from `proxy_keys` at ingestion time
-- `team` — denormalized from `proxy_keys` at ingestion time
-- `customer` — denormalized from `proxy_keys` at ingestion time
-- `benchmark_session_id` — optional FK → `sessions.session_id` when traffic carries session metadata
+- `proxy_key_id` -- FK -> `proxy_keys.proxy_key_id` (nullable if key not in registry); the collector resolves the LiteLLM key ID to `proxy_key_id` using an ephemeral mapping that lives outside the benchmark DB (see Collector key-matching below)
+- `key_alias` -- denormalized from `proxy_keys` at ingestion time (retains alias at time of request even if alias is later renamed or revoked)
+- `owner` -- denormalized from `proxy_keys` at ingestion time
+- `team` -- denormalized from `proxy_keys` at ingestion time
+- `customer` -- denormalized from `proxy_keys` at ingestion time
+- `benchmark_session_id` -- optional FK -> `sessions.session_id` when traffic carries session metadata
 - `provider_id`
 - `provider_route`
 - `model`
@@ -178,6 +180,7 @@ Core fields:
 - `output_tokens`
 - `cached_input_tokens`
 - `cache_write_tokens`
+- `cost` -- spend amount when available from LiteLLM logs; null when LiteLLM spend data is unreliable or the field is not exposed
 - `status`
 - `error_code`
 
@@ -230,9 +233,21 @@ Use LiteLLM spend logs or structured logs to capture:
 - request IDs
 - model and provider routing fields
 - error states
-- virtual key ID (replaced with `key_alias` from `proxy_keys` registry before persistence)
+- virtual key ID (resolved to `proxy_key_id` via ephemeral key-mapping, then dropped before persistence)
 
-Collectors must match the LiteLLM virtual key ID to the `proxy_keys` registry by alias, then drop the raw key ID before writing `usage_requests` rows. If no registry entry exists, the collector stores `key_alias = null` and logs a warning.
+Collectors must resolve the LiteLLM virtual key ID to `proxy_key_id` through an ephemeral key-mapping table outside the benchmark database, then drop the raw key ID before writing `usage_requests` rows. If no registry entry exists, the collector stores `proxy_key_id = null` and logs a warning.
+
+### Collector key-matching
+
+The collector needs to resolve the LiteLLM virtual key ID (from logs) to a `proxy_key_id` without storing raw key secrets in the benchmark database. The mapping cannot live in the benchmark DB per the redaction rules.
+
+**Expected approach**: maintain an ephemeral key-mapping table in the collector process or a sidecar file outside the benchmark database. When a key is created in LiteLLM, the operator (or a provisioning script) also inserts a mapping row `(litellm_virtual_key_id -> proxy_key_id, key_alias)` into this ephemeral store. The collector queries this mapping at ingestion time, writes `proxy_key_id` and denormalized `key_alias` into `usage_requests`, and never persists the raw key ID.
+
+**Operational expectations**:
+- The ephemeral mapping is the single source of truth for the collector.
+- If a mapping is missing, the collector writes `proxy_key_id = null` and logs a warning (the same fallback behavior already documented for `key_alias`).
+- The mapping is refreshed when keys are created, revoked, or reissued.
+- Historical `usage_requests` rows remain immutable even if the mapping or the `proxy_keys` registry entry changes later.
 
 ### Prometheus
 
@@ -318,9 +333,9 @@ The benchmark database should include at least:
 
 ### Usage-mode tables
 
-- `proxy_keys` — non-secret registry for LiteLLM virtual key metadata
-- `usage_requests` — normalized usage records with optional benchmark session linkage
-- `usage_rollups` — derived summaries by key alias, model, provider, owner, team, customer, and time bucket
+- `proxy_keys` -- non-secret registry for LiteLLM virtual key metadata
+- `usage_requests` -- normalized usage records with optional benchmark session linkage
+- `usage_rollups` -- derived summaries by key alias, model, provider, owner, team, customer, and time bucket
 
 ## Join strategy
 
@@ -334,7 +349,8 @@ The benchmark database should include at least:
 
 ### Usage joins
 
-- `usage_requests.key_alias -> proxy_keys.key_alias`
+- `usage_requests.proxy_key_id -> proxy_keys.proxy_key_id` (nullable for unattributed traffic)
+- `usage_requests.key_alias -> proxy_keys.key_alias` (convenience join for queries; the alias may change over time)
 - `usage_requests.benchmark_session_id -> sessions.session_id` (optional, nullable)
 - `usage_requests.litellm_call_id -> LiteLLM spend_log.call_id` (source audit)
 - `usage_requests.provider_id -> providers.provider_id`
@@ -351,9 +367,10 @@ This lets operators query usage traffic that was generated during a benchmark se
 
 ### LiteLLM log joins
 
-The collector joins LiteLLM spend logs to `proxy_keys` by matching the LiteLLM virtual key ID to the `key_alias` in the registry. After ingestion, the raw key ID is dropped. The stable joins are:
+The collector resolves the LiteLLM virtual key ID to `proxy_key_id` through an ephemeral key-mapping table outside the benchmark database (see Collector key-matching above), then drops the raw key ID before writing `usage_requests`. The stable joins are:
 
-- `usage_requests.key_alias -> proxy_keys.key_alias`
+- `usage_requests.proxy_key_id -> proxy_keys.proxy_key_id`
+- `usage_requests.key_alias -> proxy_keys.key_alias` (convenience join; alias may change over time)
 - `usage_requests.litellm_call_id -> LiteLLM log.call_id` (for audit and debugging)
 
 Preserve raw source keys alongside benchmark keys so raw ingestion can be audited.
@@ -394,6 +411,6 @@ The schema must make these queries cheap and obvious:
 - median latency and p95 latency by key alias and model for a time window
 - total usage by team or customer for a time window
 - compare usage across models for one key alias
-- find unattributed traffic (key_alias is null)
+- find unattributed traffic (proxy_key_id is null)
 - export usage summaries and request-level rows for external analysis
 - cross-mode query: all traffic (benchmark + usage) for a given model and time window
