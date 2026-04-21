@@ -530,5 +530,6 @@ Representative `/spend/logs` records are committed under `tests/fixtures/litellm
 - `failed_request.json` — rate-limit error, zero tokens/spend, null TTFT
 - `streaming_request.json` — streaming flag, large completion, low TTFT
 - `cached_request.json` — cache hit, low latency/spend, cached token count
+- `sparse_request.json` — best-effort fields (e.g., `ttft`, `cache_write_tokens`, `endTime`) omitted entirely, demonstrating the common real-world partial record
 
 These fixtures are synthetic and contain no real API keys or prompt/response content.

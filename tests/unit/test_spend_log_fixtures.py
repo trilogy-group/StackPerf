@@ -125,13 +125,12 @@ class TestSpendLogFixtures:
             assert "messages" not in data, f"{name}: contains prompt content"
             assert "choices" not in data, f"{name}: contains response content"
 
-    def test_all_fixtures_have_key_fields(self, load_fixture) -> None:
-        """Every fixture has the canonical fields we depend on."""
-        required_fields = [
+    def test_all_fixtures_have_stable_fields(self, load_fixture) -> None:
+        """Every fixture has the stable fields we depend on."""
+        stable_fields = [
             "request_id",
             "call_id",
             "api_key",
-            "api_key_alias",
             "startTime",
             "model",
             "requested_model",
@@ -140,7 +139,6 @@ class TestSpendLogFixtures:
             "total_tokens",
             "prompt_tokens",
             "completion_tokens",
-            "cache_hit",
             "stream",
             "latency",
             "status",
@@ -153,5 +151,22 @@ class TestSpendLogFixtures:
             "sparse_request.json",
         ]:
             data = load_fixture(name)
-            missing = [f for f in required_fields if f not in data]
-            assert not missing, f"{name}: missing fields {missing}"
+            missing = [f for f in stable_fields if f not in data]
+            assert not missing, f"{name}: missing stable fields {missing}"
+
+    def test_best_effort_fields_present_in_full_fixtures(self, load_fixture) -> None:
+        """Full fixtures carry best-effort fields; sparse fixture may omit them."""
+        best_effort_fields = [
+            "api_key_alias",
+            "cache_hit",
+        ]
+        full_fixtures = [
+            "successful_request.json",
+            "failed_request.json",
+            "streaming_request.json",
+            "cached_request.json",
+        ]
+        for name in full_fixtures:
+            data = load_fixture(name)
+            missing = [f for f in best_effort_fields if f not in data]
+            assert not missing, f"{name}: missing best-effort fields {missing}"
