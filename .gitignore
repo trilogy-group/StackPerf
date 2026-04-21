@@ -38,3 +38,4 @@ WORKPAD.md
 *.sqlite
 *.sqlite3
 .codex_workpad.md
+.opensymphony*
