@@ -1,5 +1,40 @@
 # Config and Contracts
 
+## Operating modes
+
+StackPerf supports two complementary operating modes.
+
+### Benchmark mode
+
+Benchmark mode is the session-first comparison workflow. It requires:
+
+- an `experiment`
+- a `variant`
+- a `task_card`
+- a `harness_profile`
+
+Every benchmark session must be created before harness traffic starts. The system issues a session-scoped proxy credential, renders a harness environment snippet, and normalizes all traffic into `requests` rows that belong to the session.
+
+### Usage mode
+
+Usage mode is the sessionless observability workflow. It works **without** experiment, variant, task card, or session. The operator creates a usage-mode proxy key (with `key_alias`, `owner`, `team`, `customer`), routes traffic through LiteLLM, and the system normalizes all traffic into `usage_requests` rows.
+
+Usage mode does not weaken benchmark invariants. Benchmark mode still requires session creation before harness traffic.
+
+## Canonical terms
+
+| Term | Definition |
+|------|------------|
+| **Proxy key** | A LiteLLM virtual key (the actual secret string) issued by the LiteLLM proxy. |
+| **Key alias** | A human-readable identifier assigned to a proxy key at creation time (e.g., `team-alpha-gpt4o`). Aliases are non-secret and stored in the benchmark registry. |
+| **Proxy key ID** | The LiteLLM-internal identifier for a virtual key (e.g., `sk-...`). This is a secret and must not be persisted in the benchmark database. |
+| **Usage request** | One normalized LLM call observed through LiteLLM, stored in `usage_requests`. |
+| **Usage rollup** | A derived summary of usage requests grouped by one or more dimensions (e.g., key alias, model, time bucket). |
+| **Owner** | The entity responsible for a proxy key (e.g., a person, service account, or team). |
+| **Team** | An organizational grouping that owns one or more proxy keys. |
+| **Customer** | An external billing or cost-center label attached to a proxy key for charge-back. |
+| **Time bucket** | A fixed time interval (e.g., hour, day) used to aggregate usage rollups. |
+
 ## Config directories
 
 ```text
@@ -249,9 +284,56 @@ Before running a harness:
 - [ ] API key environment variable is set to the session virtual key
 - [ ] Model environment variable is set to the variant's model alias
 
+## Usage-mode proxy key contract
+
+### Creating a usage-mode proxy key
+
+Usage-mode keys are independent of benchmark sessions. They are created through the CLI or API:
+
+```bash
+bench key create \
+  --alias team-alpha-gpt4o \
+  --owner alice \
+  --team platform \
+  --customer acme-corp \
+  --description "Platform team GPT-4o key" \
+  --budget-duration 30d \
+  --budget-amount 1000
+```
+
+The command must produce:
+
+- a `key_alias` (human-readable, unique, non-secret)
+- a LiteLLM virtual key secret (displayed once to the operator, never stored in the benchmark database)
+- a registry entry in `proxy_keys` containing only non-secret metadata
+
+### Proxy key registry (`proxy_keys`)
+
+Stored fields (all non-secret):
+
+- `key_alias` — primary key, human-readable identifier
+- `owner` — attribution owner
+- `team` — team grouping
+- `customer` — customer or cost-center
+- `description` — human note
+- `budget_duration` — budget interval
+- `budget_amount` — budget limit
+- `created_at` — creation timestamp
+- `revoked_at` — revocation timestamp (nullable)
+- `expires_at` — expiration timestamp (nullable)
+- `metadata` — JSONB key-value tags (nullable)
+
+### Redaction rules
+
+1. The benchmark database **never** stores raw LiteLLM virtual key secrets (`sk-...`).
+2. The benchmark database **never** stores upstream provider API key secrets.
+3. Collectors must replace raw virtual key IDs in LiteLLM logs with the corresponding `key_alias` from the `proxy_keys` registry before writing `usage_requests` rows.
+4. Exports and API responses must include only `key_alias`, never the raw key ID.
+5. Application logs must log the alias, never the secret.
+
 ## CLI contract
 
-Suggested commands:
+### Benchmark commands
 
 ```text
 bench config validate
@@ -265,6 +347,18 @@ bench collect prometheus
 bench rollup sessions
 bench report compare --experiment <name>
 bench export sessions --format <csv|json|parquet>
+```
+
+### Usage-mode commands
+
+```text
+bench key create --alias <alias> --owner <owner> --team <team> --customer <customer>
+bench key list
+bench key revoke --alias <alias>
+bench usage collect
+bench usage rollup --by key_alias --by model --by day
+bench usage report --key-alias <alias> --from <date> --to <date>
+bench usage export --format <csv|json|parquet>
 ```
 
 ## Normalization contract
