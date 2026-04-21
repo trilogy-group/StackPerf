@@ -190,7 +190,7 @@ Represents derived summaries for usage mode.
 Core fields:
 
 - `usage_rollup_id`
-- `scope_type` with values `key_alias`, `owner`, `team`, `customer`, `model`, `provider`, `day`, `hour`
+- `scope_type` with values `proxy_key_id`, `key_alias`, `owner`, `team`, `customer`, `model`, `provider`, `day`, `hour`
 - `scope_id`
 - `metric_name`
 - `metric_value`
