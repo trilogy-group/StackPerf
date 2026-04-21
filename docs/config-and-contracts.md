@@ -28,7 +28,7 @@ Usage mode does not weaken benchmark invariants. Benchmark mode still requires s
 | **Proxy key** | A LiteLLM virtual key (the actual secret string) issued by the LiteLLM proxy. Example: `sk-litellm-abc123def456` (secret, never stored in the benchmark database). |
 | **Key alias** | A human-readable identifier assigned to a proxy key at creation time (e.g., `team-alpha-gpt4o`). Aliases are non-secret, unique, and stored in the benchmark registry. |
 | **Proxy key ID** | The stable surrogate identifier in the benchmark registry for a proxy key (auto-increment or UUID, e.g., `pk-550e8400-e29b-41d4-a716-446655440000`). This is non-secret and is the canonical foreign key for usage rows. |
-| **LiteLLM virtual key ID** | The LiteLLM-internal identifier for a virtual key (e.g., a UUID `550e8400-e29b-41d4-a716-446655440000` or an internal hash distinct from the bearer token). This is a secret or sensitive identifier and must not be persisted in the benchmark database. |
+| **LiteLLM virtual key ID** | The LiteLLM-internal identifier for a virtual key (e.g., `sk-litellm-abc123def456`). In LiteLLM's implementation this is the same value as the **Proxy key** (the bearer token). This is a secret and must not be persisted in the benchmark database. |
 | **Usage request** | One normalized LLM call observed through LiteLLM, stored in `usage_requests`. |
 | **Usage rollup** | A derived summary of usage requests grouped by one or more dimensions (e.g., proxy_key_id, key_alias, model, time bucket). |
 | **Owner** | The entity responsible for a proxy key (e.g., a person, service account, or team). |
