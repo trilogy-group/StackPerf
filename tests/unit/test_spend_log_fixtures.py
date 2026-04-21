@@ -14,7 +14,7 @@ def load_fixture():
 
     def _load(name: str) -> dict:
         path = FIXTURE_DIR / name
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
 
     return _load
@@ -35,7 +35,7 @@ class TestSpendLogFixtures:
     def test_fixture_loads_as_valid_json(self, filename: str) -> None:
         """Each fixture file parses as valid JSON."""
         path = FIXTURE_DIR / filename
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         assert isinstance(data, dict)
 
