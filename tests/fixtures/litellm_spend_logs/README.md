@@ -12,6 +12,7 @@ Sanitized, representative `/spend/logs` records for unit testing and documentati
 | `cached_request.json` | Cache hit | `cache_hit: true`, low latency/spend; `ttft` null |
 | `sparse_request.json` | Partial record | Best-effort fields omitted entirely (not just null) |
 | `non_streaming_with_completion_start.json` | TTFT derivation gap-fill | Non-streaming; provides `completion_start_time` so `ttft_ms` can be derived |
+| `fallback_to_call_id.json` | Fallback ID | `request_id` absent; `call_id` serves as `litellm_call_id` |
 
 ## Sanitization Rules
 

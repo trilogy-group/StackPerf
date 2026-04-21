@@ -427,14 +427,14 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 | `cached_input_tokens` | `cached_input_tokens` | **Best-effort** | Actual cached token count when cache is enabled and hit |
 | `cache_write_tokens` | `cache_write_tokens` | **Best-effort** | Tokens written to cache; rarely exposed by providers |
 | `stream` | — (metadata) | **Stable** | Boolean; `true` for streaming requests |
-| `completion_start_time` | `ttft_ms` | **Best-effort** | Source ISO timestamp used to derive `ttft_ms` when `ttft` is absent: `ttft_ms = round((completion_start_time - startTime) * 1000)` |
+| `completion_start_time` | `-> ttft_ms` | **Best-effort** | Source ISO timestamp used to derive `ttft_ms` when `ttft` is absent: `ttft_ms = round((completion_start_time - startTime) * 1000)` |
 | `latency` | `latency_ms` | **Stable** | Total request latency in seconds; multiplied by 1000 on ingest |
 | `ttft` | `ttft_ms` | **Best-effort** | Time-to-first-token in seconds; typically null or absent on non-streaming requests and errors |
 | `total_latency` | `latency_ms` | **Stable** | Alias for `latency`; same value |
 | `time_to_first_token` | `ttft_ms` | **Best-effort** | Alias for `ttft` |
 | `status` | `status` | **Stable** | String: `"success"`, `"failure"`, or `"pending"` |
-| `error` | `error_code` (mapped) | **Best-effort** | Error message string on failures; null on successes |
-| `error_code` | `error_code` | **Best-effort** | HTTP-style code (e.g. `429`); may be absent when LiteLLM cannot map the error |
+| `error` | `error_message` | **Best-effort** | Error message string on failures; stored as `error_message` when ingest schema supports it; null on successes |
+| `error_code` | `error_code` | **Best-effort** | Numeric HTTP-style code (e.g. `429`); may be absent when LiteLLM cannot map the error |
 | `metadata` | Various (denormalized) | **Best-effort** | JSON blob with session correlation keys. Field names vary by LiteLLM version and callback config |
 
 ### Redaction and sensitivity
