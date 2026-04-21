@@ -150,6 +150,12 @@ def capture_grafana_screenshots():
                             print(f"  Warning: {no_data_elements.count()} panels show 'No data'")
                             # Skip capture if all panels are empty
                             panel_count = page.locator('div.panel-content').count()
+                        # Verify panels have data (not "No data" messages)
+                        no_data_elements = page.locator('text=/No data/i, text=/No datapoints/i')
+                        if no_data_elements.count() > 0:
+                            print(f"  Warning: {no_data_elements.count()} panels show 'No data'")
+                            # Skip capture if all panels are empty
+                            panel_count = page.locator('div.panel-content').count()
                             if panel_count > 0 and no_data_elements.count() >= panel_count:
                                 print(f"  ✗ All panels empty, skipping screenshot")
                                 page.close()
