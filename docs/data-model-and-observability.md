@@ -360,7 +360,7 @@ The collector resolves the LiteLLM virtual key ID (`sk-...`) to a stable `proxy_
 - `usage_requests.key_alias -> proxy_keys.key_alias` (denormalized, for query convenience)
 - `usage_requests.litellm_call_id -> LiteLLM log.call_id` (for audit and debugging)
 
-Preserve raw source keys alongside benchmark keys so raw ingestion can be audited.
+LiteLLM call IDs and other non-secret routing metadata are preserved for audit; raw virtual key secrets are dropped per the redaction boundary above.
 
 ## Redaction boundary
 

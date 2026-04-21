@@ -96,7 +96,7 @@ Denormalized fields are populated at ingestion so that rollups and queries do no
 - Raw key secrets are never in the benchmark database.
 - Attribution queries are fast because `owner`, `team`, and `customer` are stored on `usage_requests`.
 - Operators can update key metadata without rewriting historical usage rows.
-- Missing registry entries are visible through null `key_alias` counts and collector warnings.
+- Missing registry entries are visible through null `proxy_key_id` counts and collector warnings.
 - The system can support multiple keys per owner/team/customer without losing granularity.
 
 ## Related
