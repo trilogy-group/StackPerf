@@ -102,7 +102,27 @@ class TestUsagePolicyProfile:
         with pytest.raises(ValidationError) as exc_info:
             UsagePolicyProfile(name="test", budget_amount=-1.0)
         assert "budget_amount" in str(exc_info.value)
-        assert "negative" in str(exc_info.value)
+        assert "positive" in str(exc_info.value)
+
+    def test_zero_budget_raises(self) -> None:
+        """Test that zero budget_amount raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            UsagePolicyProfile(name="test", budget_amount=0.0)
+        assert "budget_amount" in str(exc_info.value)
+        assert "positive" in str(exc_info.value)
+
+    def test_invalid_budget_duration_raises(self) -> None:
+        """Test that non-standard budget_duration format raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            UsagePolicyProfile(name="test", budget_duration="foobar")
+        assert "budget_duration" in str(exc_info.value)
+        assert "duration format" in str(exc_info.value)
+
+    def test_budget_duration_formats(self) -> None:
+        """Test that valid budget_duration formats are accepted."""
+        for duration in ("1d", "30d", "12h", "5m", "100d"):
+            profile = UsagePolicyProfile(name="test", budget_duration=duration)
+            assert profile.budget_duration == duration
 
     def test_zero_ttl_raises(self) -> None:
         """Test that zero ttl_seconds raises ValidationError."""
@@ -114,7 +134,7 @@ class TestUsagePolicyProfile:
     def test_rejects_sk_in_name(self) -> None:
         """Test that sk- prefix in name is rejected as secret-like."""
         with pytest.raises(ValidationError) as exc_info:
-            UsagePolicyProfile(name="sk-ant-api03-abc123def456ghi789jkl012")
+            UsagePolicyProfile(name="sk-0123456789012345678901234567890")
         assert "secret-like values" in str(exc_info.value)
         assert "name" in str(exc_info.value)
 
@@ -123,7 +143,7 @@ class TestUsagePolicyProfile:
         with pytest.raises(ValidationError) as exc_info:
             UsagePolicyProfile(
                 name="test",
-                owner="sk-ant-api03-abc123def456ghi789jkl012",
+                owner="sk-ant-0123456789012345678901234567890",
             )
         assert "secret-like values" in str(exc_info.value)
         assert "owner" in str(exc_info.value)
@@ -133,7 +153,7 @@ class TestUsagePolicyProfile:
         with pytest.raises(ValidationError) as exc_info:
             UsagePolicyProfile(
                 name="test",
-                metadata={"api_key": "sk-ant-api03-abc123def456ghi789jkl012"},
+                metadata={"api_key": "sk-ant-0123456789012345678901234567890"},
             )
         assert "secret-like values" in str(exc_info.value)
         assert "metadata.api_key" in str(exc_info.value)

@@ -5,16 +5,20 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-# Secret rejection patterns for config fields
+# Secret rejection patterns for config fields.
+# Applied selectively to UsagePolicyProfile because its metadata fields
+# (name, description, owner, team, customer, metadata tags) are user-configured
+# and most likely to accidentally receive pasted secrets.
 _SECRET_PATTERNS = [
-    # OpenAI-style keys: sk- followed by 20+ alphanumeric/hyphen chars
-    re.compile(r"sk-[a-zA-Z0-9_-]{20,}"),
-    # Anthropic-style keys: sk-ant- followed by 20+ alphanumeric/hyphen chars
-    re.compile(r"sk-ant-[a-zA-Z0-9_-]{20,}"),
+    # OpenAI-style keys: sk- followed by 20+ alphanumeric chars (no hyphens in
+    # body to avoid false positives on legitimate variant/model identifiers)
+    re.compile(r"sk-[a-zA-Z0-9]{20,}"),
+    # Anthropic-style keys: sk-ant- followed by 20+ alphanumeric chars
+    re.compile(r"sk-ant-[a-zA-Z0-9]{20,}"),
     # Bearer tokens: Bearer followed by 10+ alphanumeric chars
-    re.compile(r"bearer\s+[a-zA-Z0-9_-]{10,}", re.IGNORECASE),
+    re.compile(r"bearer\s+[a-zA-Z0-9]{10,}", re.IGNORECASE),
     # Generic API key with long alphanumeric tail
-    re.compile(r"api[_-]?key[=:]\s*[a-zA-Z0-9_-]{10,}", re.IGNORECASE),
+    re.compile(r"api[_-]?key[=:]\s*[a-zA-Z0-9]{10,}", re.IGNORECASE),
 ]
 
 
@@ -272,7 +276,7 @@ class UsagePolicyProfile(BaseModel):
     )
     budget_duration: str | None = Field(
         default=None,
-        description="Budget interval (e.g., 1d, 30d)",
+        description="Budget interval (e.g., 1d, 30d, 12h, 5m). Must match /^[0-9]+[dhm]$/.",
     )
     budget_amount: float | None = Field(
         default=None,
@@ -329,9 +333,9 @@ class UsagePolicyProfile(BaseModel):
 
     @field_validator("budget_amount")
     @classmethod
-    def validate_budget_non_negative(cls, v: float | None) -> float | None:
-        if v is not None and v < 0:
-            raise ValueError("budget_amount must not be negative")
+    def validate_budget_positive(cls, v: float | None) -> float | None:
+        if v is not None and v <= 0:
+            raise ValueError("budget_amount must be positive")
         return v
 
     @field_validator("ttl_seconds")
@@ -339,6 +343,15 @@ class UsagePolicyProfile(BaseModel):
     def validate_ttl_positive(cls, v: int | None) -> int | None:
         if v is not None and v <= 0:
             raise ValueError("ttl_seconds must be positive")
+        return v
+
+    @field_validator("budget_duration")
+    @classmethod
+    def validate_budget_duration_format(cls, v: str | None) -> str | None:
+        if v is not None and not re.match(r"^[0-9]+[dhm]$", v):
+            raise ValueError(
+                "budget_duration must match a duration format such as '1d', '30d', '12h', '5m'"
+            )
         return v
 
 
