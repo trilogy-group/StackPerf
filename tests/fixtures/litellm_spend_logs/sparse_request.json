@@ -1,0 +1,17 @@
+{
+  "request_id": "req-sparse-001",
+  "call_id": "call-sparse-001",
+  "api_key": "sk-litellm-hash-e5f6g7h8i9j0",
+  "startTime": "2025-04-21T10:20:00.000Z",
+  "model": "gpt-4o-mini",
+  "model_id": "gpt-4o-mini",
+  "requested_model": "gpt-4o-mini",
+  "provider": "openai",
+  "total_tokens": 45,
+  "prompt_tokens": 30,
+  "completion_tokens": 15,
+  "stream": false,
+  "latency": 1.2,
+  "total_latency": 1.2,
+  "status": "success"
+}
