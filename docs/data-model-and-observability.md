@@ -406,8 +406,8 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 
 | LiteLLM field | Canonical target | Presence | Notes |
 |:--------------|:-----------------|:---------|:------|
-| `request_id` | `litellm_call_id` | **Stable** | Top-level identifier; fallback from `id` or `call_id` if missing |
-| `call_id` | `litellm_call_id` | **Stable** | Same as `request_id` on most records; used for source audit joins |
+| `request_id` | `litellm_call_id` | **Stable** | Primary source; prefer `request_id` when present, fall back to `call_id` or `id` if missing |
+| `call_id` | `litellm_call_id` | **Stable** | Same value as `request_id` on most records; kept for source audit joins when both present |
 | `api_key` | — (dropped at ingest) | **Stable** | Hashed LiteLLM virtual key. Replaced by `key_alias` from `proxy_keys` registry |
 | `api_key_alias` | `key_alias` | **Best-effort** | Human-readable alias. May be missing on older LiteLLM versions or when key is not in registry |
 | `user` | `owner` (denormalized) | **Best-effort** | Often the same as `api_key_alias`, but not guaranteed |
@@ -427,7 +427,7 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 | `cached_input_tokens` | `cached_input_tokens` | **Best-effort** | Actual cached token count when cache is enabled and hit |
 | `cache_write_tokens` | `cache_write_tokens` | **Best-effort** | Tokens written to cache; rarely exposed by providers |
 | `stream` | — (metadata) | **Stable** | Boolean; `true` for streaming requests |
-| `completion_start_time` | `ttft_ms` (source timestamp) | **Best-effort** | ISO 8601 timestamp of first token arrival; subtract `startTime` to derive `ttft_ms` |
+| `completion_start_time` | `— (derived)` | **Best-effort** | Not stored directly. When `ttft` is absent, compute `ttft_ms = (completion_start_time − startTime) × 1000` |
 | `latency` | `latency_ms` | **Stable** | Total request latency in seconds; multiplied by 1000 on ingest |
 | `ttft` | `ttft_ms` | **Best-effort** | Time-to-first-token in seconds; typically null or absent on non-streaming requests and errors |
 | `total_latency` | `latency_ms` | **Stable** | Alias for `latency`; same value |
@@ -451,7 +451,7 @@ The following fields are **never** stored in committed fixtures or ingested rows
 |:--------------|:---------------|:---------------------------|:-----------|
 | **Per-request cost accuracy** | Budget enforcement, chargeback | `spend` is best-effort; provider pricing tables may lag | Use provider invoices for billing of record; use `spend` for trending only |
 | **Cache write tokens** | Cache cost attribution | Not exposed by most providers via LiteLLM | Aggregate `cache_hit` ratio as proxy |
-| **TTFT on non-streaming requests** | Latency breakdown | `ttft` is typically null or absent when `stream: false` | Use `completion_start_time` minus `startTime` when available |
+| **TTFT on non-streaming requests** | Latency breakdown | `ttft` is typically null or absent when `stream: false` | Derive `ttft_ms = (completion_start_time − startTime) × 1000` when both fields present |
 | **Provider request ID** | Cross-referencing provider logs | Not in `/spend/logs`; only in callbacks | Use `call_id` as primary audit key |
 | **Key alias on every record** | Human-readable attribution | `api_key_alias` missing when key not in `proxy_keys` registry | Store `key_alias = null` and warn; match retroactively |
 | **Prompt token breakdown (system vs user)** | Usage optimization | Not exposed in spend logs | Not available without custom callbacks |
