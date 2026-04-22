@@ -260,7 +260,6 @@ class ProxyKey(Base):
         String(50),
         nullable=False,
         default="active",
-        index=True,
     )
     key_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     proxy_credential_id: Mapped[uuid.UUID | None] = mapped_column(
