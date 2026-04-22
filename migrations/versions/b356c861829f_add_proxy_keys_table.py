@@ -30,17 +30,15 @@ def upgrade() -> None:
         sa.Column("team", sa.String(255), nullable=True),
         sa.Column("customer", sa.String(255), nullable=True),
         sa.Column("purpose", sa.Text(), nullable=True),
-        sa.Column("allowed_models", sa.JSON(), nullable=True, default=list),
+        sa.Column("allowed_models", sa.JSON(), nullable=True),
         sa.Column("budget_duration", sa.String(50), nullable=True),
         sa.Column("budget_amount", sa.Float(), nullable=True),
         sa.Column("budget_currency", sa.String(10), nullable=False, server_default="USD"),
-        sa.Column(
-            "status", sa.String(50), nullable=False, default="active", server_default="active"
-        ),
+        sa.Column("status", sa.String(50), nullable=False, server_default="active"),
         sa.CheckConstraint(
             "status IN ('active', 'revoked', 'expired')", name="ck_proxy_keys_status"
         ),
-        sa.Column("key_metadata", sa.JSON(), nullable=True, default=dict),
+        sa.Column("key_metadata", sa.JSON(), nullable=True),
         sa.Column("proxy_credential_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column(
             "created_at",
@@ -65,7 +63,6 @@ def upgrade() -> None:
     op.create_index("ix_proxy_keys_owner", "proxy_keys", ["owner"])
     op.create_index("ix_proxy_keys_team", "proxy_keys", ["team"])
     op.create_index("ix_proxy_keys_customer", "proxy_keys", ["customer"])
-    op.create_index("ix_proxy_keys_status", "proxy_keys", ["status"])
     op.create_index(
         "ix_proxy_keys_owner_team_customer",
         "proxy_keys",
@@ -88,7 +85,6 @@ def downgrade() -> None:
     op.drop_index("ix_proxy_keys_proxy_credential_id", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_status_created_at", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_owner_team_customer", table_name="proxy_keys")
-    op.drop_index("ix_proxy_keys_status", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_customer", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_team", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_owner", table_name="proxy_keys")

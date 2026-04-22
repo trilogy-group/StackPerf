@@ -923,6 +923,43 @@ class TestProxyKeyRepository:
         assert revoked.status == "revoked"
         assert revoked.revoked_at is not None
 
+    async def test_revoke_idempotent(self, proxy_key_repo, db_session):
+        """Test that revoking an already-revoked key is a no-op."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        proxy_key = ProxyKeyORM(
+            key_alias="idempotent-revoke-key",
+            litellm_key_id="litellm-idempotent",
+            status="active",
+        )
+        created = await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        await proxy_key_repo.revoke(created.id)
+        db_session.commit()
+
+        revoked2 = await proxy_key_repo.revoke(created.id)
+        db_session.commit()
+
+        assert revoked2 is not None
+        assert revoked2.status == "revoked"
+        assert revoked2.revoked_at is not None
+
+    async def test_list_by_proxy_credential_id(self, proxy_key_repo):
+        """Test listing proxy keys by proxy credential ID returns empty for non-existent."""
+        from uuid import UUID
+
+        results = await proxy_key_repo.list_by_proxy_credential_id(
+            UUID("00000000-0000-0000-0000-000000000001")
+        )
+        assert results == []
+
+        # Also verify the query structure by checking pagination params pass through
+        results2 = await proxy_key_repo.list_by_proxy_credential_id(
+            UUID("00000000-0000-0000-0000-000000000001"), limit=5, offset=0
+        )
+        assert results2 == []
+
     async def test_get_nonexistent_proxy_key(self, proxy_key_repo):
         """Test retrieving proxy keys that don't exist."""
         from uuid import uuid4

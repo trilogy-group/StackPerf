@@ -47,7 +47,7 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
             The proxy key if found, None otherwise.
         """
         stmt = select(ProxyKeyORM).where(ProxyKeyORM.litellm_key_id == litellm_key_id)
-        return self._session.execute(stmt).scalars().one_or_none()
+        return self._session.execute(stmt).scalars().first()
 
     async def list_by_owner(
         self, owner: str, limit: int = 100, offset: int = 0
