@@ -64,6 +64,8 @@ class TestMigrations:
             "requests",
             "rollups",
             "artifacts",
+            "proxy_credentials",
+            "proxy_keys",
         ]
 
         for table in expected_tables:
