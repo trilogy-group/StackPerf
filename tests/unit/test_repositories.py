@@ -29,6 +29,7 @@ from benchmark_core.repositories.provider_repository import SQLProviderRepositor
 from benchmark_core.repositories.request_repository import SQLRequestRepository
 from benchmark_core.repositories.session_repository import SQLSessionRepository
 from benchmark_core.repositories.task_card_repository import SQLTaskCardRepository
+from benchmark_core.repositories.usage_request_repository import SQLUsageRequestRepository
 from benchmark_core.repositories.variant_repository import SQLVariantRepository
 
 
@@ -1262,3 +1263,586 @@ class TestSQLArtifactRepository:
         fake_id = uuid4()
         deleted = await artifact_repo.delete(fake_id)
         assert deleted is False
+
+
+@pytest.fixture
+def usage_request_repo(db_session):
+    """Create a usage request repository."""
+    return SQLUsageRequestRepository(db_session)
+
+
+class TestUsageRequestRepository:
+    """Tests for SQLUsageRequestRepository."""
+
+    @pytest.fixture
+    async def setup_experiment_variant_task(self, db_session):
+        """Create prerequisite entities for usage request tests."""
+        experiment = Experiment(name="usage-test-exp")
+        db_session.add(experiment)
+        db_session.flush()
+
+        variant = Variant(
+            name="usage-test-variant",
+            provider="test-provider",
+            model_alias="gpt-4o",
+            harness_profile="default",
+        )
+        db_session.add(variant)
+        db_session.flush()
+
+        task_card = TaskCard(
+            name="usage-test-task",
+            goal="Test usage request",
+            starting_prompt="Start",
+            stop_condition="Stop",
+        )
+        db_session.add(task_card)
+        db_session.flush()
+
+        db_session.commit()
+        return experiment, variant, task_card
+
+    @pytest.fixture
+    async def setup_benchmark_session(self, db_session, setup_experiment_variant_task):
+        """Create a benchmark session for linkage tests."""
+        experiment, variant, task_card = setup_experiment_variant_task
+
+        session = SessionORM(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task_card.id,
+            harness_profile="default",
+            repo_path="/tmp/test",
+            git_branch="main",
+            git_commit="abc1234",
+            status="active",
+        )
+        db_session.add(session)
+        db_session.commit()
+        return session
+
+    @pytest.fixture
+    async def setup_proxy_key(self, db_session):
+        """Create a proxy key for linkage tests."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        proxy_key = ProxyKeyORM(
+            key_alias="usage-test-key",
+            litellm_key_id="litellm-test-123",
+            status="active",
+        )
+        db_session.add(proxy_key)
+        db_session.commit()
+        return proxy_key
+
+    async def test_create_without_session(self, usage_request_repo, db_session):
+        """Usage rows can be persisted without a benchmark session."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        usage = UsageRequestORM(
+            litellm_call_id="call-no-session-001",
+            key_alias="standalone-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+            input_tokens=10,
+            output_tokens=20,
+            latency_ms=500.0,
+        )
+        created = await usage_request_repo.create(usage)
+        db_session.commit()
+
+        assert created.id is not None
+        assert created.litellm_call_id == "call-no-session-001"
+        assert created.benchmark_session_id is None
+        assert created.key_alias == "standalone-key"
+
+    async def test_create_with_session(
+        self, usage_request_repo, db_session, setup_benchmark_session
+    ):
+        """Usage rows can optionally link to a benchmark session."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        session = setup_benchmark_session
+        usage = UsageRequestORM(
+            litellm_call_id="call-with-session-001",
+            key_alias="session-key",
+            benchmark_session_id=session.id,
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+            input_tokens=10,
+            output_tokens=20,
+        )
+        created = await usage_request_repo.create(usage)
+        db_session.commit()
+
+        assert created.benchmark_session_id == session.id
+
+    async def test_duplicate_litellm_call_id(self, usage_request_repo, db_session):
+        """Duplicate LiteLLM request IDs do not create duplicate usage rows."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        usage1 = UsageRequestORM(
+            litellm_call_id="duplicate-call-001",
+            key_alias="key-1",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+            input_tokens=10,
+            output_tokens=20,
+        )
+        await usage_request_repo.create(usage1)
+        db_session.commit()
+
+        usage2 = UsageRequestORM(
+            litellm_call_id="duplicate-call-001",
+            key_alias="key-2",
+            provider="anthropic",
+            resolved_model="claude-3",
+            status="failure",
+            input_tokens=5,
+            output_tokens=0,
+        )
+        from sqlalchemy.exc import IntegrityError
+
+        with pytest.raises(IntegrityError):
+            await usage_request_repo.create(usage2)
+            db_session.commit()
+
+        # Rollback the failed transaction so the session is clean
+        db_session.rollback()
+
+        # Verify only the first row exists
+        found = await usage_request_repo.get_by_litellm_call_id("duplicate-call-001")
+        assert found is not None
+        assert found.provider == "openai"
+        assert found.resolved_model == "gpt-4o"
+
+    async def test_no_content_fields_stored(self, usage_request_repo, db_session):
+        """No prompt/response content fields are stored by default."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        usage = UsageRequestORM(
+            litellm_call_id="content-check-001",
+            key_alias="key-1",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+            request_metadata={"stream": False},
+        )
+        created = await usage_request_repo.create(usage)
+        db_session.commit()
+
+        # Verify the model does not have prompt/response columns
+        from benchmark_core.db.models import UsageRequest
+
+        columns = {col.name for col in UsageRequest.__table__.columns}
+        assert "prompt" not in columns
+        assert "response" not in columns
+        assert "prompt_text" not in columns
+        assert "response_text" not in columns
+        assert "messages" not in columns
+        assert created.request_metadata == {"stream": False}
+
+    async def test_create_many_idempotent(self, usage_request_repo, db_session):
+        """Idempotent create_many skips duplicates."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        req1 = UsageRequestORM(
+            litellm_call_id="batch-001",
+            key_alias="batch-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+        )
+        req2 = UsageRequestORM(
+            litellm_call_id="batch-002",
+            key_alias="batch-key",
+            provider="openai",
+            resolved_model="gpt-4o-mini",
+            status="success",
+        )
+        req3 = UsageRequestORM(
+            litellm_call_id="batch-001",  # duplicate of req1
+            key_alias="batch-key",
+            provider="anthropic",
+            resolved_model="claude-3",
+            status="failure",
+        )
+
+        created, skipped = await usage_request_repo.create_many([req1, req2, req3])
+        db_session.commit()
+
+        assert len(created) == 2
+        assert skipped == 1
+
+        all_by_alias = await usage_request_repo.list_by_key_alias("batch-key")
+        assert len(all_by_alias) == 2
+        call_ids = {r.litellm_call_id for r in all_by_alias}
+        assert "batch-001" in call_ids
+        assert "batch-002" in call_ids
+
+    async def test_create_many_preserves_first_record(self, usage_request_repo, db_session):
+        """End-to-end: inserting a duplicate must not overwrite or return
+        the pre-existing row, and the caller must receive only the newly
+        inserted items in the result tuple."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        original = UsageRequestORM(
+            litellm_call_id="dup-001",
+            key_alias="dup-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+        )
+        await usage_request_repo.create(original)
+        db_session.commit()
+        original_id = original.id
+
+        duplicate = UsageRequestORM(
+            litellm_call_id="dup-001",
+            key_alias="dup-key",
+            provider="anthropic",
+            resolved_model="claude-3",
+            status="failure",
+        )
+        new = UsageRequestORM(
+            litellm_call_id="dup-002",
+            key_alias="dup-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+        )
+
+        created, skipped = await usage_request_repo.create_many([duplicate, new])
+        db_session.commit()
+
+        assert skipped == 1
+        assert len(created) == 1
+        assert created[0].litellm_call_id == "dup-002"
+
+        # Original row must be untouched
+        row = await usage_request_repo.get_by_litellm_call_id("dup-001")
+        assert row is not None
+        assert row.id == original_id
+        assert row.provider == "openai"
+        assert row.resolved_model == "gpt-4o"
+        assert row.status == "success"
+
+    async def test_get_by_litellm_call_id(self, usage_request_repo, db_session):
+        """Retrieve usage request by LiteLLM call ID."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        usage = UsageRequestORM(
+            litellm_call_id="find-me-001",
+            key_alias="find-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+        )
+        await usage_request_repo.create(usage)
+        db_session.commit()
+
+        found = await usage_request_repo.get_by_litellm_call_id("find-me-001")
+        assert found is not None
+        assert found.litellm_call_id == "find-me-001"
+
+        not_found = await usage_request_repo.get_by_litellm_call_id("does-not-exist")
+        assert not_found is None
+
+    async def test_list_by_key_alias(self, usage_request_repo, db_session):
+        """List usage requests by key alias."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        for i in range(3):
+            usage = UsageRequestORM(
+                litellm_call_id=f"alias-list-{i}",
+                key_alias="shared-alias",
+                provider="openai",
+                resolved_model="gpt-4o",
+                status="success",
+            )
+            await usage_request_repo.create(usage)
+        db_session.commit()
+
+        results = await usage_request_repo.list_by_key_alias("shared-alias")
+        assert len(results) == 3
+
+    async def test_list_by_model(self, usage_request_repo, db_session):
+        """List usage requests by resolved model."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        for i in range(2):
+            usage = UsageRequestORM(
+                litellm_call_id=f"model-gpt-{i}",
+                key_alias="model-key",
+                provider="openai",
+                resolved_model="gpt-4o",
+                status="success",
+            )
+            await usage_request_repo.create(usage)
+
+        usage_other = UsageRequestORM(
+            litellm_call_id="model-claude-001",
+            key_alias="model-key",
+            provider="anthropic",
+            resolved_model="claude-3",
+            status="success",
+        )
+        await usage_request_repo.create(usage_other)
+        db_session.commit()
+
+        results = await usage_request_repo.list_by_model("gpt-4o")
+        assert len(results) == 2
+
+    async def test_list_by_provider(self, usage_request_repo, db_session):
+        """List usage requests by provider."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        for i in range(2):
+            usage = UsageRequestORM(
+                litellm_call_id=f"prov-openai-{i}",
+                key_alias="prov-key",
+                provider="openai",
+                resolved_model="gpt-4o",
+                status="success",
+            )
+            await usage_request_repo.create(usage)
+
+        usage_other = UsageRequestORM(
+            litellm_call_id="prov-fireworks-001",
+            key_alias="prov-key",
+            provider="fireworks",
+            resolved_model="kimi-k2-5",
+            status="success",
+        )
+        await usage_request_repo.create(usage_other)
+        db_session.commit()
+
+        results = await usage_request_repo.list_by_provider("openai")
+        assert len(results) == 2
+
+    async def test_list_by_benchmark_session(
+        self, usage_request_repo, db_session, setup_benchmark_session
+    ):
+        """List usage requests linked to a benchmark session."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        session = setup_benchmark_session
+        for i in range(2):
+            usage = UsageRequestORM(
+                litellm_call_id=f"session-link-{i}",
+                key_alias="session-key",
+                benchmark_session_id=session.id,
+                provider="openai",
+                resolved_model="gpt-4o",
+                status="success",
+            )
+            await usage_request_repo.create(usage)
+        db_session.commit()
+
+        results = await usage_request_repo.list_by_benchmark_session(session.id)
+        assert len(results) == 2
+        for r in results:
+            assert r.benchmark_session_id == session.id
+
+    async def test_list_by_time_range(self, usage_request_repo, db_session):
+        """List usage requests within a time range."""
+        from datetime import UTC, datetime
+
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        usage1 = UsageRequestORM(
+            litellm_call_id="time-001",
+            key_alias="time-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+            started_at=datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC),
+        )
+        usage2 = UsageRequestORM(
+            litellm_call_id="time-002",
+            key_alias="time-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+            started_at=datetime(2025, 1, 16, 10, 0, 0, tzinfo=UTC),
+        )
+        usage3 = UsageRequestORM(
+            litellm_call_id="time-003",
+            key_alias="time-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+            started_at=datetime(2025, 1, 17, 10, 0, 0, tzinfo=UTC),
+        )
+        await usage_request_repo.create(usage1)
+        await usage_request_repo.create(usage2)
+        await usage_request_repo.create(usage3)
+        db_session.commit()
+
+        results = await usage_request_repo.list_by_time_range(
+            datetime(2025, 1, 15, 0, 0, 0, tzinfo=UTC),
+            datetime(2025, 1, 16, 23, 59, 59, tzinfo=UTC),
+        )
+        assert len(results) == 2
+        call_ids = {r.litellm_call_id for r in results}
+        assert "time-001" in call_ids
+        assert "time-002" in call_ids
+
+    async def test_list_by_status(self, usage_request_repo, db_session):
+        """List usage requests by status."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        success = UsageRequestORM(
+            litellm_call_id="status-success-001",
+            key_alias="status-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+        )
+        failure = UsageRequestORM(
+            litellm_call_id="status-failure-001",
+            key_alias="status-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="failure",
+        )
+        await usage_request_repo.create(success)
+        await usage_request_repo.create(failure)
+        db_session.commit()
+
+        results = await usage_request_repo.list_by_status("success")
+        assert len(results) == 1
+        assert results[0].litellm_call_id == "status-success-001"
+
+    async def test_list_by_error_code(self, usage_request_repo, db_session):
+        """List usage requests by error code."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        rate_limited = UsageRequestORM(
+            litellm_call_id="error-429-001",
+            key_alias="error-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="failure",
+            error_code="429",
+        )
+        server_error = UsageRequestORM(
+            litellm_call_id="error-500-001",
+            key_alias="error-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="failure",
+            error_code="500",
+        )
+        await usage_request_repo.create(rate_limited)
+        await usage_request_repo.create(server_error)
+        db_session.commit()
+
+        results = await usage_request_repo.list_by_error_code("429")
+        assert len(results) == 1
+        assert results[0].litellm_call_id == "error-429-001"
+
+    async def test_count_by_key_alias(self, usage_request_repo, db_session):
+        """Count usage requests by key alias."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        for i in range(5):
+            usage = UsageRequestORM(
+                litellm_call_id=f"count-{i}",
+                key_alias="countable-alias",
+                provider="openai",
+                resolved_model="gpt-4o",
+                status="success",
+            )
+            await usage_request_repo.create(usage)
+        db_session.commit()
+
+        count = await usage_request_repo.count_by_key_alias("countable-alias")
+        assert count == 5
+
+    async def test_count_by_model(self, usage_request_repo, db_session):
+        """Count usage requests by model."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        for i in range(3):
+            usage = UsageRequestORM(
+                litellm_call_id=f"model-count-{i}",
+                key_alias="count-key",
+                provider="openai",
+                resolved_model="gpt-4o-mini",
+                status="success",
+            )
+            await usage_request_repo.create(usage)
+        db_session.commit()
+
+        count = await usage_request_repo.count_by_model("gpt-4o-mini")
+        assert count == 3
+
+    async def test_delete_usage_request(self, usage_request_repo, db_session):
+        """Delete a usage request by ID."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        usage = UsageRequestORM(
+            litellm_call_id="delete-me-001",
+            key_alias="delete-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+        )
+        created = await usage_request_repo.create(usage)
+        db_session.commit()
+
+        deleted = await usage_request_repo.delete(created.id)
+        db_session.commit()
+
+        assert deleted is True
+        not_found = await usage_request_repo.get_by_id(created.id)
+        assert not_found is None
+
+    async def test_delete_by_benchmark_session(
+        self, usage_request_repo, db_session, setup_benchmark_session
+    ):
+        """Delete all usage requests linked to a benchmark session."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        session = setup_benchmark_session
+        for i in range(3):
+            usage = UsageRequestORM(
+                litellm_call_id=f"batch-delete-{i}",
+                key_alias="batch-delete-key",
+                benchmark_session_id=session.id,
+                provider="openai",
+                resolved_model="gpt-4o",
+                status="success",
+            )
+            await usage_request_repo.create(usage)
+        db_session.commit()
+
+        deleted_count = await usage_request_repo.delete_by_benchmark_session(session.id)
+        db_session.commit()
+
+        assert deleted_count == 3
+        results = await usage_request_repo.list_by_benchmark_session(session.id)
+        assert len(results) == 0
+
+    async def test_list_by_litellm_key_id(self, usage_request_repo, db_session):
+        """List usage requests by LiteLLM key ID."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        for i in range(2):
+            usage = UsageRequestORM(
+                litellm_call_id=f"key-id-{i}",
+                key_alias="key-id-alias",
+                litellm_key_id="litellm-key-abc",
+                provider="openai",
+                resolved_model="gpt-4o",
+                status="success",
+            )
+            await usage_request_repo.create(usage)
+        db_session.commit()
+
+        results = await usage_request_repo.list_by_litellm_key_id("litellm-key-abc")
+        assert len(results) == 2
