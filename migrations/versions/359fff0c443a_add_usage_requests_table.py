@@ -88,6 +88,9 @@ def upgrade() -> None:
         ["benchmark_session_id"],
     )
     op.create_index(
+        "ix_usage_requests_requested_model", "usage_requests", ["requested_model"]
+    )
+    op.create_index(
         "ix_usage_requests_resolved_model", "usage_requests", ["resolved_model"]
     )
     op.create_index(
@@ -128,6 +131,7 @@ def downgrade() -> None:
     op.drop_index("ix_usage_requests_status", table_name="usage_requests")
     op.drop_index("ix_usage_requests_provider", table_name="usage_requests")
     op.drop_index("ix_usage_requests_resolved_model", table_name="usage_requests")
+    op.drop_index("ix_usage_requests_requested_model", table_name="usage_requests")
     op.drop_index("ix_usage_requests_benchmark_session_id", table_name="usage_requests")
     op.drop_index("ix_usage_requests_proxy_key_id", table_name="usage_requests")
     op.drop_index("ix_usage_requests_litellm_key_id", table_name="usage_requests")

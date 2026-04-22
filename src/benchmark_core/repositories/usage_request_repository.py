@@ -81,7 +81,12 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
     async def _create_many_postgres(
         self, requests: list[UsageRequestORM]
     ) -> tuple[list[UsageRequestORM], int]:
-        """Bulk insert with ON CONFLICT DO NOTHING (PostgreSQL only)."""
+        """Bulk insert with ON CONFLICT DO NOTHING (PostgreSQL only).
+
+        Returns only the successfully inserted records to match the
+        generic check-and-insert semantics.
+        """
+        call_ids = [r.litellm_call_id for r in requests]
         # Build insert statement with conflict handling
         insert_stmt = pg_insert(UsageRequestORM).values(
             [
@@ -121,7 +126,15 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
 
         result = self._session.execute(insert_stmt)
         skipped = len(requests) - result.rowcount  # type: ignore[attr-defined]
-        return list(requests), skipped
+
+        # Query back inserted rows so callers receive only persisted records
+        if result.rowcount:  # type: ignore[attr-defined]
+            stmt = select(UsageRequestORM).where(UsageRequestORM.litellm_call_id.in_(call_ids))
+            created = list(self._session.execute(stmt).scalars().all())
+        else:
+            created = []
+
+        return created, skipped
 
     async def _create_many_generic(
         self, requests: list[UsageRequestORM]
