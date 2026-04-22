@@ -376,9 +376,7 @@ class UsageRequest(Base):
     __tablename__ = "usage_requests"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    litellm_call_id: Mapped[str] = mapped_column(
-        String(255), nullable=False, unique=True
-    )
+    litellm_call_id: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     request_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     key_alias: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     litellm_key_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)

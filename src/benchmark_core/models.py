@@ -187,9 +187,7 @@ class UsageRequest(BaseModel):
     input_tokens: int | None = Field(default=None, description="Input/prompt token count")
     output_tokens: int | None = Field(default=None, description="Output/completion token count")
     cached_input_tokens: int | None = Field(default=None, description="Cached input token count")
-    cache_write_tokens: int | None = Field(
-        default=None, description="Tokens written to cache"
-    )
+    cache_write_tokens: int | None = Field(default=None, description="Tokens written to cache")
     cost_usd: float | None = Field(default=None, description="Spend in USD")
     status: str | None = Field(default=None, description="Request status (success/failure/pending)")
     error_code: str | None = Field(default=None, description="Error code (e.g. HTTP 429)")

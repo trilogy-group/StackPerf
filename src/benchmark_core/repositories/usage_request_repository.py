@@ -117,12 +117,10 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
                 for r in requests
             ]
         )
-        insert_stmt = insert_stmt.on_conflict_do_nothing(
-            index_elements=["litellm_call_id"]
-        )
+        insert_stmt = insert_stmt.on_conflict_do_nothing(index_elements=["litellm_call_id"])
 
         result = self._session.execute(insert_stmt)
-        skipped = len(requests) - result.rowcount
+        skipped = len(requests) - result.rowcount  # type: ignore[attr-defined]
         return list(requests), skipped
 
     async def _create_many_generic(
