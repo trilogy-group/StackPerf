@@ -113,7 +113,9 @@ class ProxyKey(BaseModel):
     customer: str | None = Field(default=None, description="Customer metadata")
     purpose: str | None = Field(default=None, description="Key purpose/description")
     allowed_models: list[str] = Field(default_factory=list, description="Allowed model aliases")
-    budget_duration: str | None = Field(default=None, description="Budget duration (e.g., daily, monthly)")
+    budget_duration: str | None = Field(
+        default=None, description="Budget duration (e.g., daily, monthly)"
+    )
     budget_amount: float | None = Field(default=None, description="Budget amount")
     budget_currency: str = Field(default="USD", description="Budget currency")
     status: str = Field(default="active", description="Key status: active, revoked, expired")

@@ -35,8 +35,7 @@ def upgrade() -> None:
         sa.Column("budget_amount", sa.Float(), nullable=True),
         sa.Column("budget_currency", sa.String(10), nullable=False, server_default="USD"),
         sa.Column(
-            "status", sa.String(50), nullable=False, default="active",
-            server_default="active"
+            "status", sa.String(50), nullable=False, default="active", server_default="active"
         ),
         sa.CheckConstraint(
             "status IN ('active', 'revoked', 'expired')", name="ck_proxy_keys_status"

@@ -49,7 +49,9 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
         stmt = select(ProxyKeyORM).where(ProxyKeyORM.litellm_key_id == litellm_key_id)
         return self._session.execute(stmt).scalars().one_or_none()
 
-    async def list_by_owner(self, owner: str, limit: int = 100, offset: int = 0) -> list[ProxyKeyORM]:
+    async def list_by_owner(
+        self, owner: str, limit: int = 100, offset: int = 0
+    ) -> list[ProxyKeyORM]:
         """List proxy keys by owner.
 
         Args:
@@ -89,7 +91,9 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
         )
         return list(self._session.execute(stmt).scalars().all())
 
-    async def list_by_customer(self, customer: str, limit: int = 100, offset: int = 0) -> list[ProxyKeyORM]:
+    async def list_by_customer(
+        self, customer: str, limit: int = 100, offset: int = 0
+    ) -> list[ProxyKeyORM]:
         """List proxy keys by customer.
 
         Args:
