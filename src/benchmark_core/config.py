@@ -289,6 +289,10 @@ class UsagePolicyProfile(BaseModel):
         default=None,
         description="Budget limit in currency units",
     )
+    budget_currency: str = Field(
+        default="USD",
+        description="Budget currency",
+    )
     ttl_seconds: int | None = Field(
         default=None,
         description="Key TTL in seconds (time-to-live before expiration)",

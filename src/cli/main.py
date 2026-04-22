@@ -3,7 +3,7 @@
 import typer
 from rich.console import Console
 
-from cli.commands import artifact, collect, config, export, health, normalize, render, session
+from cli.commands import artifact, collect, config, export, health, key, normalize, render, session
 
 app = typer.Typer(
     name="benchmark",
@@ -14,6 +14,7 @@ app = typer.Typer(
 # Register subcommands
 app.add_typer(config.app, name="config", help="Config validation and management")
 app.add_typer(session.app, name="session", help="Session lifecycle commands")
+app.add_typer(key.app, name="key", help="Sessionless proxy key management")
 app.add_typer(export.app, name="export", help="Export commands for reports")
 app.add_typer(normalize.app, name="normalize", help="Normalize LiteLLM request data")
 app.add_typer(artifact.app, name="artifact", help="Artifact registry management")
