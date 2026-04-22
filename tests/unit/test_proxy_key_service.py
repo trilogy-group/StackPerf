@@ -172,6 +172,11 @@ class TestProxyKeyCreation:
         assert proxy_key.allowed_models == ["kimi-k2-5"]
         assert proxy_key.budget_duration == "30d"
         assert proxy_key.budget_amount == 500.0
+        # ttl_seconds=7200 rounds up to 2 hours (effective TTL applied)
+        assert proxy_key.expires_at is not None
+        assert proxy_key.created_at is not None
+        delta = proxy_key.expires_at - proxy_key.created_at
+        assert abs(delta.total_seconds() - 7200) < 1  # allow <1s timing jitter
 
     @pytest.mark.asyncio
     async def test_create_key_requires_master_key(self, repository):
