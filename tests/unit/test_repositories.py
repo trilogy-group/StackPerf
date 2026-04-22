@@ -938,27 +938,99 @@ class TestProxyKeyRepository:
         await proxy_key_repo.revoke(created.id)
         db_session.commit()
 
-        revoked2 = await proxy_key_repo.revoke(created.id)
+        # Re-read from DB to get the same tz-naive representation used by second_revoke
+        refreshed = await proxy_key_repo.get_by_id(created.id)
+        first_timestamp = refreshed.revoked_at
+
+        second_revoke = await proxy_key_repo.revoke(created.id)
         db_session.commit()
 
-        assert revoked2 is not None
-        assert revoked2.status == "revoked"
-        assert revoked2.revoked_at is not None
+        assert second_revoke is not None
+        assert second_revoke.status == "revoked"
+        assert second_revoke.revoked_at is not None
+        # Verify the revoked_at timestamp was preserved (not overwritten)
+        assert second_revoke.revoked_at == first_timestamp
 
-    async def test_list_by_proxy_credential_id(self, proxy_key_repo):
-        """Test listing proxy keys by proxy credential ID returns empty for non-existent."""
+    async def test_list_by_proxy_credential_id(self, proxy_key_repo, db_session):
+        """Test listing proxy keys by proxy credential ID."""
         from uuid import UUID
 
-        results = await proxy_key_repo.list_by_proxy_credential_id(
-            UUID("00000000-0000-0000-0000-000000000001")
+        from benchmark_core.db.models import (
+            Experiment,
+            ProxyCredential,
+            TaskCard,
+            Variant,
         )
-        assert results == []
+        from benchmark_core.db.models import (
+            ProxyKey as ProxyKeyORM,
+        )
+        from benchmark_core.db.models import (
+            Session as SessionORM,
+        )
 
-        # Also verify the query structure by checking pagination params pass through
-        results2 = await proxy_key_repo.list_by_proxy_credential_id(
+        # Build minimum required chain to create a ProxyCredential
+        experiment = Experiment(name="proxy-key-test-exp")
+        db_session.add(experiment)
+        db_session.flush()
+
+        variant = Variant(
+            name="proxy-key-test-variant",
+            provider="litellm",
+            model_alias="gpt-4",
+            harness_profile="default",
+        )
+        db_session.add(variant)
+        db_session.flush()
+
+        task_card = TaskCard(
+            name="proxy-key-test-task",
+            goal="Test proxy key link",
+            starting_prompt="Start",
+            stop_condition="Stop",
+        )
+        db_session.add(task_card)
+        db_session.flush()
+
+        session = SessionORM(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task_card.id,
+            harness_profile="default",
+            repo_path="/tmp/test",
+            git_branch="main",
+            git_commit="abc1234",
+            status="active",
+        )
+        db_session.add(session)
+        db_session.flush()
+
+        credential = ProxyCredential(
+            session_id=session.id,
+            key_alias="cred-for-proxy-keys",
+            experiment_id=str(experiment.id),
+            variant_id=str(variant.id),
+            harness_profile="default",
+        )
+        db_session.add(credential)
+        db_session.flush()
+
+        proxy_key = ProxyKeyORM(
+            key_alias="linked-key-1",
+            litellm_key_id="litellm-linked-1",
+            status="active",
+            proxy_credential_id=credential.id,
+        )
+        created = await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        results = await proxy_key_repo.list_by_proxy_credential_id(credential.id)
+        assert len(results) == 1
+        assert results[0].id == created.id
+
+        other_results = await proxy_key_repo.list_by_proxy_credential_id(
             UUID("00000000-0000-0000-0000-000000000001"), limit=5, offset=0
         )
-        assert results2 == []
+        assert other_results == []
 
     async def test_get_nonexistent_proxy_key(self, proxy_key_repo):
         """Test retrieving proxy keys that don't exist."""
