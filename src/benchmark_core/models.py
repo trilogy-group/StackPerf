@@ -21,6 +21,14 @@ class SessionOutcomeState(StrEnum):
     ABORTED = "aborted"
 
 
+class ProxyKeyStatus(StrEnum):
+    """Valid status values for a proxy key registry entry."""
+
+    ACTIVE = "active"
+    REVOKED = "revoked"
+    EXPIRED = "expired"
+
+
 class Session(BaseModel):
     """One interactive benchmark session under one variant and one task card."""
 
@@ -118,7 +126,10 @@ class ProxyKey(BaseModel):
     )
     budget_amount: float | None = Field(default=None, description="Budget amount")
     budget_currency: str = Field(default="USD", description="Budget currency")
-    status: str = Field(default="active", description="Key status: active, revoked, expired")
+    status: ProxyKeyStatus = Field(
+        default=ProxyKeyStatus.ACTIVE,
+        description="Key status: active, revoked, expired",
+    )
     key_metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
     proxy_credential_id: UUID | None = Field(
         default=None,
