@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+from benchmark_core.models import ProxyKeyStatus
 from benchmark_core.repositories.base import SQLAlchemyRepository
 
 
@@ -125,7 +126,7 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
         """
         stmt = (
             select(ProxyKeyORM)
-            .where(ProxyKeyORM.status == "active")
+            .where(ProxyKeyORM.status == ProxyKeyStatus.ACTIVE)
             .order_by(ProxyKeyORM.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -140,16 +141,16 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
 
         Returns:
             The revoked proxy key, or None if not found.
-            Returns the key unchanged if already revoked.
+            Returns the key unchanged if already revoked or expired.
         """
         proxy_key = await self.get_by_id(proxy_key_id)
         if proxy_key is None:
             return None
 
-        if proxy_key.status == "revoked":
+        if proxy_key.status in (ProxyKeyStatus.REVOKED, ProxyKeyStatus.EXPIRED):
             return proxy_key
 
-        proxy_key.status = "revoked"
+        proxy_key.status = ProxyKeyStatus.REVOKED
         proxy_key.revoked_at = datetime.now(UTC)
         proxy_key.updated_at = datetime.now(UTC)
         self._session.flush()

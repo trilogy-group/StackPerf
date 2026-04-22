@@ -30,7 +30,7 @@ def upgrade() -> None:
         sa.Column("team", sa.String(255), nullable=True),
         sa.Column("customer", sa.String(255), nullable=True),
         sa.Column("purpose", sa.Text(), nullable=True),
-        sa.Column("allowed_models", sa.JSON(), nullable=True),
+        sa.Column("allowed_models", sa.JSON(), nullable=False, server_default="[]"),
         sa.Column("budget_duration", sa.String(50), nullable=True),
         sa.Column("budget_amount", sa.Float(), nullable=True),
         sa.Column("budget_currency", sa.String(10), nullable=False, server_default="USD"),
@@ -38,7 +38,7 @@ def upgrade() -> None:
         sa.CheckConstraint(
             "status IN ('active', 'revoked', 'expired')", name="ck_proxy_keys_status"
         ),
-        sa.Column("key_metadata", sa.JSON(), nullable=True),
+        sa.Column("key_metadata", sa.JSON(), nullable=False, server_default="{}"),
         sa.Column("proxy_credential_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column(
             "created_at",
