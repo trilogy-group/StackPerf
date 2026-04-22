@@ -1,11 +1,13 @@
 """Repository for UsageRequest entities."""
 
+from datetime import datetime
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, inspect, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import CursorResult
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as SQLAlchemySession
 
 from benchmark_core.db.models import UsageRequest as UsageRequestORM
@@ -83,44 +85,15 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
     ) -> tuple[list[UsageRequestORM], int]:
         """Bulk insert with ON CONFLICT DO NOTHING (PostgreSQL only).
 
+        Uses SQLAlchemy column inspection to build the value dict dynamically,
+        eliminating fragility from a hard-coded 27-column mapping.
         Returns only the successfully inserted records to match the
         generic check-and-insert semantics.
         """
         call_ids = [r.litellm_call_id for r in requests]
-        # Build insert statement with conflict handling
+        mapper = inspect(UsageRequestORM)
         insert_stmt = pg_insert(UsageRequestORM).values(
-            [
-                {
-                    "id": r.id,
-                    "litellm_call_id": r.litellm_call_id,
-                    "request_id": r.request_id,
-                    "key_alias": r.key_alias,
-                    "litellm_key_id": r.litellm_key_id,
-                    "proxy_key_id": r.proxy_key_id,
-                    "benchmark_session_id": r.benchmark_session_id,
-                    "provider": r.provider,
-                    "provider_route": r.provider_route,
-                    "requested_model": r.requested_model,
-                    "resolved_model": r.resolved_model,
-                    "route": r.route,
-                    "started_at": r.started_at,
-                    "finished_at": r.finished_at,
-                    "latency_ms": r.latency_ms,
-                    "ttft_ms": r.ttft_ms,
-                    "input_tokens": r.input_tokens,
-                    "output_tokens": r.output_tokens,
-                    "cached_input_tokens": r.cached_input_tokens,
-                    "cache_write_tokens": r.cache_write_tokens,
-                    "cost_usd": r.cost_usd,
-                    "status": r.status,
-                    "error_code": r.error_code,
-                    "error_message": r.error_message,
-                    "cache_hit": r.cache_hit,
-                    "request_metadata": r.request_metadata,
-                    "created_at": r.created_at,
-                }
-                for r in requests
-            ]
+            [{col.name: getattr(r, col.name) for col in mapper.columns} for r in requests]
         )
         insert_stmt = insert_stmt.on_conflict_do_nothing(index_elements=["litellm_call_id"])
 
@@ -139,21 +112,24 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
     async def _create_many_generic(
         self, requests: list[UsageRequestORM]
     ) -> tuple[list[UsageRequestORM], int]:
-        """Fallback check-and-insert for SQLite and other dialects."""
+        """Fallback check-and-insert for SQLite and other dialects.
+
+        Uses a per-item savepoint (begin_nested) to catch IntegrityError
+        without losing the outer transaction state, avoiding TOCTOU races.
+        """
         created: list[UsageRequestORM] = []
         skipped = 0
 
         for request in requests:
-            existing = await self.get_by_litellm_call_id(request.litellm_call_id)
-            if existing is not None:
+            nested = self._session.begin_nested()
+            try:
+                self._session.add(request)
+                self._session.flush()
+                created.append(request)
+                nested.commit()
+            except IntegrityError:
+                nested.rollback()
                 skipped += 1
-                continue
-
-            self._session.add(request)
-            created.append(request)
-
-        if created:
-            self._session.flush()
 
         return created, skipped
 
@@ -284,29 +260,27 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
 
     async def list_by_time_range(
         self,
-        start: str,
-        end: str,
+        start: datetime,
+        end: datetime,
         limit: int = 1000,
         offset: int = 0,
     ) -> list[UsageRequestORM]:
         """List usage requests within a time range.
 
         Args:
-            start: Start of time range (ISO format).
-            end: End of time range (ISO format).
+            start: Start of time range (datetime).
+            end: End of time range (datetime).
             limit: Maximum number of results.
             offset: Number of results to skip.
 
         Returns:
             List of usage requests in the time range.
         """
-        from datetime import datetime
-
         stmt = (
             select(UsageRequestORM)
             .where(
-                UsageRequestORM.started_at >= datetime.fromisoformat(start),
-                UsageRequestORM.started_at <= datetime.fromisoformat(end),
+                UsageRequestORM.started_at >= start,
+                UsageRequestORM.started_at <= end,
             )
             .order_by(UsageRequestORM.started_at.desc())
             .limit(limit)
@@ -396,17 +370,6 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
         )
         return self._session.execute(stmt).scalar() or 0
 
-    async def delete(self, id: UUID) -> bool:
-        """Delete a usage request by its ID.
-
-        Args:
-            id: The UUID of the usage request to delete.
-
-        Returns:
-            True if deleted, False if not found.
-        """
-        return await super().delete(id)
-
     async def delete_by_benchmark_session(self, benchmark_session_id: UUID) -> int:
         """Delete all usage requests linked to a benchmark session.
 
@@ -416,8 +379,6 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
         Returns:
             Number of usage requests deleted.
         """
-        from sqlalchemy import delete
-
         stmt = delete(UsageRequestORM).where(
             UsageRequestORM.benchmark_session_id == benchmark_session_id
         )

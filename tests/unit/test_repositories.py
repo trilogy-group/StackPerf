@@ -1636,8 +1636,8 @@ class TestUsageRequestRepository:
         db_session.commit()
 
         results = await usage_request_repo.list_by_time_range(
-            "2025-01-15T00:00:00+00:00",
-            "2025-01-16T23:59:59+00:00",
+            datetime(2025, 1, 15, 0, 0, 0, tzinfo=UTC),
+            datetime(2025, 1, 16, 23, 59, 59, tzinfo=UTC),
         )
         assert len(results) == 2
         call_ids = {r.litellm_call_id for r in results}
