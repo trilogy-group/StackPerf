@@ -123,6 +123,7 @@ class ProxyKey(BaseModel):
         description="Optional link to session-scoped proxy credential",
     )
     created_at: datetime = Field(default_factory=_utc_now)
+    updated_at: datetime | None = Field(default=None)
     revoked_at: datetime | None = Field(default=None)
     expires_at: datetime | None = Field(default=None)
 

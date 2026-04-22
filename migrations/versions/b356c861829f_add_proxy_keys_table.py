@@ -33,8 +33,14 @@ def upgrade() -> None:
         sa.Column("allowed_models", sa.JSON(), nullable=True, default=list),
         sa.Column("budget_duration", sa.String(50), nullable=True),
         sa.Column("budget_amount", sa.Float(), nullable=True),
-        sa.Column("budget_currency", sa.String(10), nullable=True, default="USD"),
-        sa.Column("status", sa.String(50), nullable=False, default="active"),
+        sa.Column("budget_currency", sa.String(10), nullable=False, server_default="USD"),
+        sa.Column(
+            "status", sa.String(50), nullable=False, default="active",
+            server_default="active"
+        ),
+        sa.CheckConstraint(
+            "status IN ('active', 'revoked', 'expired')", name="ck_proxy_keys_status"
+        ),
         sa.Column("key_metadata", sa.JSON(), nullable=True, default=dict),
         sa.Column("proxy_credential_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column(
@@ -43,6 +49,7 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("NOW()"),
         ),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint("id"),
@@ -54,8 +61,7 @@ def upgrade() -> None:
         ),
     )
 
-    # Indexes for lookup patterns
-    op.create_index("ix_proxy_keys_key_alias", "proxy_keys", ["key_alias"])
+    # Indexes for lookup patterns (key_alias already has unique constraint index)
     op.create_index("ix_proxy_keys_litellm_key_id", "proxy_keys", ["litellm_key_id"])
     op.create_index("ix_proxy_keys_owner", "proxy_keys", ["owner"])
     op.create_index("ix_proxy_keys_team", "proxy_keys", ["team"])
@@ -71,10 +77,16 @@ def upgrade() -> None:
         "proxy_keys",
         ["status", "created_at"],
     )
+    op.create_index(
+        "ix_proxy_keys_proxy_credential_id",
+        "proxy_keys",
+        ["proxy_credential_id"],
+    )
 
 
 def downgrade() -> None:
     """Drop proxy_keys table and indexes."""
+    op.drop_index("ix_proxy_keys_proxy_credential_id", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_status_created_at", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_owner_team_customer", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_status", table_name="proxy_keys")
@@ -82,5 +94,4 @@ def downgrade() -> None:
     op.drop_index("ix_proxy_keys_team", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_owner", table_name="proxy_keys")
     op.drop_index("ix_proxy_keys_litellm_key_id", table_name="proxy_keys")
-    op.drop_index("ix_proxy_keys_key_alias", table_name="proxy_keys")
     op.drop_table("proxy_keys")

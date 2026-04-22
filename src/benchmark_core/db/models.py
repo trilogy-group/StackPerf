@@ -255,17 +255,30 @@ class ProxyKey(Base):
     allowed_models: Mapped[list[str]] = mapped_column(JSON, default=list)
     budget_duration: Mapped[str | None] = mapped_column(String(50), nullable=True)
     budget_amount: Mapped[float | None] = mapped_column(Float, nullable=True)
-    budget_currency: Mapped[str] = mapped_column(String(10), nullable=True, default="USD")
-    status: Mapped[str] = mapped_column(String(50), nullable=False, default="active", index=True)
+    budget_currency: Mapped[str] = mapped_column(String(10), nullable=False, default="USD")
+    status: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="active",
+        index=True,
+    )
     key_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
     proxy_credential_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("proxy_credentials.id", ondelete="SET NULL"), nullable=True
+        ForeignKey("proxy_credentials.id", ondelete="SET NULL"), nullable=True, index=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('active', 'revoked', 'expired')",
+            name="ck_proxy_keys_status",
+        ),
+    )
 
     # Optional relationship to session-scoped proxy credential
     proxy_credential: Mapped["ProxyCredential | None"] = relationship(

@@ -63,6 +63,7 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
         stmt = (
             select(ProxyKeyORM)
             .where(ProxyKeyORM.owner == owner)
+            .order_by(ProxyKeyORM.created_at.desc())
             .limit(limit)
             .offset(offset)
         )
@@ -82,6 +83,7 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
         stmt = (
             select(ProxyKeyORM)
             .where(ProxyKeyORM.team == team)
+            .order_by(ProxyKeyORM.created_at.desc())
             .limit(limit)
             .offset(offset)
         )
@@ -101,6 +103,7 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
         stmt = (
             select(ProxyKeyORM)
             .where(ProxyKeyORM.customer == customer)
+            .order_by(ProxyKeyORM.created_at.desc())
             .limit(limit)
             .offset(offset)
         )
@@ -119,6 +122,7 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
         stmt = (
             select(ProxyKeyORM)
             .where(ProxyKeyORM.status == "active")
+            .order_by(ProxyKeyORM.created_at.desc())
             .limit(limit)
             .offset(offset)
         )
@@ -132,13 +136,18 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
 
         Returns:
             The revoked proxy key, or None if not found.
+            Returns the key unchanged if already revoked.
         """
         proxy_key = await self.get_by_id(proxy_key_id)
         if proxy_key is None:
             return None
 
+        if proxy_key.status == "revoked":
+            return proxy_key
+
         proxy_key.status = "revoked"
         proxy_key.revoked_at = datetime.now(UTC)
+        proxy_key.updated_at = datetime.now(UTC)
         self._session.flush()
         return proxy_key
 
@@ -158,6 +167,7 @@ class SQLProxyKeyRepository(SQLAlchemyRepository[ProxyKeyORM]):
         stmt = (
             select(ProxyKeyORM)
             .where(ProxyKeyORM.proxy_credential_id == proxy_credential_id)
+            .order_by(ProxyKeyORM.created_at.desc())
             .limit(limit)
             .offset(offset)
         )
