@@ -13,6 +13,12 @@ import httpx
 from pydantic import SecretStr
 
 from benchmark_core.models import ProxyCredential
+from benchmark_core.services.common import (
+    render_env_dotenv,
+    render_env_shell,
+    validate_litellm_url,
+    warn_revoke_failure,
+)
 
 
 class CredentialService:
@@ -38,16 +44,8 @@ class CredentialService:
         Raises:
             ValueError: If litellm_base_url doesn't use HTTPS in production
         """
-        self.litellm_base_url = litellm_base_url.rstrip("/")
+        self.litellm_base_url = validate_litellm_url(litellm_base_url, enforce_https)
         self.master_key = master_key
-
-        # Validate HTTPS in production environments
-        if enforce_https and not self.litellm_base_url.startswith(
-            ("https://", "http://localhost", "http://127.0.0.1")
-        ):
-            raise ValueError(
-                f"LiteLLM URL must use HTTPS in production environments. Got: {litellm_base_url}"
-            )
 
     def _generate_key_alias(
         self,
@@ -196,7 +194,8 @@ class CredentialService:
         Note:
             LiteLLM API errors are intentionally silenced since revocation is
             best-effort - the key may already be expired or the proxy may be
-            temporarily unavailable.
+            temporarily unavailable.  A warning is still emitted so operators
+            can detect state inconsistency.
         """
         # Call LiteLLM API to delete the key if we have the key_id
         if credential.litellm_key_id and self.master_key:
@@ -208,12 +207,10 @@ class CredentialService:
                         json={"key_ids": [credential.litellm_key_id]},
                     )
                     response.raise_for_status()
-                except httpx.HTTPStatusError:
-                    # Log but don't fail - the key may already be expired/deleted
-                    pass  # noqa: S110 - intentional silence on revoke errors
-                except httpx.RequestError:
-                    # Log but don't fail - revocation is best-effort
-                    pass  # noqa: S110 - intentional silence on connection errors
+                except httpx.HTTPStatusError as e:
+                    warn_revoke_failure("credential", credential.litellm_key_id, e)
+                except httpx.RequestError as e:
+                    warn_revoke_failure("credential", credential.litellm_key_id, e)
 
         updated = credential.model_copy(
             update={
@@ -261,11 +258,7 @@ class CredentialService:
         Returns:
             Shell commands string.
         """
-        lines = []
-        for key, value in env_vars.items():
-            escaped = value.replace("'", "'\\''")
-            lines.append(f"export {key}='{escaped}'")
-        return "\n".join(lines)
+        return render_env_shell(env_vars)
 
     def render_env_dotenv(self, env_vars: dict[str, str]) -> str:
         """Render environment variables as dotenv file content.
@@ -276,81 +269,4 @@ class CredentialService:
         Returns:
             Dotenv file content string.
         """
-        lines = []
-        for key, value in env_vars.items():
-            if " " in value or "#" in value or "'" in value or '"' in value:
-                escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-                lines.append(f'{key}="{escaped}"')
-            else:
-                lines.append(f"{key}={value}")
-        return "\n".join(lines)
-
-    # ------------------------------------------------------------------
-    # Backward-compatible convenience wrappers (deprecated stubs)
-    # ------------------------------------------------------------------
-
-    def _legacy_render_env_snippet(
-        self,
-        credential: str,
-        proxy_base_url: str,
-        model: str,
-        harness_profile: str,
-    ) -> dict[str, str]:
-        """Legacy wrapper accepting a plain credential string."""
-        return {
-            "OPENAI_API_BASE": proxy_base_url,
-            "OPENAI_API_KEY": credential,
-            "OPENAI_MODEL": model,
-        }
-
-    def _legacy_render_shell_snippet(
-        self,
-        credential: str,
-        proxy_base_url: str,
-        model: str,
-        additional_vars: dict[str, str] | None = None,
-    ) -> str:
-        """Legacy wrapper for shell rendering with a plain credential string."""
-        env_vars = self._legacy_render_env_snippet(credential, proxy_base_url, model, "")
-        if additional_vars:
-            env_vars.update(additional_vars)
-        return self.render_env_shell(env_vars)
-
-    def _legacy_render_dotenv_snippet(
-        self,
-        credential: str,
-        proxy_base_url: str,
-        model: str,
-        additional_vars: dict[str, str] | None = None,
-    ) -> str:
-        """Legacy wrapper for dotenv rendering with a plain credential string."""
-        env_vars = self._legacy_render_env_snippet(credential, proxy_base_url, model, "")
-        if additional_vars:
-            env_vars.update(additional_vars)
-        return self.render_env_dotenv(env_vars)
-
-    def _legacy_validate_credential(self, credential: str) -> dict | None:
-        """Legacy placeholder validation for stub credentials."""
-        if credential.startswith("sk-benchmark-"):
-            parts = credential.split("-")
-            if len(parts) >= 3:
-                return {
-                    "session_id": parts[2] if len(parts) > 2 else None,
-                    "experiment_prefix": parts[3] if len(parts) > 3 else None,
-                    "valid": True,
-                }
-        return None
-
-    async def _legacy_issue_credential(
-        self,
-        session_id: UUID,
-        experiment_id: str,
-        variant_id: str,
-        harness_profile: str,
-    ) -> str:
-        """Legacy placeholder that returns a stub credential string."""
-        return f"sk-benchmark-{session_id}-{experiment_id[:8]}"
-
-    async def _legacy_revoke_credential(self, credential: str) -> bool:
-        """Legacy placeholder revocation."""
-        return True
+        return render_env_dotenv(env_vars)

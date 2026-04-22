@@ -16,6 +16,12 @@ from benchmark_core.config import UsagePolicyProfile
 from benchmark_core.db.models import ProxyKey as ProxyKeyORM
 from benchmark_core.models import ProxyKey, ProxyKeyStatus
 from benchmark_core.repositories.proxy_key_repository import SQLProxyKeyRepository
+from benchmark_core.services.common import (
+    render_env_dotenv,
+    render_env_shell,
+    validate_litellm_url,
+    warn_revoke_failure,
+)
 
 
 class ProxyKeyServiceError(Exception):
@@ -57,15 +63,8 @@ class ProxyKeyService:
             ValueError: If litellm_base_url doesn't use HTTPS in production.
         """
         self._repository = repository
-        self.litellm_base_url = litellm_base_url.rstrip("/")
+        self.litellm_base_url = validate_litellm_url(litellm_base_url, enforce_https)
         self.master_key = master_key
-
-        if enforce_https and not self.litellm_base_url.startswith(
-            ("https://", "http://localhost", "http://127.0.0.1")
-        ):
-            raise ValueError(
-                f"LiteLLM URL must use HTTPS in production environments. Got: {litellm_base_url}"
-            )
 
     def _http_headers(self) -> dict[str, str]:
         """Build HTTP headers for LiteLLM API calls."""
@@ -338,10 +337,10 @@ class ProxyKeyService:
                         json={"key_ids": [orm.litellm_key_id]},
                     )
                     response.raise_for_status()
-                except httpx.HTTPStatusError:
-                    pass  # Best-effort: key may already be expired/deleted
-                except httpx.RequestError:
-                    pass  # Best-effort: proxy may be temporarily unavailable
+                except httpx.HTTPStatusError as e:
+                    warn_revoke_failure("proxy_key", orm.litellm_key_id, e)
+                except httpx.RequestError as e:
+                    warn_revoke_failure("proxy_key", orm.litellm_key_id, e)
 
         # Mark local metadata as revoked
         revoked_orm = await self._repository.revoke(proxy_key_id)
@@ -384,12 +383,7 @@ class ProxyKeyService:
         Returns:
             Shell commands string.
         """
-        lines = []
-        for key in sorted(env_vars.keys()):
-            value = env_vars[key]
-            escaped = value.replace("'", "'\\''")
-            lines.append(f"export {key}='{escaped}'")
-        return "\n".join(lines)
+        return render_env_shell(env_vars)
 
     def render_env_dotenv(self, env_vars: dict[str, str]) -> str:
         """Render environment variables as dotenv file content.
@@ -400,15 +394,7 @@ class ProxyKeyService:
         Returns:
             Dotenv file content string.
         """
-        lines = []
-        for key in sorted(env_vars.keys()):
-            value = env_vars[key]
-            if " " in value or "#" in value or "'" in value or '"' in value:
-                escaped = value.replace("\\", "\\\\").replace('"', '\\"')
-                lines.append(f'{key}="{escaped}"')
-            else:
-                lines.append(f"{key}={value}")
-        return "\n".join(lines)
+        return render_env_dotenv(env_vars)
 
     def render_harness_env(
         self,
