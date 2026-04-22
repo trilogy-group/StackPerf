@@ -365,6 +365,55 @@ class Request(Base):
     )
 
 
+class UsageRequest(Base):
+    """One normalized LiteLLM usage record for traffic ingestion.
+
+    Stores request timing, routing, token counts, cost, and error metadata.
+    No prompt or response content is stored by default.
+    Designed for sessionless usage tracking with optional benchmark linkage.
+    """
+
+    __tablename__ = "usage_requests"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    litellm_call_id: Mapped[str] = mapped_column(
+        String(255), nullable=False, unique=True
+    )
+    request_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    key_alias: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    litellm_key_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    proxy_key_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("proxy_keys.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    benchmark_session_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("sessions.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    provider: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    provider_route: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    requested_model: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    resolved_model: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    route: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    latency_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    ttft_ms: Mapped[float | None] = mapped_column(Float, nullable=True)
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cached_input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cache_write_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    status: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    error_code: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cache_hit: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    request_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+
 class MetricRollup(Base):
     """Derived latency, throughput, error, and cache metrics."""
 

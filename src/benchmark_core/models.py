@@ -159,6 +159,48 @@ class Request(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
+class UsageRequest(BaseModel):
+    """One normalized LiteLLM usage record for traffic ingestion.
+
+    No prompt or response content is stored by default.
+    Designed for sessionless usage tracking with optional benchmark linkage.
+    """
+
+    usage_request_id: UUID = Field(default_factory=uuid4)
+    litellm_call_id: str = Field(..., description="Primary LiteLLM call/request ID for idempotency")
+    request_id: str | None = Field(default=None, description="Alternate request ID")
+    key_alias: str | None = Field(default=None, description="Denormalized key alias")
+    litellm_key_id: str | None = Field(default=None, description="LiteLLM internal key ID")
+    proxy_key_id: UUID | None = Field(default=None, description="Optional FK to proxy_keys")
+    benchmark_session_id: UUID | None = Field(
+        default=None, description="Optional FK to benchmark session"
+    )
+    provider: str | None = Field(default=None, description="Provider slug")
+    provider_route: str | None = Field(default=None, description="Full provider route string")
+    requested_model: str | None = Field(default=None, description="Client-requested model alias")
+    resolved_model: str | None = Field(default=None, description="Resolved upstream model name")
+    route: str | None = Field(default=None, description="API route/endpoint")
+    started_at: datetime | None = Field(default=None, description="Request start time (UTC)")
+    finished_at: datetime | None = Field(default=None, description="Request end time (UTC)")
+    latency_ms: float | None = Field(default=None, description="Total latency in milliseconds")
+    ttft_ms: float | None = Field(default=None, description="Time to first token in milliseconds")
+    input_tokens: int | None = Field(default=None, description="Input/prompt token count")
+    output_tokens: int | None = Field(default=None, description="Output/completion token count")
+    cached_input_tokens: int | None = Field(default=None, description="Cached input token count")
+    cache_write_tokens: int | None = Field(
+        default=None, description="Tokens written to cache"
+    )
+    cost_usd: float | None = Field(default=None, description="Spend in USD")
+    status: str | None = Field(default=None, description="Request status (success/failure/pending)")
+    error_code: str | None = Field(default=None, description="Error code (e.g. HTTP 429)")
+    error_message: str | None = Field(default=None, description="Error message")
+    cache_hit: bool | None = Field(default=None, description="Cache hit flag")
+    request_metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Safe metadata (no content)"
+    )
+    created_at: datetime = Field(default_factory=_utc_now)
+
+
 class MetricRollup(BaseModel):
     """Derived latency, throughput, error, and cache metrics."""
 
