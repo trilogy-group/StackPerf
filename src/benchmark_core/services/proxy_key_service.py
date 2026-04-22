@@ -134,14 +134,20 @@ class ProxyKeyService:
         effective_owner = owner or (usage_policy.owner if usage_policy else None)
         effective_team = team or (usage_policy.team if usage_policy else None)
         effective_customer = customer or (usage_policy.customer if usage_policy else None)
-        effective_models = allowed_models or (
-            list(usage_policy.allowed_models) if usage_policy else []
+        effective_models = (
+            list(allowed_models)
+            if allowed_models is not None
+            else (list(usage_policy.allowed_models) if usage_policy else [])
         )
-        effective_budget_duration = budget_duration or (
-            usage_policy.budget_duration if usage_policy else None
+        effective_budget_duration = (
+            budget_duration
+            if budget_duration is not None
+            else (usage_policy.budget_duration if usage_policy else None)
         )
-        effective_budget_amount = budget_amount or (
-            usage_policy.budget_amount if usage_policy else None
+        effective_budget_amount = (
+            budget_amount
+            if budget_amount is not None
+            else (usage_policy.budget_amount if usage_policy else None)
         )
         effective_ttl = (
             usage_policy.ttl_seconds // 3600
