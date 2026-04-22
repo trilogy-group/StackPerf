@@ -1483,6 +1483,53 @@ class TestUsageRequestRepository:
         assert "batch-001" in call_ids
         assert "batch-002" in call_ids
 
+    async def test_create_many_preserves_first_record(self, usage_request_repo, db_session):
+        """End-to-end: inserting a duplicate must not overwrite or return
+        the pre-existing row, and the caller must receive only the newly
+        inserted items in the result tuple."""
+        from benchmark_core.db.models import UsageRequest as UsageRequestORM
+
+        original = UsageRequestORM(
+            litellm_call_id="dup-001",
+            key_alias="dup-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+        )
+        await usage_request_repo.create(original)
+        db_session.commit()
+        original_id = original.id
+
+        duplicate = UsageRequestORM(
+            litellm_call_id="dup-001",
+            key_alias="dup-key",
+            provider="anthropic",
+            resolved_model="claude-3",
+            status="failure",
+        )
+        new = UsageRequestORM(
+            litellm_call_id="dup-002",
+            key_alias="dup-key",
+            provider="openai",
+            resolved_model="gpt-4o",
+            status="success",
+        )
+
+        created, skipped = await usage_request_repo.create_many([duplicate, new])
+        db_session.commit()
+
+        assert skipped == 1
+        assert len(created) == 1
+        assert created[0].litellm_call_id == "dup-002"
+
+        # Original row must be untouched
+        row = await usage_request_repo.get_by_litellm_call_id("dup-001")
+        assert row is not None
+        assert row.id == original_id
+        assert row.provider == "openai"
+        assert row.resolved_model == "gpt-4o"
+        assert row.status == "success"
+
     async def test_get_by_litellm_call_id(self, usage_request_repo, db_session):
         """Retrieve usage request by LiteLLM call ID."""
         from benchmark_core.db.models import UsageRequest as UsageRequestORM

@@ -91,6 +91,15 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
         generic check-and-insert semantics.
         """
         call_ids = [r.litellm_call_id for r in requests]
+
+        # Snapshot pre-existing IDs so we can exclude them from the
+        # post-insert query-back result (ON CONFLICT DO NOTHING may skip
+        # some rows and we must only return newly inserted ones).
+        pre_existing_stmt = select(UsageRequestORM.litellm_call_id).where(
+            UsageRequestORM.litellm_call_id.in_(call_ids)
+        )
+        pre_existing = set(self._session.execute(pre_existing_stmt).scalars().all())
+
         mapper = inspect(UsageRequestORM)
         insert_stmt = pg_insert(UsageRequestORM).values(
             [{col.name: getattr(r, col.name) for col in mapper.columns} for r in requests]
@@ -100,12 +109,15 @@ class SQLUsageRequestRepository(SQLAlchemyRepository[UsageRequestORM]):
         result = self._session.execute(insert_stmt)
         skipped = len(requests) - result.rowcount  # type: ignore[attr-defined]
 
-        # Query back inserted rows so callers receive only persisted records
+        # Query back inserted rows, filtering out any pre-existing ones
+        created: list[UsageRequestORM] = []
         if result.rowcount:  # type: ignore[attr-defined]
             stmt = select(UsageRequestORM).where(UsageRequestORM.litellm_call_id.in_(call_ids))
-            created = list(self._session.execute(stmt).scalars().all())
-        else:
-            created = []
+            created = [
+                r
+                for r in self._session.execute(stmt).scalars().all()
+                if r.litellm_call_id not in pre_existing
+            ]
 
         return created, skipped
 
