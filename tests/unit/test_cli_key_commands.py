@@ -314,11 +314,11 @@ class TestKeyRevokeCommand:
         assert result.exit_code == 1
         assert "not found" in result.output
 
-    def test_revoke_invalid_uuid(self, runner, mock_env_db_url, monkeypatch):
-        """Revoke with invalid UUID shows error."""
+    def test_revoke_invalid_alias(self, runner, mock_env_db_url, monkeypatch):
+        """Revoke with non-existent alias shows not-found error."""
         result = runner.invoke(app, ["key", "revoke", "not-a-uuid"])
         assert result.exit_code == 1
-        assert "Invalid UUID" in result.output
+        assert "not found" in result.output
 
 
 class TestKeyCLIImports:

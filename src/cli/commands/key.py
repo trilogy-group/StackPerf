@@ -52,6 +52,15 @@ def create(
     models: list[str] | None = typer.Option(
         None, "--model", "-m", help="Allowed model alias (repeatable)"
     ),
+    budget_amount: float | None = typer.Option(
+        None, "--budget-amount", "-b", help="Budget limit (currency units)"
+    ),
+    budget_duration: str | None = typer.Option(
+        None, "--budget-duration", "-d", help="Budget interval (e.g. '1d', '30d')"
+    ),
+    metadata_pairs: list[str] | None = typer.Option(
+        None, "--meta", help="Metadata tag as 'key=value' (repeatable)"
+    ),
     ttl_hours: int = typer.Option(168, "--ttl-hours", help="Key TTL in hours (default 7 days)"),
     show_env: bool = typer.Option(
         False, "--show-env", "-e", help="Print environment snippet after creation"
@@ -70,6 +79,17 @@ def create(
     """
     console.print("[bold blue]Creating sessionless proxy key...[/bold blue]")
 
+    # Parse metadata pairs
+    metadata: dict[str, str] | None = None
+    if metadata_pairs:
+        metadata = {}
+        for pair in metadata_pairs:
+            if "=" not in pair:
+                console.print(f"[red]Invalid metadata format: {pair} (expected key=value)[/red]")
+                raise typer.Exit(1)
+            key, value = pair.split("=", 1)
+            metadata[key] = value
+
     with get_db_session() as db:
         service = _get_service(db)
 
@@ -82,6 +102,9 @@ def create(
                     customer=customer,
                     purpose=purpose,
                     allowed_models=models or None,
+                    budget_amount=budget_amount,
+                    budget_duration=budget_duration,
+                    metadata=metadata,
                     ttl_hours=ttl_hours,
                 )
             )
@@ -256,26 +279,36 @@ def info(
 
 @app.command()
 def revoke(
-    key_id: str = typer.Argument(..., help="Proxy key ID (UUID)"),
+    key_id: str = typer.Argument(..., help="Proxy key ID (UUID) or alias"),
 ) -> None:
     """Revoke a sessionless proxy key.
 
     Marks the local metadata as inactive and attempts LiteLLM deletion.
     The key secret cannot be recovered after revocation.
     """
-    try:
-        pk_uuid = UUID(key_id)
-    except ValueError as e:
-        console.print(f"[red]Invalid UUID: {key_id}[/red]")
-        raise typer.Exit(1) from e
-
     with get_db_session() as db:
         service = _get_service(db)
+
+        # Try as UUID first, then as alias
         try:
-            proxy_key = _run(service.revoke_key(pk_uuid))
-        except ProxyKeyServiceError as e:
-            console.print(f"[red]Error: {e}[/red]")
-            raise typer.Exit(1) from e
+            pk_uuid = UUID(key_id)
+            try:
+                proxy_key = _run(service.revoke_key(pk_uuid))
+            except ProxyKeyServiceError as e:
+                console.print(f"[red]Error: {e}[/red]")
+                raise typer.Exit(1) from e
+        except ValueError:
+            try:
+                proxy_key = _run(service.get_key_by_alias(key_id))
+            except ProxyKeyServiceError as e:
+                console.print(f"[red]Error: {e}[/red]")
+                raise typer.Exit(1) from e
+            if proxy_key is not None:
+                try:
+                    proxy_key = _run(service.revoke_key(proxy_key.proxy_key_id))
+                except ProxyKeyServiceError as e:
+                    console.print(f"[red]Error: {e}[/red]")
+                    raise typer.Exit(1) from e
 
     if proxy_key is None:
         console.print(f"[red]Proxy key not found: {key_id}[/red]")
