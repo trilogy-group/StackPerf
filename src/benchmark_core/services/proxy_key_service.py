@@ -126,9 +126,7 @@ class ProxyKeyService:
             ProxyKeyServiceError: If master_key not configured.
         """
         if self.master_key is None:
-            raise ProxyKeyServiceError(
-                "Cannot create key: LiteLLM master_key not configured."
-            )
+            raise ProxyKeyServiceError("Cannot create key: LiteLLM master_key not configured.")
 
         # Apply usage policy defaults if provided
         effective_alias = key_alias or self._build_key_alias(
@@ -147,7 +145,9 @@ class ProxyKeyService:
             usage_policy.budget_amount if usage_policy else None
         )
         effective_ttl = (
-            usage_policy.ttl_seconds // 3600 if usage_policy and usage_policy.ttl_seconds else ttl_hours
+            usage_policy.ttl_seconds // 3600
+            if usage_policy and usage_policy.ttl_seconds
+            else ttl_hours
         )
 
         # Merge metadata

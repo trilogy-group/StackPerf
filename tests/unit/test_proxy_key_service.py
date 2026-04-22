@@ -167,7 +167,7 @@ class TestProxyKeyCreation:
         )
 
         assert proxy_key.owner == "override-owner"  # explicit override
-        assert proxy_key.team == "default-team"      # from policy
+        assert proxy_key.team == "default-team"  # from policy
         assert proxy_key.customer == "default-customer"
         assert proxy_key.allowed_models == ["kimi-k2-5"]
         assert proxy_key.budget_duration == "30d"
@@ -381,9 +381,7 @@ class TestEnvRendering:
     def test_render_env_snippet_with_model(self, service):
         """Includes model when provided."""
         secret = SecretStr("sk-test-key")
-        env = service.render_env_snippet(
-            secret, proxy_base_url="http://proxy:4000", model="gpt-4o"
-        )
+        env = service.render_env_snippet(secret, proxy_base_url="http://proxy:4000", model="gpt-4o")
 
         assert env["OPENAI_MODEL"] == "gpt-4o"
 

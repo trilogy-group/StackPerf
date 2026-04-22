@@ -108,7 +108,9 @@ def create(
     console.print(f"  Expires: {proxy_key.expires_at}")
 
     # Display the secret ONCE
-    console.print("\n[bold yellow]API Key Secret (copy now - will not be shown again):[/bold yellow]")
+    console.print(
+        "\n[bold yellow]API Key Secret (copy now - will not be shown again):[/bold yellow]"
+    )
     console.print(f"  {secret.get_secret_value()}")
 
     # Optionally render environment snippet
@@ -286,6 +288,6 @@ def revoke(
         console.print(f"  Revoked at: {proxy_key.revoked_at}")
 
 
-def _run(coro) -> Any:
+def _run(coro: Any) -> Any:
     """Run an async coroutine synchronously."""
     return asyncio.run(coro)

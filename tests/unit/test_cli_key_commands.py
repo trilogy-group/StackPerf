@@ -297,6 +297,7 @@ class TestKeyRevokeCommand:
 
         # Extract UUID from output
         import re
+
         uuid_match = re.search(r"ID: ([0-9a-f-]{36})", result.output)
         assert uuid_match, f"Could not find UUID in output: {result.output}"
         key_id = uuid_match.group(1)
@@ -309,9 +310,7 @@ class TestKeyRevokeCommand:
 
     def test_revoke_not_found(self, runner, mock_env_db_url, monkeypatch):
         """Revoke non-existent key shows error."""
-        result = runner.invoke(
-            app, ["key", "revoke", "12345678-1234-1234-1234-123456789abc"]
-        )
+        result = runner.invoke(app, ["key", "revoke", "12345678-1234-1234-1234-123456789abc"])
         assert result.exit_code == 1
         assert "not found" in result.output
 
