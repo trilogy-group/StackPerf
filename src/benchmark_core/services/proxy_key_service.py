@@ -6,6 +6,7 @@ Only non-secret key metadata is persisted locally.
 """
 
 from datetime import UTC, datetime, timedelta
+from math import ceil
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -131,9 +132,13 @@ class ProxyKeyService:
         effective_alias = key_alias or self._build_key_alias(
             usage_policy.name if usage_policy else None
         )
-        effective_owner = owner or (usage_policy.owner if usage_policy else None)
-        effective_team = team or (usage_policy.team if usage_policy else None)
-        effective_customer = customer or (usage_policy.customer if usage_policy else None)
+        effective_owner = (
+            owner if owner is not None else (usage_policy.owner if usage_policy else None)
+        )
+        effective_team = team if team is not None else (usage_policy.team if usage_policy else None)
+        effective_customer = (
+            customer if customer is not None else (usage_policy.customer if usage_policy else None)
+        )
         effective_models = (
             list(allowed_models)
             if allowed_models is not None
@@ -150,7 +155,7 @@ class ProxyKeyService:
             else (usage_policy.budget_amount if usage_policy else None)
         )
         effective_ttl = (
-            usage_policy.ttl_seconds // 3600
+            ceil(usage_policy.ttl_seconds / 3600)
             if usage_policy and usage_policy.ttl_seconds
             else ttl_hours
         )
@@ -359,7 +364,6 @@ class ProxyKeyService:
         api_key: SecretStr,
         proxy_base_url: str = "http://localhost:4000",
         model: str | None = None,
-        harness_profile: str = "openai-compatible",
     ) -> dict[str, str]:
         """Render generic OpenAI-compatible environment snippet.
 
@@ -367,7 +371,6 @@ class ProxyKeyService:
             api_key: The proxy key secret.
             proxy_base_url: LiteLLM proxy base URL.
             model: Optional default model alias.
-            harness_profile: Harness profile hint for rendering.
 
         Returns:
             Dictionary of environment variables.
@@ -401,35 +404,6 @@ class ProxyKeyService:
             Dotenv file content string.
         """
         return render_env_dotenv(env_vars)
-
-    def render_harness_env(
-        self,
-        api_key: SecretStr,
-        harness_profile_name: str,
-        proxy_base_url: str = "http://localhost:4000",
-        model: str | None = None,
-    ) -> dict[str, str]:
-        """Render harness-profile-based environment snippet.
-
-        Args:
-            api_key: The proxy key secret.
-            harness_profile_name: Name of the harness profile.
-            proxy_base_url: LiteLLM proxy base URL.
-            model: Optional default model alias.
-
-        Returns:
-            Dictionary of environment variables.
-        """
-        # Generic OpenAI-compatible rendering
-        # Future: could load harness profile from config and adapt variable names
-        env_vars: dict[str, str] = {
-            "OPENAI_API_BASE": proxy_base_url,
-            "OPENAI_API_KEY": api_key.get_secret_value(),
-        }
-        if model:
-            env_vars["OPENAI_MODEL"] = model
-        env_vars["LITELLM_KEY_ALIAS"] = harness_profile_name
-        return env_vars
 
     def _orm_to_model(self, orm: ProxyKeyORM) -> ProxyKey:
         """Convert an ORM ProxyKey to a domain model.
