@@ -8,8 +8,11 @@ from benchmark_core.config import (
     HarnessProfile,
     ProviderConfig,
     ProviderModel,
+    RedactionPolicy,
     RoutingDefaults,
     TaskCard,
+    UsagePolicyConfig,
+    UsagePolicyProfile,
     Variant,
 )
 
@@ -29,6 +32,9 @@ __all__ = [
     "Variant",
     "Experiment",
     "TaskCard",
+    "RedactionPolicy",
+    "UsagePolicyConfig",
+    "UsagePolicyProfile",
     "ConfigLoader",
     "ConfigRegistry",
     "ConfigValidationError",

@@ -12,17 +12,11 @@ To attribute usage to owners, teams, and customers, the system needs a non-secre
 
 ## Canonical Terms
 
-| Term | Definition |
-|------|------------|
-| **Proxy key** | A LiteLLM virtual key (the actual secret string) issued by the LiteLLM proxy. |
-| **Key alias** | A human-readable identifier assigned to a proxy key at creation time (e.g., `team-alpha-gpt4o`). Aliases are non-secret and stored in the benchmark registry. |
-| **Proxy key ID** | The LiteLLM-internal identifier for a virtual key (e.g., `sk-...`). This is a secret and must not be persisted. |
-| **Usage request** | One normalized LLM call observed through LiteLLM, stored in `usage_requests`. |
-| **Usage rollup** | A derived summary of usage requests grouped by one or more dimensions (e.g., key alias, model, time bucket). |
-| **Owner** | The entity responsible for a proxy key (e.g., a person, service account, or team). |
-| **Team** | An organizational grouping that owns one or more proxy keys. |
-| **Customer** | An external billing or cost-center label attached to a proxy key for charge-back. |
-| **Time bucket** | A fixed time interval (e.g., hour, day) used to aggregate usage rollups. |
+See `docs/config-and-contracts.md` for the canonical glossary. The following terms are expanded here only when this ADR adds key-management-specific nuance:
+
+- **Proxy key ID** (`proxy_key_id`) — The stable surrogate identifier in the benchmark registry (auto-increment or UUID). This is non-secret and is the canonical foreign key for `usage_requests`.
+- **LiteLLM virtual key ID** — The LiteLLM-internal identifier (e.g., `sk-...`). This is a secret and must not be persisted in the benchmark database.
+- All other terms (`Proxy key`, `Key alias`, `Usage request`, `Usage rollup`, `Owner`, `Team`, `Customer`, `Time bucket`) are defined in `docs/config-and-contracts.md`.
 
 ## Attribution Contract
 
@@ -30,7 +24,8 @@ To attribute usage to owners, teams, and customers, the system needs a non-secre
 
 The benchmark database stores only **non-secret** key metadata:
 
-- `key_alias` — the human-readable alias (unique within the system)
+- `proxy_key_id` — stable surrogate primary key (auto-increment or UUID), non-secret
+- `key_alias` — the human-readable alias (unique within the system, non-secret)
 - `owner` — free-text owner label
 - `team` — team identifier
 - `customer` — customer or cost-center label
@@ -47,14 +42,20 @@ The benchmark database stores only **non-secret** key metadata:
 
 ### What LiteLLM logs contain
 
-LiteLLM spend logs and request logs contain the virtual key ID. The benchmark collectors read these logs, match the key ID to the local registry entry by alias, and then drop the raw key ID before persistence. If a log references a key that has no registry entry, the collector stores `key_alias = null` and logs a warning.
+LiteLLM spend logs and request logs contain the LiteLLM virtual key ID (`sk-...`). This is a secret and must never be persisted in the benchmark database. The collector resolves this secret ID to a stable, non-secret registry identifier through one of the following mechanisms, configured at deployment time:
+
+- **Ephemeral collector mapping** (default): The collector maintains an in-memory lookup that resolves a LiteLLM virtual key ID (`sk-...`) to the stable `proxy_key_id`. Because the `proxy_keys` registry does not store the raw `sk-...` value, the collector bootstraps the lookup at startup by fetching the `sk-...` -> `key_alias` pairs from an external source (e.g., a live LiteLLM admin API query or an operator-managed static mapping file suitable for dev/test environments), then joining to `proxy_keys` by `key_alias` to resolve the stable `proxy_key_id`. The resulting lookup table is held only in memory and rebuilt at each startup. The raw `sk-...` value is used only during this resolution, never written.
+- **Sidecar file** (alternative for air-gapped or high-security environments): A process outside the benchmark database periodically syncs the mapping from LiteLLM virtual key ID to key_alias to a local JSON Lines (.jsonl) file. Each line is a JSON object with exactly two fields: `litellm_virtual_key_id` (string, the raw sk-... value) and `key_alias` (string, the human-readable alias registered in proxy_keys). The collector reads the sidecar file at startup, looks up key_alias in proxy_keys to resolve proxy_key_id, and discards the raw sk-... value. The sidecar is stored outside the benchmark database backup scope. The sidecar file must have restrictive file-system permissions (e.g., owner-read-only, 0600) and must never be committed to version control, because it may contain raw virtual key secrets.
+- **Live LiteLLM admin API lookup** (alternative for dynamic environments): The collector queries the LiteLLM admin API at ingestion time to resolve a virtual key ID to its `key_alias`. It then joins to `proxy_keys` by `key_alias` to resolve the stable `proxy_key_id`. The raw key ID is discarded after resolution.
+
+In all mechanisms, the raw LiteLLM virtual key ID is dropped before any benchmark database write. If a log references a key that has no registry entry, the collector stores `proxy_key_id = null` and `key_alias = null`, and logs a warning.
 
 ### Redaction rules
 
-1. **Ingestion redaction**: Before writing a `usage_requests` row, the collector must replace any raw virtual key ID with the corresponding `key_alias` from the registry. If no alias is found, the field is left null.
-2. **Export redaction**: Any export or API response that includes usage rows must include only `key_alias`, never the raw key ID.
-3. **Log redaction**: Application logs that mention keys must log the alias, never the secret.
-4. **Audit trail**: The collector should record how many rows were ingested with missing aliases so operators can detect unattributed traffic.
+1. **Ingestion redaction**: Before writing a `usage_requests` row, the collector must resolve the raw LiteLLM virtual key ID to the stable `proxy_key_id` (and denormalized `key_alias`) from the registry through the configured collector mapping mechanism. The raw `sk-...` value is never stored. If no registry entry is found, `proxy_key_id` and `key_alias` are left null.
+2. **Export redaction**: Any export or API response that includes usage rows must include only `proxy_key_id` and `key_alias`, never the raw LiteLLM virtual key ID.
+3. **Log redaction**: Application logs that mention keys must log `proxy_key_id` or `key_alias`, never the secret.
+4. **Audit trail**: The collector should record how many rows were ingested with missing registry entries so operators can detect unattributed traffic.
 
 ## Storage Strategy
 
@@ -62,7 +63,8 @@ LiteLLM spend logs and request logs contain the virtual key ID. The benchmark co
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `key_alias` | string, PK | Human-readable, unique, non-secret |
+| `proxy_key_id` | UUID or auto-increment, PK | Stable surrogate identifier, non-secret |
+| `key_alias` | string, unique | Human-readable, unique, non-secret |
 | `owner` | string, nullable | Attribution owner |
 | `team` | string, nullable | Team grouping |
 | `customer` | string, nullable | Customer or cost-center |
@@ -80,10 +82,12 @@ Attribution fields:
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `key_alias` | string, FK → `proxy_keys.key_alias` | Null if key not in registry |
+| `proxy_key_id` | UUID or int, FK → `proxy_keys.proxy_key_id` | Null if key not in registry |
+| `key_alias` | string, nullable | Denormalized from registry at ingestion time |
 | `owner` | string, nullable | Denormalized from registry at ingestion time |
 | `team` | string, nullable | Denormalized from registry at ingestion time |
 | `customer` | string, nullable | Denormalized from registry at ingestion time |
+| `cost` | numeric, nullable | Total spend from LiteLLM spend logs when available |
 
 Denormalized fields are populated at ingestion so that rollups and queries do not need to join `proxy_keys` for every aggregation. If a key is later updated (e.g., team change), historical usage rows retain the values that were current at ingestion time. This is intentional: usage records are immutable facts.
 
@@ -92,7 +96,7 @@ Denormalized fields are populated at ingestion so that rollups and queries do no
 - Raw key secrets are never in the benchmark database.
 - Attribution queries are fast because `owner`, `team`, and `customer` are stored on `usage_requests`.
 - Operators can update key metadata without rewriting historical usage rows.
-- Missing registry entries are visible through null `key_alias` counts and collector warnings.
+- Missing registry entries are visible through null `proxy_key_id` counts and collector warnings.
 - The system can support multiple keys per owner/team/customer without losing granularity.
 
 ## Related

@@ -739,6 +739,327 @@ class TestProxyCredentialRepository:
         assert result is None
 
 
+class TestProxyKeyRepository:
+    """Tests for SQLProxyKeyRepository."""
+
+    @pytest.fixture
+    def proxy_key_repo(self, db_session):
+        """Create a proxy key repository."""
+        from benchmark_core.repositories.proxy_key_repository import SQLProxyKeyRepository
+
+        return SQLProxyKeyRepository(db_session)
+
+    async def test_create_proxy_key(self, proxy_key_repo, db_session):
+        """Test creating a proxy key registry entry."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        proxy_key = ProxyKeyORM(
+            key_alias="test-key-001",
+            litellm_key_id="litellm-key-001",
+            owner="dev-team",
+            team="platform",
+            customer="internal",
+            purpose="benchmark sessions",
+            allowed_models=["gpt-4o", "gpt-4"],
+            budget_duration="monthly",
+            budget_amount=100.0,
+            budget_currency="USD",
+            status="active",
+        )
+
+        created = await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        assert created.id is not None
+        assert created.key_alias == "test-key-001"
+        assert created.litellm_key_id == "litellm-key-001"
+        assert created.owner == "dev-team"
+        assert created.team == "platform"
+        assert created.customer == "internal"
+        assert created.status == "active"
+        assert created.budget_currency == "USD"
+        # Ensure no secret column exists
+        assert not hasattr(created, "api_key")
+        assert not hasattr(created, "secret")
+
+    async def test_get_by_alias(self, proxy_key_repo, db_session):
+        """Test retrieving a proxy key by alias."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        proxy_key = ProxyKeyORM(
+            key_alias="alias-lookup-key",
+            litellm_key_id="litellm-lookup-123",
+            owner="qa-team",
+            status="active",
+        )
+        await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        found = await proxy_key_repo.get_by_alias("alias-lookup-key")
+        assert found is not None
+        assert found.key_alias == "alias-lookup-key"
+        assert found.litellm_key_id == "litellm-lookup-123"
+
+    async def test_get_by_litellm_key_id(self, proxy_key_repo, db_session):
+        """Test retrieving a proxy key by LiteLLM key ID."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        proxy_key = ProxyKeyORM(
+            key_alias="litellm-lookup-key",
+            litellm_key_id="sk-litellm-abc-789",
+            owner="ops-team",
+            status="active",
+        )
+        await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        found = await proxy_key_repo.get_by_litellm_key_id("sk-litellm-abc-789")
+        assert found is not None
+        assert found.litellm_key_id == "sk-litellm-abc-789"
+        assert found.key_alias == "litellm-lookup-key"
+
+    async def test_list_by_owner(self, proxy_key_repo, db_session):
+        """Test listing proxy keys by owner."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        for i in range(3):
+            proxy_key = ProxyKeyORM(
+                key_alias=f"owner-key-{i}",
+                litellm_key_id=f"litellm-owner-{i}",
+                owner="shared-owner",
+                team=f"team-{i}",
+                status="active",
+            )
+            await proxy_key_repo.create(proxy_key)
+
+        # Different owner
+        other = ProxyKeyORM(
+            key_alias="other-owner-key",
+            litellm_key_id="litellm-other",
+            owner="different-owner",
+            status="active",
+        )
+        await proxy_key_repo.create(other)
+        db_session.commit()
+
+        results = await proxy_key_repo.list_by_owner("shared-owner")
+        assert len(results) == 3
+        for r in results:
+            assert r.owner == "shared-owner"
+
+    async def test_list_by_team(self, proxy_key_repo, db_session):
+        """Test listing proxy keys by team."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        for i in range(2):
+            proxy_key = ProxyKeyORM(
+                key_alias=f"team-key-{i}",
+                litellm_key_id=f"litellm-team-{i}",
+                team="ml-platform",
+                status="active",
+            )
+            await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        results = await proxy_key_repo.list_by_team("ml-platform")
+        assert len(results) == 2
+
+    async def test_list_by_customer(self, proxy_key_repo, db_session):
+        """Test listing proxy keys by customer."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        proxy_key = ProxyKeyORM(
+            key_alias="customer-key",
+            litellm_key_id="litellm-customer-1",
+            customer="acme-corp",
+            status="active",
+        )
+        await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        results = await proxy_key_repo.list_by_customer("acme-corp")
+        assert len(results) == 1
+        assert results[0].customer == "acme-corp"
+
+    async def test_list_active(self, proxy_key_repo, db_session):
+        """Test listing only active proxy keys."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        active = ProxyKeyORM(
+            key_alias="active-key",
+            litellm_key_id="litellm-active",
+            status="active",
+        )
+        revoked = ProxyKeyORM(
+            key_alias="revoked-key",
+            litellm_key_id="litellm-revoked",
+            status="revoked",
+        )
+        await proxy_key_repo.create(active)
+        await proxy_key_repo.create(revoked)
+        db_session.commit()
+
+        results = await proxy_key_repo.list_active()
+        aliases = {r.key_alias for r in results}
+        assert "active-key" in aliases
+        assert "revoked-key" not in aliases
+
+    async def test_revoke_proxy_key(self, proxy_key_repo, db_session):
+        """Test revoking a proxy key."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        proxy_key = ProxyKeyORM(
+            key_alias="revocable-key",
+            litellm_key_id="litellm-revoke-me",
+            status="active",
+        )
+        created = await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        revoked = await proxy_key_repo.revoke(created.id)
+        db_session.commit()
+
+        assert revoked is not None
+        assert revoked.status == "revoked"
+        assert revoked.revoked_at is not None
+
+    async def test_revoke_idempotent(self, proxy_key_repo, db_session):
+        """Test that revoking an already-revoked key is a no-op."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        proxy_key = ProxyKeyORM(
+            key_alias="idempotent-revoke-key",
+            litellm_key_id="litellm-idempotent",
+            status="active",
+        )
+        created = await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        await proxy_key_repo.revoke(created.id)
+        db_session.commit()
+
+        # Re-read from DB to get the same tz-naive representation used by second_revoke
+        refreshed = await proxy_key_repo.get_by_id(created.id)
+        first_timestamp = refreshed.revoked_at
+
+        second_revoke = await proxy_key_repo.revoke(created.id)
+        db_session.commit()
+
+        assert second_revoke is not None
+        assert second_revoke.status == "revoked"
+        assert second_revoke.revoked_at is not None
+        # Verify the revoked_at timestamp was preserved (not overwritten)
+        assert second_revoke.revoked_at == first_timestamp
+
+    async def test_list_by_proxy_credential_id(self, proxy_key_repo, db_session):
+        """Test listing proxy keys by proxy credential ID."""
+        from uuid import UUID
+
+        from benchmark_core.db.models import (
+            Experiment,
+            ProxyCredential,
+            TaskCard,
+            Variant,
+        )
+        from benchmark_core.db.models import (
+            ProxyKey as ProxyKeyORM,
+        )
+        from benchmark_core.db.models import (
+            Session as SessionORM,
+        )
+
+        # Build minimum required chain to create a ProxyCredential
+        experiment = Experiment(name="proxy-key-test-exp")
+        db_session.add(experiment)
+        db_session.flush()
+
+        variant = Variant(
+            name="proxy-key-test-variant",
+            provider="litellm",
+            model_alias="gpt-4",
+            harness_profile="default",
+        )
+        db_session.add(variant)
+        db_session.flush()
+
+        task_card = TaskCard(
+            name="proxy-key-test-task",
+            goal="Test proxy key link",
+            starting_prompt="Start",
+            stop_condition="Stop",
+        )
+        db_session.add(task_card)
+        db_session.flush()
+
+        session = SessionORM(
+            experiment_id=experiment.id,
+            variant_id=variant.id,
+            task_card_id=task_card.id,
+            harness_profile="default",
+            repo_path="/tmp/test",
+            git_branch="main",
+            git_commit="abc1234",
+            status="active",
+        )
+        db_session.add(session)
+        db_session.flush()
+
+        credential = ProxyCredential(
+            session_id=session.id,
+            key_alias="cred-for-proxy-keys",
+            experiment_id=str(experiment.id),
+            variant_id=str(variant.id),
+            harness_profile="default",
+        )
+        db_session.add(credential)
+        db_session.flush()
+
+        proxy_key = ProxyKeyORM(
+            key_alias="linked-key-1",
+            litellm_key_id="litellm-linked-1",
+            status="active",
+            proxy_credential_id=credential.id,
+        )
+        created = await proxy_key_repo.create(proxy_key)
+        db_session.commit()
+
+        results = await proxy_key_repo.list_by_proxy_credential_id(credential.id)
+        assert len(results) == 1
+        assert results[0].id == created.id
+
+        other_results = await proxy_key_repo.list_by_proxy_credential_id(
+            UUID("00000000-0000-0000-0000-000000000001"), limit=5, offset=0
+        )
+        assert other_results == []
+
+    async def test_get_nonexistent_proxy_key(self, proxy_key_repo):
+        """Test retrieving proxy keys that don't exist."""
+        from uuid import uuid4
+
+        result = await proxy_key_repo.get_by_id(uuid4())
+        assert result is None
+
+        result = await proxy_key_repo.get_by_alias("nonexistent-alias")
+        assert result is None
+
+        result = await proxy_key_repo.get_by_litellm_key_id("nonexistent-litellm-id")
+        assert result is None
+
+    async def test_create_duplicate_alias(self, proxy_key_repo):
+        """Test that duplicate key aliases are rejected."""
+        from benchmark_core.db.models import ProxyKey as ProxyKeyORM
+
+        key1 = ProxyKeyORM(key_alias="unique-alias", status="active")
+        key2 = ProxyKeyORM(key_alias="unique-alias", status="active")
+
+        await proxy_key_repo.create(key1)
+
+        from sqlalchemy.exc import IntegrityError
+
+        with pytest.raises(IntegrityError):
+            await proxy_key_repo.create(key2)
+
+
 class TestSQLArtifactRepository:
     """Tests for SQLArtifactRepository."""
 

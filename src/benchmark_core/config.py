@@ -1,8 +1,32 @@
-"""Typed config schemas for providers, harness profiles, variants, experiments, and task cards."""
+"""Typed config schemas for providers, harness profiles, variants, experiments, task cards, and usage policies."""
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+# Secret rejection patterns for config fields.
+# Applied selectively to UsagePolicyProfile because its metadata fields
+# (name, description, owner, team, customer, metadata tags) are user-configured
+# and most likely to accidentally receive pasted secrets.
+_SECRET_PATTERNS = [
+    # OpenAI-style keys: sk- followed by 20+ alphanumeric chars (no hyphens in
+    # body to avoid false positives on legitimate variant/model identifiers)
+    re.compile(r"sk-[a-zA-Z0-9]{20,}"),
+    # Anthropic-style keys: sk-ant- followed by 20+ alphanumeric chars
+    re.compile(r"sk-ant-[a-zA-Z0-9]{20,}"),
+    # Bearer tokens: Bearer followed by 10+ alphanumeric chars
+    re.compile(r"bearer\s+[a-zA-Z0-9]{10,}", re.IGNORECASE),
+    # Generic API key with long alphanumeric tail
+    re.compile(r"api[_-]?key[=:]\s*[a-zA-Z0-9]{10,}", re.IGNORECASE),
+]
+
+
+def _looks_like_secret(value: str) -> bool:
+    """Check if a string value appears to contain a raw API key secret."""
+    stripped = value.strip()
+    return any(pattern.search(stripped) for pattern in _SECRET_PATTERNS)
+
 
 # Define valid protocol surfaces
 ProtocolSurface = Literal["anthropic_messages", "openai_responses"]
@@ -202,4 +226,181 @@ class TaskCard(BaseModel):
     def validate_timebox(cls, v: int | None) -> int | None:
         if v is not None and v <= 0:
             raise ValueError("session_timebox_minutes must be positive")
+        return v
+
+
+class RedactionPolicy(BaseModel):
+    """Redaction and retention policy reference for a usage profile."""
+
+    model_config = {"extra": "forbid"}
+
+    policy_name: str | None = Field(
+        default=None,
+        description="Reference to a named redaction/retention policy",
+    )
+    retain_prompts: bool | None = Field(
+        default=None,
+        description="Whether to retain prompt text (default: off)",
+    )
+    retain_responses: bool | None = Field(
+        default=None,
+        description="Whether to retain response text (default: off)",
+    )
+    retention_days: int | None = Field(
+        default=None,
+        description="Number of days to retain usage records before cleanup",
+    )
+
+    @field_validator("policy_name")
+    @classmethod
+    def validate_policy_name_not_empty(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("policy_name must not be empty or whitespace")
+        return v
+
+    @field_validator("retention_days")
+    @classmethod
+    def validate_retention_positive(cls, v: int | None) -> int | None:
+        if v is not None and v <= 0:
+            raise ValueError("retention_days must be positive")
+        return v
+
+
+class UsagePolicyProfile(BaseModel):
+    """A named usage policy profile for sessionless proxy key creation.
+
+    Defines defaults and constraints for a class of proxy keys
+    (e.g., a team or customer tier).
+    """
+
+    model_config = {"extra": "forbid"}
+
+    name: str = Field(..., description="Policy profile identifier")
+    description: str = Field(default="", description="Human-readable description")
+    allowed_models: list[str] = Field(
+        default_factory=list,
+        description="Model aliases permitted under this policy",
+    )
+    budget_duration: str | None = Field(
+        default=None,
+        description="Budget interval (e.g., 1d, 30d, 12h, 5m). Must match /^[1-9][0-9]*[dhm]$/.",
+    )
+    budget_amount: float | None = Field(
+        default=None,
+        description="Budget limit in currency units",
+    )
+    ttl_seconds: int | None = Field(
+        default=None,
+        description="Key TTL in seconds (time-to-live before expiration)",
+    )
+    owner: str | None = Field(
+        default=None,
+        description="Default owner label for keys created under this policy",
+    )
+    team: str | None = Field(
+        default=None,
+        description="Default team label for keys created under this policy",
+    )
+    customer: str | None = Field(
+        default=None,
+        description="Default customer label for keys created under this policy",
+    )
+    metadata: dict[str, str] = Field(
+        default_factory=dict,
+        description="Default metadata tags for keys created under this policy",
+    )
+    redaction_policy: RedactionPolicy | None = Field(
+        default=None,
+        description="Redaction/retention policy reference",
+    )
+
+    @field_validator("name")
+    @classmethod
+    def must_not_be_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("must not be empty or whitespace")
+        return v
+
+    @field_validator("allowed_models")
+    @classmethod
+    def validate_allowed_models(cls, v: list[str]) -> list[str]:
+        for item in v:
+            if not item or not item.strip():
+                raise ValueError("allowed_models items must not be empty or whitespace")
+        seen = set()
+        for item in v:
+            if item in seen:
+                raise ValueError(f"allowed_models contains duplicate: {item!r}")
+            seen.add(item)
+        return v
+
+    @model_validator(mode="after")
+    def reject_secret_values(self) -> "UsagePolicyProfile":
+        """Reject fields that appear to contain raw API key secrets."""
+        secret_fields: list[str] = []
+        for field_name in ("name", "description", "owner", "team", "customer"):
+            value = getattr(self, field_name)
+            if value and _looks_like_secret(value):
+                secret_fields.append(field_name)
+        for key, value in self.metadata.items():
+            if _looks_like_secret(value):
+                secret_fields.append(f"metadata.{key}")
+        if secret_fields:
+            raise ValueError(
+                f"usage policy fields contain secret-like values: {', '.join(secret_fields)}"
+            )
+        return self
+
+    @field_validator("budget_amount")
+    @classmethod
+    def validate_budget_positive(cls, v: float | None) -> float | None:
+        if v is not None and v <= 0:
+            raise ValueError("budget_amount must be positive")
+        return v
+
+    @field_validator("ttl_seconds")
+    @classmethod
+    def validate_ttl_positive(cls, v: int | None) -> int | None:
+        if v is not None and v <= 0:
+            raise ValueError("ttl_seconds must be positive")
+        return v
+
+    @field_validator("budget_duration")
+    @classmethod
+    def validate_budget_duration_format(cls, v: str | None) -> str | None:
+        if v is not None and not re.match(r"^[1-9][0-9]*[dhm]$", v):
+            raise ValueError(
+                "budget_duration must match a duration format such as '1d', '30d', '12h', '5m'"
+            )
+        return v
+
+    @field_validator("owner", "team", "customer")
+    @classmethod
+    def validate_non_empty_when_present(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("must not be empty or whitespace when provided")
+        return v
+
+
+class UsagePolicyConfig(BaseModel):
+    """Top-level usage policy configuration file.
+
+    Can contain one or more named usage policy profiles.
+    Usage policy config is optional so current benchmark workflows
+    do not require migration.
+    """
+
+    model_config = {"extra": "forbid"}
+
+    profiles: list[UsagePolicyProfile] = Field(
+        default_factory=list,
+        description="Named usage policy profiles",
+    )
+
+    @field_validator("profiles")
+    @classmethod
+    def validate_unique_profile_names(cls, v: list[UsagePolicyProfile]) -> list[UsagePolicyProfile]:
+        names = [p.name for p in v]
+        if len(names) != len(set(names)):
+            raise ValueError("duplicate usage policy profile names found")
         return v

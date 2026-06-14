@@ -1,0 +1,41 @@
+profiles:
+  - name: platform-team-default
+    description: Default usage policy for platform team with moderate budgets
+    allowed_models:
+      - kimi-k2-5
+      - glm-5
+      - gpt-4o
+    budget_duration: 30d
+    budget_amount: 1000.0
+    ttl_seconds: 2592000
+    owner: platform-team
+    team: platform
+    customer: internal
+    metadata:
+      cost_center: engineering
+      environment: production
+    redaction_policy:
+      policy_name: default-redaction
+      retain_prompts: false
+      retain_responses: false
+      retention_days: 30
+
+  - name: data-science-team
+    description: Data science team policy with extended retention
+    allowed_models:
+      - kimi-k2-5
+      - glm-5
+    budget_duration: 30d
+    budget_amount: 5000.0
+    ttl_seconds: 7776000
+    owner: ds-team
+    team: data-science
+    customer: research
+    metadata:
+      cost_center: research
+      environment: staging
+    redaction_policy:
+      policy_name: research-redaction
+      retain_prompts: false
+      retain_responses: false
+      retention_days: 90
