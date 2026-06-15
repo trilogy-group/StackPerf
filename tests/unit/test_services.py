@@ -2,7 +2,10 @@
 
 from uuid import uuid4
 
+import httpx
 import pytest
+import respx
+from pydantic import SecretStr
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -80,8 +83,8 @@ def session_service(db_session):
 
 @pytest.fixture
 def credential_service():
-    """Create a credential service."""
-    return CredentialService()
+    """Create a credential service with test master key."""
+    return CredentialService(master_key="test-master-key")
 
 
 @pytest.fixture
@@ -631,8 +634,20 @@ class TestSessionService:
 class TestCredentialService:
     """Tests for CredentialService."""
 
+    @pytest.mark.asyncio
+    @respx.mock
     async def test_issue_credential(self, credential_service):
-        """Test issuing a credential."""
+        """Test issuing a credential via LiteLLM API."""
+        respx.post("http://localhost:4000/key/generate").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "key": "sk-benchmark-test-key-12345",
+                    "key_id": "litellm-key-id-123",
+                },
+            )
+        )
+
         session_id = uuid4()
         credential = await credential_service.issue_credential(
             session_id=session_id,
@@ -641,43 +656,47 @@ class TestCredentialService:
             harness_profile="default",
         )
 
-        assert credential.startswith("sk-benchmark-")
-        assert str(session_id) in credential
+        assert credential.key_alias.startswith("session-")
+        assert str(session_id)[:8] in credential.key_alias
+        assert credential.api_key.get_secret_value().startswith("sk-benchmark-")
 
     def test_render_env_snippet(self, credential_service):
         """Test rendering environment snippet."""
+        from benchmark_core.models import ProxyCredential
+
+        credential = ProxyCredential(
+            session_id=uuid4(),
+            key_alias="test-alias",
+            api_key=SecretStr("sk-test"),
+            experiment_id="test-experiment",
+            variant_id="test-variant",
+            harness_profile="default",
+        )
         env = credential_service.render_env_snippet(
-            credential="sk-test",
+            credential=credential,
             proxy_base_url="http://localhost:4000",
             model="gpt-4o",
-            harness_profile="default",
         )
 
         assert env["OPENAI_API_BASE"] == "http://localhost:4000"
         assert env["OPENAI_API_KEY"] == "sk-test"
         assert env["OPENAI_MODEL"] == "gpt-4o"
 
-    def test_render_shell_snippet(self, credential_service):
+    def test_render_env_shell(self, credential_service):
         """Test rendering shell snippet."""
-        snippet = credential_service.render_shell_snippet(
-            credential="sk-test",
-            proxy_base_url="http://localhost:4000",
-            model="gpt-4o",
-        )
+        env = {"OPENAI_API_BASE": "http://localhost:4000", "OPENAI_API_KEY": "sk-test"}
+        snippet = credential_service.render_env_shell(env)
 
-        assert 'export OPENAI_API_BASE="http://localhost:4000"' in snippet
-        assert 'export OPENAI_API_KEY="sk-test"' in snippet
+        assert "export OPENAI_API_BASE='http://localhost:4000'" in snippet
+        assert "export OPENAI_API_KEY='sk-test'" in snippet
 
-    def test_render_dotenv_snippet(self, credential_service):
+    def test_render_env_dotenv(self, credential_service):
         """Test rendering dotenv snippet."""
-        snippet = credential_service.render_dotenv_snippet(
-            credential="sk-test",
-            proxy_base_url="http://localhost:4000",
-            model="gpt-4o",
-        )
+        env = {"OPENAI_API_BASE": "http://localhost:4000", "OPENAI_API_KEY": "sk-test"}
+        snippet = credential_service.render_env_dotenv(env)
 
-        assert 'OPENAI_API_BASE="http://localhost:4000"' in snippet
-        assert 'OPENAI_API_KEY="sk-test"' in snippet
+        assert "OPENAI_API_BASE=http://localhost:4000" in snippet
+        assert "OPENAI_API_KEY=sk-test" in snippet
 
 
 class TestBenchmarkMetadataService:
