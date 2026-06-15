@@ -22,6 +22,7 @@ from benchmark_core.repositories.proxy_key_repository import SQLProxyKeyReposito
 from benchmark_core.repositories.request_repository import SQLRequestRepository
 from benchmark_core.repositories.session_repository import SQLSessionRepository
 from benchmark_core.repositories.task_card_repository import SQLTaskCardRepository
+from benchmark_core.repositories.usage_request_repository import SQLUsageRequestRepository
 from benchmark_core.repositories.variant_repository import SQLVariantRepository
 from benchmark_core.repositories_abc import (
     ArtifactRepository,
@@ -53,4 +54,5 @@ __all__ = [
     "SQLHarnessProfileRepository",
     "SQLArtifactRepository",
     "SQLProxyKeyRepository",
+    "SQLUsageRequestRepository",
 ]
