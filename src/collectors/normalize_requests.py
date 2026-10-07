@@ -1036,7 +1036,6 @@ class UsageRequestNormalizer:
             ("end_user", "end_user"),
             ("team_id", "team_id"),
             ("litellm_session_id", "session_id"),
-            ("cache_key", "cache_key"),
         ):
             sanitized = self._sanitize_scalar(raw_data.get(source_key))
             if sanitized is not None and sanitized != "":
