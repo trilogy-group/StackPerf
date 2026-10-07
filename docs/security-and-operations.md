@@ -64,6 +64,10 @@ Supported secret patterns:
 - AWS credentials
 - Environment variables with secret-like names (PASSWORD, SECRET, KEY, TOKEN, CREDENTIAL)
 
+### Usage collection metadata
+
+The sessionless usage collector (`collectors.LiteLLMUsageCollector`) never copies arbitrary LiteLLM metadata into `usage_requests.request_metadata`. Only an allowlist of scalar join and routing fields is kept (benchmark join fields, `trace_id`, `stream`, `end_user`, `team_id`, `team_alias`, `litellm_session_id`, `request_tags`, retry/fallback counts), each passed through `RedactionFilter` and truncated to 255 characters. Prompt/response content (`messages`, `response`, `proxy_server_request`) and raw key references (`api_key`, `metadata.user_api_key`) are never persisted; unattributed keys are reported only by alias or a truncated `sha256:` fingerprint. Error messages are redacted before storage.
+
 ### Content Capture Configuration
 
 Content capture is controlled by `ContentCaptureConfig`:
