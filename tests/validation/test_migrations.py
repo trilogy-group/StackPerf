@@ -66,6 +66,7 @@ class TestMigrations:
             "artifacts",
             "proxy_credentials",
             "proxy_keys",
+            "usage_requests",
         ]
 
         for table in expected_tables:
