@@ -236,6 +236,18 @@ Use LiteLLM spend logs or structured logs to capture:
 
 Collectors must resolve the LiteLLM virtual key ID to the stable `proxy_key_id` (and denormalized `key_alias`) from the `proxy_keys` registry through the configured collector mapping mechanism, then drop the raw key ID before writing `usage_requests` rows. If no registry entry exists, the collector stores `proxy_key_id = null` and `key_alias = null`, and logs a warning.
 
+#### Sessionless usage collector
+
+`collectors.LiteLLMUsageCollector` collects all-key usage without a benchmark session:
+
+1. Fetch `GET /spend/logs?start_date=<YYYY-MM-DD>&end_date=<YYYY-MM-DD>&summarize=false` (LiteLLM filters by calendar date; rows are then filtered to the half-open window `[start_time, end_time)` by `startTime`).
+2. Normalize each row with `collectors.UsageRequestNormalizer` into a `usage_requests` row. Field extraction (timestamps, latency, TTFT, tokens, cache, cost, status/errors) is shared with benchmark request normalization through `collectors.extraction`.
+3. Resolve key attribution with `collectors.ProxyKeyAttributionResolver`: registry `litellm_key_id` match on the spend-log key reference, then an optional in-memory virtual-key-to-alias mapping, then the LiteLLM-reported alias (`api_key_alias` / `metadata.user_api_key_alias`). Matches set `proxy_key_id`, `key_alias`, and denormalize `owner`/`team`/`customer` into `request_metadata`. Unmatched rows keep `proxy_key_id = null` and `key_alias = null`, store the non-secret reported alias as `request_metadata.litellm_key_alias`, and are counted as unattributed.
+4. Preserve optional benchmark join fields in `request_metadata` (`benchmark_session_id`, `experiment_id`, `variant_id`, `task_card_id`, `harness_profile`, `trace_id`). Sources, in priority order: `metadata.spend_logs_metadata`, `metadata.requester_metadata`, `metadata`, `request_tags` (`key:value` / `key=value`). Accepted keys include the credential-service tags (`benchmark_*`) and short forms (`session_id`, `experiment`, `variant`, `task_card`, `harness`). The `benchmark_session_id` FK column is set only when the value is a UUID of a known session; LiteLLM's own top-level `session_id` is stored as `litellm_session_id` and never treated as a benchmark session.
+5. Write idempotently through `SQLUsageRequestRepository.create_many` (duplicate `litellm_call_id` values are skipped). `dry_run=True` normalizes and reports without writing.
+
+Rows without `request_id` or `call_id` are skipped with reason `missing_stable_request_id`. Rows missing best-effort fields are accepted as **partial**. The `UsageReconciliationReport` (`to_dict()` / `to_markdown()`) reports mapped, partial, skipped, out-of-window, attributed, unattributed, session-linked, written, and duplicate counts; missing-field counts keyed by LiteLLM source field name (`endTime`, `spend`, `api_key_alias`, `proxy_key_id`, ...); unattributed keys by alias or `sha256:` fingerprint; categorized fetch errors (`auth_error`, `http_error`, `connection_error`, `invalid_response`, `repository_error`); and up to 100 per-row diagnostics.
+
 ### Prometheus
 
 Use Prometheus for:
@@ -423,7 +435,7 @@ The following table maps LiteLLM `/spend/logs` fields to the canonical `usage_re
 | `requested_model` | — (metadata) | **Stable** | Model alias sent by the client; useful for audit |
 | `provider` | `provider_id` | **Stable** | Short provider slug (e.g. `openai`, `fireworks`) |
 | `custom_llm_provider` | `provider_route` | **Best-effort** | Full provider string; may differ from `provider` |
-| `spend` | `cost_usd` (planned) | **Best-effort** | Cost in USD. May be `0.0` for failed requests or when provider pricing is not configured |
+| `spend` | `cost_usd` | **Best-effort** | Cost in USD. May be `0.0` for failed requests or when provider pricing is not configured |
 | `total_tokens` | `input_tokens + output_tokens` | **Stable** | Sum of prompt + completion tokens |
 | `prompt_tokens` | `input_tokens` | **Stable** | Input side token count |
 | `completion_tokens` | `output_tokens` | **Stable** | Output side token count |

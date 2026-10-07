@@ -4,13 +4,32 @@ Maps raw LiteLLM fields into canonical requests with session correlation
 and generates reconciliation reports for unmapped rows.
 """
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
 from benchmark_core.db.models import Request as RequestORM
+from benchmark_core.db.models import UsageRequest as UsageRequestORM
 from benchmark_core.repositories.request_repository import SQLRequestRepository
+from benchmark_core.security import RedactionFilter
+from collectors.extraction import (
+    extract_cache_fields,
+    extract_cost_usd,
+    extract_error_fields,
+    extract_finished_at,
+    extract_latency_ms,
+    extract_record_metadata,
+    extract_started_at,
+    extract_token_counts,
+    extract_ttft_ms,
+    first_present,
+    parse_bool,
+    parse_json_list,
+    parse_json_object,
+)
+from collectors.key_attribution import KeyAttribution
 
 
 @dataclass
@@ -546,3 +565,509 @@ class RequestNormalizerJob:
         # For now, delegate to run() - session validation can be added
         # when session repository integration is needed
         return await self.run(raw_requests)
+
+
+# =============================================================================
+# Sessionless usage normalization (usage_requests)
+# =============================================================================
+
+USAGE_OUTCOME_MAPPED = "mapped"
+USAGE_OUTCOME_PARTIAL = "partial"
+USAGE_OUTCOME_SKIPPED = "skipped"
+
+SKIP_MISSING_STABLE_ID = "missing_stable_request_id"
+SKIP_INVALID_RECORD = "invalid_record_type"
+
+# Canonical join field -> accepted source keys, in priority order. The
+# ``benchmark_*`` names are the tags written by the session credential service.
+USAGE_SESSION_JOIN_FIELDS: dict[str, tuple[str, ...]] = {
+    "benchmark_session_id": ("benchmark_session_id", "session_id"),
+    "experiment_id": ("benchmark_experiment_id", "experiment_id", "experiment"),
+    "variant_id": ("benchmark_variant_id", "variant_id", "variant"),
+    "task_card_id": ("benchmark_task_card_id", "task_card_id", "task_card"),
+    "harness_profile": ("benchmark_harness_profile", "harness_profile", "harness"),
+}
+USAGE_TRACE_FIELDS = ("trace_id", "span_id", "parent_span_id")
+MAX_METADATA_STRING_LENGTH = 255
+MAX_REQUEST_TAGS = 50
+MAX_ERROR_MESSAGE_LENGTH = 2000
+MAX_USAGE_ROW_DIAGNOSTICS = 100
+
+
+@dataclass
+class UsageRowDiagnostics:
+    """Per-row normalization diagnostics for usage collection.
+
+    ``missing_fields`` uses LiteLLM source field names so operators can map
+    gaps directly to proxy configuration or the spend-log field inventory.
+    """
+
+    row_index: int | None = None
+    litellm_call_id: str | None = None
+    outcome: str = USAGE_OUTCOME_MAPPED
+    reason: str = ""
+    missing_fields: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)
+    raw_keys: list[str] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Convert diagnostics to a JSON-serializable dictionary."""
+        return {
+            "row_index": self.row_index,
+            "litellm_call_id": self.litellm_call_id,
+            "outcome": self.outcome,
+            "reason": self.reason,
+            "missing_fields": list(self.missing_fields),
+            "notes": list(self.notes),
+            "raw_keys": list(self.raw_keys),
+        }
+
+
+@dataclass
+class UsageNormalizationResult:
+    """Outcome of normalizing one raw spend-log record.
+
+    ``key_reference`` is the LiteLLM key reference used only for registry
+    lookup; it is never written to ``usage_requests``.
+    """
+
+    usage_request: UsageRequestORM | None
+    diagnostics: UsageRowDiagnostics
+    key_reference: str | None = field(default=None, repr=False)
+    reported_key_alias: str | None = None
+    benchmark_session_candidate: UUID | None = None
+
+
+@dataclass
+class UsageReconciliationReport:
+    """Reconciliation report for all-key usage collection."""
+
+    dry_run: bool = False
+    total_rows: int = 0
+    mapped_count: int = 0
+    partial_count: int = 0
+    skipped_count: int = 0
+    out_of_window_count: int = 0
+    attributed_count: int = 0
+    unattributed_count: int = 0
+    session_linked_count: int = 0
+    written_count: int = 0
+    duplicate_count: int = 0
+    missing_field_counts: dict[str, int] = field(default_factory=dict)
+    skip_reason_counts: dict[str, int] = field(default_factory=dict)
+    unattributed_keys: dict[str, int] = field(default_factory=dict)
+    errors: list[dict[str, str]] = field(default_factory=list)
+    rows: list[UsageRowDiagnostics] = field(default_factory=list)
+
+    @property
+    def accepted_count(self) -> int:
+        """Rows accepted for persistence (fully or partially mapped)."""
+        return self.mapped_count + self.partial_count
+
+    def record_row(self, diagnostics: UsageRowDiagnostics) -> None:
+        """Record the final outcome of one in-window row."""
+        self.total_rows += 1
+        if diagnostics.outcome == USAGE_OUTCOME_SKIPPED:
+            self.skipped_count += 1
+            reason = diagnostics.reason or "unknown"
+            self.skip_reason_counts[reason] = self.skip_reason_counts.get(reason, 0) + 1
+        elif diagnostics.outcome == USAGE_OUTCOME_PARTIAL:
+            self.partial_count += 1
+        else:
+            self.mapped_count += 1
+        for name in diagnostics.missing_fields:
+            self.missing_field_counts[name] = self.missing_field_counts.get(name, 0) + 1
+        if diagnostics.outcome != USAGE_OUTCOME_MAPPED and len(self.rows) < (
+            MAX_USAGE_ROW_DIAGNOSTICS
+        ):
+            self.rows.append(diagnostics)
+
+    def record_unattributed(self, key_label: str) -> None:
+        """Record a row whose key could not be resolved in ``proxy_keys``."""
+        self.unattributed_count += 1
+        self.unattributed_keys[key_label] = self.unattributed_keys.get(key_label, 0) + 1
+
+    def add_error(self, category: str, message: str) -> None:
+        """Record a collection-level error (fetch, response, repository)."""
+        self.errors.append({"category": category, "message": message})
+
+    def to_dict(self) -> dict[str, Any]:
+        """Generate a JSON-serializable report."""
+        return {
+            "summary": {
+                "dry_run": self.dry_run,
+                "total_rows": self.total_rows,
+                "accepted_count": self.accepted_count,
+                "mapped_count": self.mapped_count,
+                "partial_count": self.partial_count,
+                "skipped_count": self.skipped_count,
+                "out_of_window_count": self.out_of_window_count,
+                "attributed_count": self.attributed_count,
+                "unattributed_count": self.unattributed_count,
+                "session_linked_count": self.session_linked_count,
+                "written_count": self.written_count,
+                "duplicate_count": self.duplicate_count,
+            },
+            "missing_field_counts": dict(self.missing_field_counts),
+            "skip_reason_counts": dict(self.skip_reason_counts),
+            "unattributed_keys": dict(self.unattributed_keys),
+            "errors": list(self.errors),
+            "rows": [row.to_dict() for row in self.rows],
+        }
+
+    def to_markdown(self) -> str:
+        """Generate a markdown report."""
+        lines = [
+            "# Usage Collection Reconciliation Report",
+            "",
+            "## Summary",
+            "",
+            f"- **Dry run**: {self.dry_run}",
+            f"- **Total rows**: {self.total_rows}",
+            f"- **Mapped**: {self.mapped_count}",
+            f"- **Partially mapped**: {self.partial_count}",
+            f"- **Skipped**: {self.skipped_count}",
+            f"- **Outside window**: {self.out_of_window_count}",
+            f"- **Attributed to proxy_keys**: {self.attributed_count}",
+            f"- **Unattributed**: {self.unattributed_count}",
+            f"- **Linked to benchmark session**: {self.session_linked_count}",
+            f"- **Written**: {self.written_count}",
+            f"- **Duplicates skipped**: {self.duplicate_count}",
+            "",
+        ]
+        sections: list[tuple[str, str, dict[str, int]]] = [
+            ("Missing Source Fields", "Field", self.missing_field_counts),
+            ("Skip Reasons", "Reason", self.skip_reason_counts),
+            ("Unattributed Keys", "Key", self.unattributed_keys),
+        ]
+        for title, column, counts in sections:
+            if not counts:
+                continue
+            lines.extend([f"## {title}", "", f"| {column} | Count |", "|---|---|"])
+            for name, count in sorted(counts.items(), key=lambda item: (-item[1], item[0])):
+                lines.append(f"| {name} | {count} |")
+            lines.append("")
+        if self.errors:
+            lines.extend(["## Errors", ""])
+            lines.extend(f"- `{error['category']}`: {error['message']}" for error in self.errors)
+            lines.append("")
+        if self.rows:
+            lines.extend(["## Rows Needing Attention (first 10)", ""])
+            for row in self.rows[:10]:
+                label = row.litellm_call_id or f"row {row.row_index}"
+                lines.append(f"### {label} ({row.outcome})")
+                lines.append("")
+                if row.reason:
+                    lines.append(f"- **Reason**: {row.reason}")
+                if row.missing_fields:
+                    lines.append(f"- **Missing fields**: {', '.join(row.missing_fields)}")
+                for note in row.notes:
+                    lines.append(f"- **Note**: {note}")
+                lines.append("")
+        return "\n".join(lines)
+
+
+def apply_key_attribution(
+    result: UsageNormalizationResult,
+    attribution: KeyAttribution | None,
+) -> None:
+    """Apply registry attribution to a normalized usage row (ADR-002).
+
+    On a registry match the stable ``proxy_key_id`` and registry alias/ID are
+    written and owner/team/customer are denormalized into metadata. Without a
+    match, ``proxy_key_id`` and ``key_alias`` stay null; the LiteLLM-reported
+    alias (non-secret) is kept in metadata for retroactive matching.
+    """
+    usage = result.usage_request
+    if usage is None:
+        return
+    metadata = dict(usage.request_metadata or {})
+    if attribution is not None:
+        usage.proxy_key_id = attribution.proxy_key_id
+        usage.key_alias = attribution.key_alias
+        usage.litellm_key_id = attribution.litellm_key_id
+        metadata["key_attribution"] = attribution.matched_by
+        for name in ("owner", "team", "customer"):
+            value = getattr(attribution, name)
+            if value is not None:
+                metadata[name] = value
+    else:
+        usage.proxy_key_id = None
+        usage.key_alias = None
+        usage.litellm_key_id = None
+        metadata["key_attribution"] = "unresolved"
+        if result.reported_key_alias:
+            metadata["litellm_key_alias"] = result.reported_key_alias
+        if "proxy_key_id" not in result.diagnostics.missing_fields:
+            result.diagnostics.missing_fields.append("proxy_key_id")
+            result.diagnostics.notes.append(
+                "key not found in proxy_keys registry; register the key alias to attribute usage"
+            )
+        if result.diagnostics.outcome == USAGE_OUTCOME_MAPPED:
+            result.diagnostics.outcome = USAGE_OUTCOME_PARTIAL
+    usage.request_metadata = metadata
+
+
+class UsageRequestNormalizer:
+    """Normalize raw LiteLLM spend-log records into ``usage_requests`` rows.
+
+    No benchmark session is required. Optional session join fields are
+    preserved when present. Only allowlisted, redacted metadata is stored;
+    prompt/response content and raw key references are never copied.
+    """
+
+    def __init__(self, redaction_filter: RedactionFilter | None = None) -> None:
+        self._redaction = redaction_filter or RedactionFilter()
+
+    def normalize(
+        self,
+        raw_data: Any,
+        row_index: int | None = None,
+    ) -> UsageNormalizationResult:
+        """Normalize one raw spend-log record.
+
+        Args:
+            raw_data: Raw record from LiteLLM ``/spend/logs``.
+            row_index: Position of the record in the fetched batch.
+
+        Returns:
+            Result with the ORM row (None when skipped) and diagnostics.
+        """
+        if not isinstance(raw_data, dict):
+            return UsageNormalizationResult(
+                usage_request=None,
+                diagnostics=UsageRowDiagnostics(
+                    row_index=row_index,
+                    outcome=USAGE_OUTCOME_SKIPPED,
+                    reason=SKIP_INVALID_RECORD,
+                    notes=[f"expected JSON object, got {type(raw_data).__name__}"],
+                ),
+            )
+
+        diagnostics = UsageRowDiagnostics(row_index=row_index, raw_keys=sorted(raw_data.keys()))
+        litellm_call_id = first_present(raw_data, "request_id", "call_id", "litellm_call_id")
+        if litellm_call_id is None:
+            diagnostics.outcome = USAGE_OUTCOME_SKIPPED
+            diagnostics.reason = SKIP_MISSING_STABLE_ID
+            diagnostics.missing_fields = ["request_id", "call_id"]
+            return UsageNormalizationResult(usage_request=None, diagnostics=diagnostics)
+        diagnostics.litellm_call_id = str(litellm_call_id)
+
+        record_metadata = extract_record_metadata(raw_data)
+        started_at = extract_started_at(raw_data)
+        finished_at = extract_finished_at(raw_data)
+        tokens = extract_token_counts(raw_data)
+        cache = extract_cache_fields(raw_data)
+        errors = extract_error_fields(raw_data)
+        cost_usd = extract_cost_usd(raw_data)
+        latency_ms = extract_latency_ms(raw_data)
+        ttft_ms = extract_ttft_ms(raw_data)
+        stream = parse_bool(raw_data.get("stream"))
+
+        resolved_model = first_present(raw_data, "model", "model_id")
+        requested_model = first_present(raw_data, "requested_model", "model_group")
+        provider_route = first_present(raw_data, "custom_llm_provider")
+        provider = first_present(raw_data, "provider") or provider_route
+        if provider is None and isinstance(resolved_model, str) and "/" in resolved_model:
+            provider = resolved_model.split("/", 1)[0]
+
+        key_reference = first_present(raw_data, "api_key") or first_present(
+            record_metadata, "user_api_key_hash", "user_api_key"
+        )
+        reported_alias = first_present(raw_data, "api_key_alias", "key_alias") or first_present(
+            record_metadata, "user_api_key_alias"
+        )
+
+        join_fields, session_candidate = self._extract_join_fields(
+            raw_data, record_metadata, diagnostics
+        )
+        request_metadata = self._build_metadata(raw_data, record_metadata, join_fields, stream)
+
+        error_message = errors.error_message
+        if error_message is not None:
+            error_message = self._redaction.redact_string(error_message)[:MAX_ERROR_MESSAGE_LENGTH]
+
+        cache_hit = cache.cache_hit
+        if cache_hit is None and cache.cached_input_tokens:
+            cache_hit = True
+
+        request_id = first_present(raw_data, "request_id")
+        usage = UsageRequestORM(
+            id=uuid.uuid4(),
+            litellm_call_id=str(litellm_call_id),
+            request_id=str(request_id) if request_id is not None else None,
+            key_alias=str(reported_alias) if reported_alias is not None else None,
+            litellm_key_id=None,
+            proxy_key_id=None,
+            benchmark_session_id=None,
+            provider=str(provider) if provider is not None else None,
+            provider_route=str(provider_route) if provider_route is not None else None,
+            requested_model=str(requested_model) if requested_model is not None else None,
+            resolved_model=str(resolved_model) if resolved_model is not None else None,
+            route=self._optional_str(first_present(raw_data, "call_type", "route")),
+            started_at=started_at,
+            finished_at=finished_at,
+            latency_ms=latency_ms,
+            ttft_ms=ttft_ms,
+            input_tokens=tokens.input_tokens,
+            output_tokens=tokens.output_tokens,
+            cached_input_tokens=cache.cached_input_tokens,
+            cache_write_tokens=cache.cache_write_tokens,
+            cost_usd=cost_usd,
+            status=errors.status,
+            error_code=errors.error_code,
+            error_message=error_message,
+            cache_hit=cache_hit,
+            request_metadata=request_metadata,
+            created_at=datetime.now(UTC),
+        )
+
+        missing = diagnostics.missing_fields
+        if started_at is None:
+            missing.append("startTime")
+        if finished_at is None:
+            missing.append("endTime")
+        if resolved_model is None:
+            missing.append("model")
+        if provider is None:
+            missing.append("provider")
+        if tokens.input_tokens is None:
+            missing.append("prompt_tokens")
+        if tokens.output_tokens is None:
+            missing.append("completion_tokens")
+        if cost_usd is None:
+            missing.append("spend")
+        if latency_ms is None:
+            missing.append("latency")
+        if stream and ttft_ms is None:
+            missing.append("ttft")
+        if errors.is_error and errors.error_code is None:
+            missing.append("error_code")
+        if key_reference is None and reported_alias is None:
+            missing.append("api_key")
+        elif reported_alias is None:
+            missing.append("api_key_alias")
+        diagnostics.outcome = USAGE_OUTCOME_PARTIAL if missing else USAGE_OUTCOME_MAPPED
+
+        return UsageNormalizationResult(
+            usage_request=usage,
+            diagnostics=diagnostics,
+            key_reference=str(key_reference) if key_reference is not None else None,
+            reported_key_alias=str(reported_alias) if reported_alias is not None else None,
+            benchmark_session_candidate=session_candidate,
+        )
+
+    @staticmethod
+    def _optional_str(value: Any) -> str | None:
+        return str(value) if value is not None else None
+
+    def _metadata_sources(
+        self, raw_data: dict[str, Any], record_metadata: dict[str, Any]
+    ) -> list[dict[str, Any]]:
+        sources = [
+            parse_json_object(record_metadata.get("spend_logs_metadata")),
+            parse_json_object(record_metadata.get("requester_metadata")),
+            record_metadata,
+            self._parse_request_tags(raw_data),
+        ]
+        # Top-level ``session_id`` on LiteLLM spend logs is LiteLLM's own
+        # trace session, not a benchmark session, so it is not a join source.
+        top_level = {key: value for key, value in raw_data.items() if key != "session_id"}
+        sources.append(top_level)
+        return sources
+
+    @staticmethod
+    def _parse_request_tags(raw_data: dict[str, Any]) -> dict[str, Any]:
+        parsed: dict[str, Any] = {}
+        for tag in parse_json_list(raw_data.get("request_tags")):
+            if not isinstance(tag, str):
+                continue
+            for separator in (":", "="):
+                if separator in tag:
+                    key, value = tag.split(separator, 1)
+                    parsed.setdefault(key.strip(), value.strip())
+                    break
+        return parsed
+
+    def _extract_join_fields(
+        self,
+        raw_data: dict[str, Any],
+        record_metadata: dict[str, Any],
+        diagnostics: UsageRowDiagnostics,
+    ) -> tuple[dict[str, Any], UUID | None]:
+        sources = self._metadata_sources(raw_data, record_metadata)
+        join_fields: dict[str, Any] = {}
+        for canonical, aliases in USAGE_SESSION_JOIN_FIELDS.items():
+            for source in sources:
+                value = first_present(source, *aliases)
+                sanitized = self._sanitize_scalar(value)
+                if sanitized is not None:
+                    join_fields[canonical] = sanitized
+                    break
+        for trace_field in USAGE_TRACE_FIELDS:
+            for source in sources:
+                sanitized = self._sanitize_scalar(source.get(trace_field))
+                if sanitized is not None:
+                    join_fields[trace_field] = sanitized
+                    break
+
+        session_candidate: UUID | None = None
+        session_value = join_fields.get("benchmark_session_id")
+        if session_value is not None:
+            try:
+                session_candidate = UUID(str(session_value))
+            except ValueError:
+                diagnostics.notes.append(
+                    "benchmark_session_id is not a UUID; preserved in request_metadata only"
+                )
+        return join_fields, session_candidate
+
+    def _build_metadata(
+        self,
+        raw_data: dict[str, Any],
+        record_metadata: dict[str, Any],
+        join_fields: dict[str, Any],
+        stream: bool | None,
+    ) -> dict[str, Any]:
+        metadata: dict[str, Any] = dict(join_fields)
+        if stream is not None:
+            metadata["stream"] = stream
+        for target, source_key in (
+            ("end_user", "end_user"),
+            ("team_id", "team_id"),
+            ("litellm_session_id", "session_id"),
+        ):
+            sanitized = self._sanitize_scalar(raw_data.get(source_key))
+            if sanitized is not None and sanitized != "":
+                metadata[target] = sanitized
+        for target, source_key in (
+            ("team_alias", "user_api_key_team_alias"),
+            ("litellm_overhead_time_ms", "litellm_overhead_time_ms"),
+            ("attempted_retries", "attempted_retries"),
+            ("attempted_fallbacks", "attempted_fallbacks"),
+        ):
+            sanitized = self._sanitize_scalar(record_metadata.get(source_key))
+            if sanitized is not None:
+                metadata[target] = sanitized
+        tags = [
+            self._sanitize_scalar(tag)
+            for tag in parse_json_list(raw_data.get("request_tags"))[:MAX_REQUEST_TAGS]
+            if isinstance(tag, str)
+        ]
+        if tags:
+            metadata["request_tags"] = tags
+        return metadata
+
+    def _sanitize_scalar(self, value: Any) -> Any:
+        """Return a redacted scalar suitable for metadata, or None."""
+        if value is None:
+            return None
+        if isinstance(value, bool | int | float):
+            return value
+        if isinstance(value, str):
+            if value == "":
+                return None
+            return self._redaction.redact_string(value)[:MAX_METADATA_STRING_LENGTH]
+        if isinstance(value, UUID):
+            return str(value)
+        return None
